@@ -2460,6 +2460,58 @@ Results on the owner's private test photos are not published.
   note under the November 25 one. Nothing from the private photos is on the blog: its
   evaluation stays "generated images only".
 
+## 2026-11-26: open-source release on GitHub and Hugging Face
+
+The owner gave the go-ahead ("Lets deploy to Huggingface and Github"). Released under Apache-2.0
+(code and models, with the credit line in `NOTICE`) and CC BY 4.0 (datasets):
+
+| what | where | contents |
+|---|---|---|
+| code, docs, journal, blog, the Reader | https://github.com/KokkakNiphon/hxh-ocr | one fresh commit (`HxH OCR 1.0.0`), 845 files, 142 MB |
+| models | https://huggingface.co/KokkakNiphon/hxh-ocr | sets `v4`, `tiny`, `base`: int8, ESP-DL, ONNX, PyTorch; presets, vocabularies; 61 files, 79 MB |
+| line images | https://huggingface.co/datasets/KokkakNiphon/hxh-ocr-lines | configs `synth_v4` (default), `v5`; 3.52 GB |
+| pages | https://huggingface.co/datasets/KokkakNiphon/hxh-ocr-pages | configs `v3o` (default), `v2`, `foreign_open` (validation only), `v5`; 10.92 GB |
+
+**The export, again.** Since the audited export (3cae7ad) the repo gained the explainer's files,
+HxH Translator and readers v6, and the audit raised 13 traces of the private photos and 30 new
+images. Changes (bcf39c4):
+- `docs/video/` is left out (the video is not part of the OCR; its script plans anime inserts
+  and quotes the private photos). `translator/` was never allowlisted. Their journal entries
+  become short notes in the public copy, since they quote the photos and the results on them.
+- `launch_v6.sh` loses its private photo-scoring lines in the export, as `family_eval.sh` does.
+- The photo-table rule now also catches indented tables; the v6 line-set header is a reviewed
+  exception. A photo whose file stem is also an ordinary name blocks only by its full file name.
+- 13 images reviewed by eye and recorded: the v6 golden strips, the page previews and target
+  sheets (all generated), and the v6 blog figures. `CITATION.cff`: released 2026-11-26.
+Result: 839 files + 6 overlaid, 204 excluded, 44 rewritten, no blockers.
+
+**GitHub.** GitHub names are case-insensitive, so the private working repo was renamed first
+(`origin` updated in this checkout). The public repo was
+created private, given one commit authored with the owner's GitHub no-reply address, checked
+(845 files on GitHub, licence detected as Apache-2.0, every local link in the README resolves),
+then made public with a description, the live site as homepage and 11 topics. Signed out, the
+public repo answers 200 and the private one 404. The public repo's working copy is
+`release/hxh-ocr-git/` (git-ignored); to update it, re-run the export, sync it over (removing
+files the export dropped), commit and push.
+
+**Hugging Face.** The owner logged in through the browser with the project's `hf` 2.4 (the
+global `hf` 1.19 only takes a pasted token, which failed). The packages were rebuilt with
+`--namespace KokkakNiphon` (no placeholders left), the three repos created private and
+uploaded: the models in 22 s, lines in 6 min, pages in 18 min. Every file's SHA-256 (LFS) or git
+blob id equals the local file. From the Hub, every config and split streams and its images
+decode; `foreign_open` loads in full (300 pages). Then all three were made public (the
+anonymous API reports `private: false`, not gated). The dataset viewer was still processing
+right after.
+
+**Not in this release:** the v6 readers are in the GitHub repo (`experiments/family/tiny_v6`,
+`base_v6`) but not in the Hugging Face model package, and the v6 data is not on the Hub; HxH
+Translator and the video files stay private.
+
+**Links on the site** (1d3033b, deployed): the Reader's byline links the code and the models, every
+blog footer has an "Open source" line (code, models, both datasets and their licences), and the
+deep dive's Reproduction appendix starts with where to get everything; English, Thai and
+Japanese. The public repo was then synced with the same export (this entry and the links).
+
 ## 2026-11-24: plan addition: full-page reading (text-line detection)
 
 Decided with the owner. The recogniser reads one horizontal line per crop;

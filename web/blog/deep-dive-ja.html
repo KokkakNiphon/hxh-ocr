@@ -834,6 +834,7 @@
       <!-- ============================================================ appendix -->
       <h2 id="appendix">付録</h2>
       <h3 id="app-repro"><span class="sec-n">A</span> 再現手順</h3>
+      <p>すべて公開しています：コードは <a href="https://github.com/KokkakNiphon/hxh-ocr">GitHub</a>、モデルは <a href="https://huggingface.co/KokkakNiphon/hxh-ocr">Hugging Face</a>、データセットは <a href="https://huggingface.co/datasets/KokkakNiphon/hxh-ocr-lines">hxh-ocr-lines</a> と <a href="https://huggingface.co/datasets/KokkakNiphon/hxh-ocr-pages">hxh-ocr-pages</a> です。</p>
       <p>学習用にはプロジェクトの仮想環境（<code>.venv</code>）を持つ Python 3.10 以上、ESP-PPQ 1.3.15 用には別の仮想環境（<code>.venv-ppq</code>）、wasm32 ターゲット付きの Rust、ブラウザのテスト用に node 24 を使う。主なエントリポイントは次のとおりで、リポジトリのルートから実行する。</p>
       <pre class="cmd"><span class="c"># 1 行データ（生成器 v4）と、Windows で高速に読み込むためのパック</span>
 python scripts/generate.py --out data/synth_v4 --train 500000 --val 10000 --seed 3 --gray
@@ -957,6 +958,7 @@ node web/test/page_e2e.mjs --conf-sweep</pre>
 
 <footer class="site-foot">
   <div class="foot-inner">
+    <p>オープンソース：コードは <a href="https://github.com/KokkakNiphon/hxh-ocr">GitHub</a>、モデルは <a href="https://huggingface.co/KokkakNiphon/hxh-ocr">Hugging Face</a> で公開しています（Apache-2.0、クレジット表記あり）。学習データは <a href="https://huggingface.co/datasets/KokkakNiphon/hxh-ocr-lines">行画像</a> と <a href="https://huggingface.co/datasets/KokkakNiphon/hxh-ocr-pages">ページ</a> の2 つのデータセットです（CC BY 4.0）。</p>
     <p>HxH OCR はファンによるプロジェクトです。『HUNTER×HUNTER』の権利は冨樫義博氏、集英社および制作スタジオに帰属し、本プロジェクトはこれらと一切関係ありません。文字の形はファンによる資料からトレースしたもので、学習用の画像はすべて生成したものです。</p>
   </div>
 </footer>
