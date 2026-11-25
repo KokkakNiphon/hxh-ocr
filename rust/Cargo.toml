@@ -1,0 +1,25 @@
+[workspace]
+resolver = "3"
+members = ["hxh-infer", "hxh-detect", "hxh-infer-wasm", "hxh-cli", "hxh-synth"]
+# `cargo test` / `cargo build` at the root skip the wasm wrapper (it is built with
+# --target wasm32-unknown-unknown --profile wasm, see FORMAT.md).
+default-members = ["hxh-infer", "hxh-detect", "hxh-cli", "hxh-synth"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+# Size-optimised build for the browser: cargo build -p hxh-infer-wasm --target wasm32-unknown-unknown --profile wasm
+[profile.wasm]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

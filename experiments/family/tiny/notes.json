@@ -1,0 +1,12 @@
+{
+  "det": {
+    "description": "Model family 'tiny' text-line detector: DBNet-lite on MobileNetV4-small 0.5 (det_v2's architecture, 350k params, 1.57 G MACs), det_v2 fine-tuned on pages_v2 / pages_v3o / pages_v5 (photo-style v5 pages: name cards, lyric videos, anime screens, pages photographed off a screen, avatars and captions as negatives) 25/25/50%, then detector QAT; int8 via ESP-PPQ PTQ, .hxhm v2 (raw output), bit-exact with ESP-PPQ (host, wasm SIMD, wasm scalar). Input 640x640 letterbox (long side to 640, top-left, pad 255); output [2,320,320] int8.",
+    "tuning": "browser pipeline, int8, reading confidence 0.8: see docs/research/JOURNAL.md (2026-11-25, model family) and experiments/family/eval"
+  },
+  "rec": {
+    "description": "Model family 'tiny' horizontal reader: MobileNetV4-small 0.5 CTC (324k params, 154 M MACs), 48x768, 91 classes (74 kana + space + 0-9 ! ? : / . -), fine-tuned from the v4 reader on lines_v5b (lines cut from v5 pages by hxh-synth, with non-Hunter negatives) + synth_v4, QAT, int8 via ESP-PPQ PTQ, bit-exact."
+  },
+  "rec_v": {
+    "description": "Model family 'tiny' vertical reader: as the horizontal one, on vertical columns turned 90 degrees counter-clockwise (top glyph first, on the left)."
+  }
+}

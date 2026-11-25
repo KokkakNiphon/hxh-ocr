@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en" data-fig="Fig." data-table="Table">
+<head>
+<meta charset="utf-8">
+<script src="../theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>The first OCR for the Hunter × Hunter alphabet: deep dive · HxH OCR</title>
+<meta name="description" content="Research write-up of the first OCR for the Hunter × Hunter alphabet: synthetic lines and pages, a MobileNetV4 CTC reader and a DBNet-lite line detector, int8 quantisation-aware training, and a bit-exact Rust engine in WebAssembly, with every experiment and its numbers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="blog.css">
+<link rel="stylesheet" href="deep.css">
+<!-- site:begin (scripts/site_meta.py) -->
+<link rel="canonical" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive">
+<link rel="alternate" hreflang="en" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive">
+<link rel="alternate" hreflang="th" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive-th">
+<link rel="alternate" hreflang="ja" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive-ja">
+<link rel="alternate" hreflang="x-default" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive">
+<meta name="author" content="KokkakNiphon">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#2340d8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HxH OCR">
+<meta property="og:title" content="The first OCR for the Hunter × Hunter alphabet: deep dive · HxH OCR">
+<meta property="og:description" content="Research write-up of the first OCR for the Hunter × Hunter alphabet: synthetic lines and pages, a MobileNetV4 CTC reader and a DBNet-lite line detector, int8 quantisation-aware training, and a bit-exact Rust engine in WebAssembly, with every experiment and its numbers.">
+<meta property="og:url" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive">
+<meta property="og:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HxH OCR: the first OCR for the Hunter × Hunter alphabet, reading a manga page.">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="th_TH">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The first OCR for the Hunter × Hunter alphabet: deep dive · HxH OCR">
+<meta name="twitter:description" content="Research write-up of the first OCR for the Hunter × Hunter alphabet: synthetic lines and pages, a MobileNetV4 CTC reader and a DBNet-lite line detector, int8 quantisation-aware training, and a bit-exact Rust engine in WebAssembly, with every experiment and its numbers.">
+<meta name="twitter:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../site.css">
+<script src="../lang.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "url": "https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive", "inLanguage": "en", "description": "Research write-up of the first OCR for the Hunter × Hunter alphabet: synthetic lines and pages, a MobileNetV4 CTC reader and a DBNet-lite line detector, int8 quantisation-aware training, and a bit-exact Rust engine in WebAssembly, with every experiment and its numbers.", "image": "https://hxh-ocr.kokkakniphon.workers.dev/og.png", "author": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "headline": "The first OCR for the Hunter × Hunter alphabet: deep dive · HxH OCR", "datePublished": "2026-11-25", "dateModified": "2026-11-25", "publisher": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "mainEntityOfPage": "https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive", "about": [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}], "isPartOf": {"@type": "WebSite", "name": "HxH OCR", "url": "https://hxh-ocr.kokkakniphon.workers.dev/"}}</script>
+<!-- site:end -->
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M5.6 6.52H14.4M5.6 13.48H14.4M10 6.52V13.48M19.28 14.39L26.14 5.61M9.92 18.45V25.55M5.73 25.55H14.27M16.8 18.52L19.36 22.04L16.8 25.48M19.36 22.04H24.56M27.2 18.52L24.56 22.04L27.2 25.48"/><circle cx="19.7" cy="7.95" r="1.84"/></svg>HxH OCR</a>
+    <nav aria-label="Site">
+      <a href="../index.html">Reader</a>
+      <a href="index.html">How it works</a>
+      <a href="deep-dive.html" aria-current="page">Deep dive</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="Theme" data-auto="auto" data-light="light" data-dark="dark" aria-label="Theme: auto">
+      <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      <svg class="ic-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ic-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="nav-cta" href="../index.html">Try the reader</a>
+  </div>
+</header>
+
+<main class="post">
+  <div class="post-head">
+    <p class="kicker">Research write-up <span>·</span> Deep dive</p>
+    <p class="meta">By <a class="byline" href="https://github.com/KokkakNiphon" rel="author">KokkakNiphon</a> <span>·</span> November 25, 2026 <span>·</span> Technical report <span>·</span> 40 min read</p>
+    <h1>Reading an invented alphabet in the browser: a 1&nbsp;MB int8 OCR for Hunter&nbsp;×&nbsp;Hunter script</h1>
+    <p class="dek">Synthetic lines and pages, a MobileNetV4 CTC reader and a DBNet-lite line detector, quantisation-aware training that follows Espressif's int8 rules, and a Rust engine in WebAssembly that matches them bit for bit. Every number below comes from the project's research journal and run logs.</p>
+    <p class="post-update"><b>Update, November 25, 2026.</b> This report describes the first models: the v4 readers (75 classes) and det_v2. The <a href="../index.html">Reader</a> now runs a model family trained with photo-style pages as well. Fast is det_v2 with retrained tiny readers (91 classes: the kana, space, digits and <code>! ? : / . -</code>); Accurate is a MobileNetV4-small 1.0 detector at 960&nbsp;px with wider readers, 3.6&nbsp;MB in all. Their training and benchmarks are in <code>docs/research/JOURNAL.md</code> (2026-11-25).</p>
+    <p class="post-update"><b>Update, November 26, 2026.</b> New readers that read numbers drawn as part of the lettering, such as a model number <code>07</code> or a <code>!!</code> after a title, are trained and tested but not in the Reader yet: <a href="#app-v6">Appendix E</a>.</p>
+    <p class="paper-meta"><span><b>Code</b> hxh_ocr/, rust/, web/</span><span><b>Record</b> docs/research/JOURNAL.md</span><span><b>Evaluation</b> generated images only</span></p>
+  </div>
+
+  <div class="post-grid">
+    <aside class="toc-rail">
+      <nav class="toc" aria-label="Table of contents">
+        <p class="label">Contents</p>
+        <ol id="toc"></ol>
+      </nav>
+      <a class="rail-card" href="index.html">
+        <span class="label">Shorter version</span>
+        <span class="rail-title">How it works</span>
+        <span class="rail-text">The same project without the equations, for readers new to OCR.</span>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+    </aside>
+
+    <article id="article">
+
+      <!-- ============================================================ abstract -->
+      <h2 id="abstract">Abstract</h2>
+      <div class="abstract">
+        <p>The <em>Hunter&nbsp;×&nbsp;Hunter</em> manga and anime write signs, letters and title cards in an invented alphabet that is a one-to-one cipher for Japanese kana. This report describes an optical character recogniser (OCR) for that script that runs entirely in a mobile web browser. No labelled data exists, so every model is trained on generated images: a line generator, built in four versions that each answer a measured failure, and a page generator that also draws unlabelled ordinary text and icons as negatives. The system has three int8 models, about 1&nbsp;MB together. A DBNet-style line detector (350k parameters, 1.57&nbsp;G multiply-accumulates per 640&nbsp;×&nbsp;640 page) finds lines, and two CTC readers (323k parameters, 154&nbsp;M MACs per 48&nbsp;×&nbsp;768 line) read horizontal lines and vertical columns. All three share a MobileNetV4-small backbone. Quantisation-aware training that reproduces Espressif's power-of-two int8 rules closes most of the int8 gap. A no_std Rust engine, compiled to WebAssembly, reproduces Espressif's integer simulation bit for bit and runs at about 16&nbsp;G MAC/s on one desktop thread. On generated data, the readers reach 0.84% (horizontal) and 0.71% (vertical) character error rate in int8, and the detector reaches F1 0.922 in fp32. The full int8 browser pipeline reaches F1 91.0% at about 0.2&nbsp;s per page. We report every ablation, including the failures, and the limits of an evaluation that uses no real images.</p>
+        <p class="keywords">Keywords: scene text recognition · CTC · DBNet · synthetic data · int8 quantisation · QAT · WebAssembly · power-of-two scales</p>
+      </div>
+
+      <div class="stats" role="list">
+        <div role="listitem"><span class="stat">1.0 MB</span><span class="label">three int8 models</span></div>
+        <div role="listitem"><span class="stat">9.5 ms</span><span class="label">per line, wasm SIMD, node</span></div>
+        <div role="listitem"><span class="stat">0.922</span><span class="label">detector F1, fp32</span></div>
+        <div role="listitem"><span class="stat">0.84%</span><span class="label">reader CER, int8</span></div>
+      </div>
+
+      <figure class="fig" id="f-teaser">
+        <div class="fig-media fig-page"><img src="img/pipeline/05_boxes.webp" alt="A generated manga page with twelve lines of Hunter script boxed and numbered in reading order; vertical columns in purple." loading="eager"></div>
+        <figcaption>Fig. # — Output of the browser pipeline on a generated validation page. Each box is one detected line, numbered in reading order. Purple boxes are vertical columns. Nothing here was seen in training.</figcaption>
+      </figure>
+
+      <!-- ============================================================ 1 -->
+      <h2 id="intro"><span class="sec-n">1</span> Introduction</h2>
+      <p>In <em>Hunter&nbsp;×&nbsp;Hunter</em>, the text inside the story world is drawn in an invented script. Fans worked out that it is a substitution cipher for Japanese kana (Hunterpedia; Omniglot). There are 46 kana glyphs plus the long-vowel mark ー, so 47 base glyphs. Voiced kana work as in Japanese: a small filled dot at the lower right turns か into が, and a small ring turns は into ぱ. Hiragana and katakana share glyphs, and small kana (ゃ, っ) are drawn smaller. Reading the script therefore means reading kana (<a class="xref" href="#f-glyphs">Figure</a>). Romanising or translating them afterwards is easy.</p>
+      <p>The goal was a reader small enough for a phone's browser: a photo, screenshot or camera frame goes in, and kana and romaji come out, without a server. The first target was even smaller, an ESP32-S3 microcontroller. That target was parked partway through, but its constraints shaped the models: int8 arithmetic with per-tensor power-of-two scales, and only convolutions, ReLU and additions.</p>
+
+      <figure class="fig" id="f-glyphs">
+        <div class="fig-box">
+          <div class="fig-title">The Hunter alphabet</div>
+          <div class="fig-sub">47 base glyphs in gojūon order, drawn from the stroke data the generators use. Hover or tap a glyph.</div>
+          <div class="glyph-chart" id="glyph-chart" role="list"></div>
+          <div class="glyph-detail" id="glyph-detail" aria-live="polite"></div>
+        </div>
+        <figcaption>Fig. # — The cipher. Each glyph stands for one kana; a dot or ring at the lower right marks voiced and p-sounds. Three glyphs have two official forms.</figcaption>
+      </figure>
+
+      <p>Three problems make this harder than it looks. First, there is no dataset: real examples number in the dozens, and they are copyrighted frames. Second, the voicing marks are tiny. A dakuten dot has a radius of 0.065&nbsp;em, so at a 32&nbsp;px line height it is one or two pixels across, and confusing が with か is the most common error throughout this report. Third, the script appears among other things: speech bubbles, character art, Japanese and English text, icons. A detector trained only on Hunter script has no reason to ignore ordinary writing.</p>
+      <p><a class="xref" href="#f-overview">Figure</a> shows the system. Offline, two generators make training images, PyTorch trains the models, and a quantisation chain turns them into int8 files. Online, a Rust engine compiled to WebAssembly runs a detector and two readers in the browser.</p>
+
+      <figure class="fig" id="f-overview">
+        <div class="fig-box dfig">
+          <div class="fig-title">System overview</div>
+          <div class="fig-sub">Top: offline, on one PC. Bottom: online, in the browser. Blue nodes are int8.</div>
+          <div class="lanes" id="d-overview"></div>
+        </div>
+        <figcaption>Fig. # — The two halves of the system. Everything the browser runs is produced by the chain at the top; the int8 files are bit-exact with Espressif's simulator.</figcaption>
+      </figure>
+
+      <p>The contributions are practical rather than algorithmic:</p>
+      <ol class="contrib">
+        <li><strong>Synthetic data for an invented script.</strong> A vector line generator (four versions, each motivated by a measured failure) and a Rust page generator that writes DBNet targets and, since its third version, unlabelled ordinary text and icons as hard negatives (<a href="#data">Section 3</a>).</li>
+        <li><strong>Small int8 models with a restricted op set.</strong> A conv-only CTC reader and a DBNet-lite detector on an ImageNet-pretrained MobileNetV4-small, using only Conv, ReLU and Add, plus nearest Resize and Concat for the detector (<a href="#models">Section 4</a>).</li>
+        <li><strong>Quantisation-aware training that matches the target exactly.</strong> Fake quantisation that reproduces ESP-PPQ's power-of-two rules, verified exponent for exponent and logit for logit (<a href="#quant">Section 6</a>).</li>
+        <li><strong>A bit-exact int8 engine.</strong> A no_std, dependency-free Rust engine with WebAssembly SIMD kernels whose output equals ESP-PPQ's simulation on every tested vector (<a href="#quant">Section 6</a>).</li>
+        <li><strong>An honest evaluation of the whole pipeline</strong> on generated pages: post-processing and crop sweeps, a confidence filter, and a false-positive study on non-Hunter text (<a href="#experiments">Section 7</a>).</li>
+      </ol>
+
+      <!-- ============================================================ 2 -->
+      <h2 id="related"><span class="sec-n">2</span> Related work</h2>
+      <p><strong>Reading Hunter script.</strong> As far as we can tell, this is the first OCR for the Hunter&nbsp;×&nbsp;Hunter alphabet. Searches of the web, GitHub and Hugging Face on 25 November 2026 found tools that go the other way: they turn typed text into Hunter script, for example phonetic converters that set text in a Hunter font. A few Hugging Face repositories are named after the series, but they are empty placeholders or unrelated image classifiers. None of them reads the script from images.</p>
+      <p><strong>Line recognition with CTC.</strong> Connectionist temporal classification <a class="cite" href="#ref-1">[1]</a> trains a network that emits one class per time step, including a "blank", against an unsegmented label. CRNN <a class="cite" href="#ref-2">[2]</a> combined a convolutional feature extractor, a recurrent layer and a CTC transcription layer into one trainable model for scene text. Our reader keeps CRNN's layout and CTC loss but replaces the recurrent layer with depthwise convolutions. A conv-only network keeps the int8 engine to about six operations, all quantised by the same rules.</p>
+      <p><strong>Text detection by segmentation.</strong> DBNet <a class="cite" href="#ref-3">[3]</a> predicts a probability map of shrunk text regions and a threshold map, and makes binarisation differentiable with a steep sigmoid of their difference. At inference only the probability map is needed, and boxes are recovered by expanding ("unclipping") its connected components. We use DBNet's targets and losses almost unchanged. Its hard-negative mining follows OHEM <a class="cite" href="#ref-7">[7]</a>. PP-OCR <a class="cite" href="#ref-8">[8]</a> showed that a small DB detector plus a small CTC recogniser make a practical lightweight OCR system. Our split into a detector and line readers follows the same design, at a far smaller size because the alphabet has 74 tokens.</p>
+      <p><strong>Backbones.</strong> MobileNetV4 <a class="cite" href="#ref-4">[4]</a> introduced the Universal Inverted Bottleneck (UIB) and a family of mobile models. Its "conv-small" variants use only plain and depthwise convolutions with ReLU, with no squeeze-excitation or hard-swish, which suits fixed-point hardware. We use the 0.5-width version, pretrained on ImageNet.</p>
+      <p><strong>Synthetic training data.</strong> Jaderberg et al. <a class="cite" href="#ref-9">[9]</a> trained word recognisers entirely on rendered images, and SynthText <a class="cite" href="#ref-10">[10]</a> rendered text into natural images to train localisation. Both had real fonts to render. Here the "font" itself had to be traced, and there is no real benchmark to calibrate against.</p>
+      <p><strong>Integer inference.</strong> Jacob et al. <a class="cite" href="#ref-5">[5]</a> defined integer-only inference with fake-quantisation training (QAT). TQT <a class="cite" href="#ref-6">[6]</a> trains quantisation thresholds in the log domain and constrains scales to powers of two, so that rescaling is a bit shift. Espressif's ESP-DL runtime and ESP-PPQ quantiser <a class="cite" href="#ref-11">[11]</a> use per-tensor, symmetric, power-of-two int8 for ESP32-S3 targets. We adopt that scheme as the contract between training and the engine.</p>
+
+      <!-- ============================================================ 3 -->
+      <h2 id="data"><span class="sec-n">3</span> Synthetic data</h2>
+      <h3 id="glyphs"><span class="sec-n">3.1</span> Glyphs</h3>
+      <p>All 47 base glyphs were traced by hand from the fan wiki's chart into stroke primitives: lines, arcs, ellipses, dots and splines, read off 4–5× zoomed crops and rendered back side by side for comparison. Omniglot's chart agreed on every glyph except も, which it ends in a ring instead of a dot. Two official sources found later settled the remaining forms. The 2011 anime's alphabet chart matched the trace on 43 of its 46 glyphs. It showed ま mirrored (pointing left), せ drawn narrow like a "4", and も ending in a ring. A printed guidebook chart also has the left-pointing ま, but the wide せ and the dotted も. So the fan chart's ま was most likely an error, while せ and も simply have two official styles.</p>
+      <p>The generator therefore samples weighted forms (<a class="xref" href="#f-variants">Figure</a>): ま points left 85% of the time, せ and も use each form half the time. Voicing marks are placed relative to the bounding box of the form actually drawn. Version 4 of the line generator also moves them: sideways to 0.55–1.35 times the chart offset, but never closer than half the stroke width plus the mark radius plus 0.03&nbsp;em, and up or down by U(−0.06,&nbsp;0.03)&nbsp;em.</p>
+
+      <figure class="fig" id="f-variants">
+        <div class="fig-box dfig">
+          <div class="fig-title">Glyph forms and voicing marks</div>
+          <div class="fig-sub">Left: the three glyphs with two forms, with their sampling weights. Right: where the generator may put a dakuten (dot) and handakuten (ring).</div>
+          <div class="gpanel" id="d-variants"></div>
+          <div id="d-marks" style="margin-top:14px"></div>
+        </div>
+        <figcaption>Fig. # — Official forms and mark placement. The shaded band is the range of dot centres in generator v4, which also keeps a minimum gap from the strokes; the blue dot is the chart's own position.</figcaption>
+      </figure>
+
+      <p>Labels use 73 kana plus the space, 74 tokens in all. Katakana and small kana are folded into full-size hiragana, because the glyphs cannot tell them apart reliably. Relative glyph sizes are kept as in the chart: い is a lone dot and て is short. Normalising every glyph to the em box would turn い into a large disc and blur the difference between い and a dakuten.</p>
+
+      <h3 id="linegen"><span class="sec-n">3.2</span> Line generator</h3>
+      <p>The line generator (Python, <code>hxh_ocr/synth.py</code>) draws glyphs from vector strokes, so styles are cheap to vary. There are three styles: clean (font-like), hand (wobble, stroke jitter, small rotation, scale and aspect jitter) and brush (pressure-tapered stamping). Stroke widths run from 0.04 to 0.24&nbsp;em. Lines run horizontally, or vertically on 30% of samples. Spacing is monospaced or proportional, with occasional italic shear and curved baselines. Backgrounds include flat, gradient, value noise, paper, manga screentone, hatching and random shapes. Ink effects include outlines, drop shadows, patchy ink and gradient ink. Degradations include blur, motion blur, down- and up-scaling, uneven light, contrast and gamma, noise, binarisation and JPEG. Each sample is a crop 64&nbsp;px thick, so training can pick 32, 40 or 48&nbsp;px by downscaling. Every sample is seeded from (seed, split, index), so any set can be regenerated exactly.</p>
+      <p>The generator went through four versions (<a class="xref" href="#t-genver">Table</a>, <a class="xref" href="#f-evo">Figure</a>). Each change answered a failure seen in a model's worst predictions or in real images.</p>
+
+      <figure class="fig table" id="t-genver">
+        <figcaption>Table # — Line generator versions, what each fixed, and the data each produced.</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>version</th><th>what changed</th><th>why</th><th class="num">train + val</th></tr></thead>
+          <tbody>
+            <tr><td class="k"><strong>v1</strong></td><td>Traced glyphs, three styles, backgrounds, effects and degradations; small kana at 0.55–0.78 scale on about 65% of lines; word spaces.</td><td>First version. Omniglot's chart added the small-kana sizes and spaces.</td><td class="num">100k + 5k</td></tr>
+            <tr><td class="k"><strong>v2</strong></td><td>Grayscale, JPEG q90, more clutter.</td><td>More data. The worst-32 grid then showed label noise: Otsu binarisation (5% of samples) turned text into blobs, and neighbouring lines could show as much as the labelled one.</td><td class="num">500k + 10k</td></tr>
+            <tr><td class="k"><strong>v3</strong></td><td>Tighter crops (em U(0.58,&nbsp;0.84) of the line height on 65% of lines, U(0.40,&nbsp;0.62) on the rest); neighbours show at most 35% of their height and stay 0.12&nbsp;em away; binarisation only on uniform backgrounds, at the ink–background midpoint.</td><td>Remove v2's label noise; give the marks a few more pixels.</td><td class="num">349,558 horizontal train lines</td></tr>
+            <tr><td class="k"><strong>v4</strong></td><td>Official glyph forms; "character art" beside the line ends on 25% of lines; bold style on 18% of lines (was 10%) up to 0.30&nbsp;em (was 0.24); drop shadows on 18% (was 10%), 60% of them soft; mark jitter.</td><td>Failures on anime title cards: mirrored ま, narrow せ, art at the crop edge read as glyphs, heavier strokes.</td><td class="num">500k + 10k</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">v1 and v2 were used together in round 1 (419,381 horizontal training lines). The v3 row gives the horizontal training lines from the run configs; the journal does not record the v3 set's total size.</p>
+      </figure>
+
+      <figure class="fig" id="f-evo">
+        <div class="fig-media">
+          <div class="evo"><div class="evo-labels" aria-hidden="true"><span style="top:11.4%">v1</span><span style="top:37.1%">v2</span><span style="top:62.9%">v3</span><span style="top:88.6%">v4</span></div><img src="img/synth/generator_evolution.webp" alt="Four rows of generated lines, one per generator version, from v1 at the top to v4 at the bottom." loading="lazy"></div>
+          <div class="fig-strips" style="border-top:1px solid var(--line)"><img src="img/synth/lines_v4.webp" alt="A grid of 25 generated training lines from generator v4 on varied backgrounds." loading="lazy"></div>
+        </div>
+        <figcaption>Fig. # — Top: one validation row from each generator version. Bottom: 25 validation lines of v4, with art beside the lines, bold strokes and shadows. All 64 px tall.</figcaption>
+      </figure>
+
+      <p>Speed mattered more than expected. The first full run made about 180 samples per second on 14 worker processes. Profiling with cProfile showed Python loops (brush stamping, join circles, a looped densify), not image operations. After vectorising them and pinning BLAS to one thread per worker, throughput reached 572 samples/s, so 100k lines take about three minutes. Version 4 renders about 78 lines per second per core.</p>
+
+      <h3 id="pagegen"><span class="sec-n">3.3</span> Page generator</h3>
+      <p>The detector needs whole pages with every line labelled. A second generator, written in Rust (<code>rust/hxh-synth</code>), composes manga-style pages 512–1024&nbsp;px on the long side. It started in Python and moved to Rust on the owner's call; the Rust version made 92 pages per second on six threads against 16.5 for the Python one (about 3.5 times faster per core). Glyph strokes, variants, weights and word lists are exported from the Python package to one JSON file (73 glyphs, 77 forms, 264 words) that the binary embeds, so there is one source of truth.</p>
+      <p>Pages use three layouts: manga panels (60%), an anime still or poster (25%), and a document with paragraphs and ruled tables (15%). Text groups are speech bubbles (ellipse, cloud, burst, with tails), captions, signs, cards with soft shadows, paragraph blocks, outlined titles and sound effects, small fillers and table cells. Groups are rotated by up to ±12°, sometimes warped in perspective, and about 11% of lines are vertical. Distractor art is drawn before and after the text, and about 3% of pages have no text at all. Each line's quadrilateral comes from its stroke geometry, so it is tight around the ink, and lines never overlap (<a class="xref" href="#f-pages">Figure</a>).</p>
+
+      <figure class="fig" id="f-pages">
+        <div class="fig-media"><img src="img/synth/pages_v2.webp" alt="Six generated manga-style pages with ground-truth line quadrilaterals." loading="lazy"></div>
+        <figcaption>Fig. # — Generated detector training pages (pages_v2) with their ground-truth quads: horizontal lines blue, vertical columns purple.</figcaption>
+      </figure>
+
+      <p>The main training set, pages_v2, has 30,000 training and 1,000 validation pages. It was written in 3 minutes at 168 pages per second on 10 threads (3.2&nbsp;GB). It holds 500,141 lines, 16.7 per page on average (at most 56), with a median line height of 19&nbsp;px (1st percentile 9&nbsp;px, 99th 70&nbsp;px); 905 pages are art only.</p>
+
+      <h3 id="negatives"><span class="sec-n">3.4</span> Ordinary text and icons as negatives</h3>
+      <p>The first detector (det_v1, trained on pages_v2) was tried on a screenshot of Omniglot's page about the alphabet. It boxed every line of text on it: headings, Japanese with kanji, romaji, English prose, URLs, and rows of icons. The readers then turned that writing into confident-looking kana. The detector had only ever seen Hunter script and drawn art, so anything text-like was text.</p>
+      <p>The third page set, pages_v3, adds ordinary writing in real fonts and icons, never labelled. DBNet's targets treat unlabelled pixels as background, so the detector has to learn to fire only on Hunter script (<a class="xref" href="#f-negatives">Figure</a>). Fonts are read at run time from the system font folder; nothing is copied or embedded. On the build machine the generator found 80 faces: Latin sans, serif, mono, display and handwriting faces, Japanese Gothic faces, Korean, and icon fonts (Segoe MDL2 Assets with 1,525 glyphs, Segoe Fluent Icons with 1,624, emoji outlines, Webdings, Wingdings and others). The text comes in several kinds: English-like sentences and headings, romaji, URLs, dates, prices and other numbers, Japanese sentences with kanji (also as vertical columns), kana, and a little Korean, Greek and Cyrillic (about 3% each). Unicode symbols such as ∀, ∇, rings and dots are deliberate hard negatives, because many Hunter glyphs look like them.</p>
+      <p>Foreign text enters in three ways. Whole text groups are written in it with probability 0.15 (1.6 times that on manga pages). Mixed groups hold both kinds of lines with probability 0.08. Extra elements fill the space left over: labels, page numbers, credits, subtitles, single icons, rows and grids of icons. A fourth layout, used for 15% of pages, imitates a screenshot of a web page, document or app (a quarter of those are app interfaces). It has navigation bars, headings, paragraphs at 6–19&nbsp;px, lists, tables, sidebars and footers, sometimes with a Hunter sample block or an alphabet chart like Omniglot's. About 3% of pages are negatives with no Hunter text at all.</p>
+
+      <figure class="fig" id="f-negatives">
+        <div class="fig-media pad"><img src="img/deep/pages_v3.webp" alt="Eight generated pages from pages_v3: manga, documents, stills and web screenshots, with Hunter lines in green or magenta and foreign text in orange." loading="lazy"></div>
+        <div class="fig-media pad" style="margin-top:10px"><img src="img/deep/pages_foreign.webp" alt="Eight generated pages from the pages_foreign check set, mostly ordinary text and icons." loading="lazy"></div>
+        <div class="legend-row"><span><i style="border-color:#00be00"></i>Hunter line (labelled)</span><span><i style="border-color:#dc00dc"></i>vertical Hunter column</span><span><i style="border-color:#ff8200"></i>foreign text (unlabelled)</span><span><i style="border-color:#00aae6"></i>icons (unlabelled)</span></div>
+        <figcaption>Fig. # — Top: pages_v3, the training set with negatives. Bottom: pages_foreign, a check set made mostly of ordinary text and icons. Only green and magenta boxes are targets; everything else must stay dark in the detector's map.</figcaption>
+      </figure>
+
+      <p>One rule keeps the labels clean. A foreign run must stay at least 0.3 times the larger of the two line heights away from every labelled quadrilateral, plus its outline or shadow halo (<a class="xref" href="#f-keep">Figure</a>). The check uses exact convex-polygon distances on the final quads, both when a group is placed and when each line is drawn. A test checks it on 320 pages generated with more mixing than the defaults.</p>
+
+      <figure class="fig" id="f-keep">
+        <div class="fig-box dfig">
+          <div class="fig-title">The keep-clear rule</div>
+          <div class="fig-sub">A foreign run is placed only if its quad stays outside the labelled quad grown by the margin.</div>
+          <div id="d-keep"></div>
+        </div>
+        <figcaption>Fig. # — Schematic of the keep-clear rule. The margin is 0.3 times the larger line height plus the foreign run's halo, so no foreign ink sits on or next to a labelled line.</figcaption>
+      </figure>
+
+      <p>The training set pages_v3 has 30,000 training and 1,000 validation pages (seed 3). A separate check set, pages_foreign (300 pages, seed 4), is built to be hard: 55% web layouts, 35% negative pages, foreign groups with probability 0.5, mixed groups 0.15, 1.5 times the foreign extras and 3 times the icons. It is used only for evaluation (<a href="#e-foreign">Section 7.8</a>).</p>
+
+      <!-- ============================================================ 4 -->
+      <h2 id="models"><span class="sec-n">4</span> Models</h2>
+      <h3 id="reader"><span class="sec-n">4.1</span> Line reader</h3>
+      <p>The reader is a CRNN-style CTC model without recurrence (<a class="xref" href="#f-reader">Figure</a>). The backbone is timm's <code>mobilenetv4_conv_small_050</code>, pretrained on ImageNet, cut after its fourth stage; the 480- and 1,280-channel heads and the classifier are dropped. The first convolution's RGB kernel is summed into one gray channel. The first two stages keep stride 2 in both directions, so the width shrinks by four. Every later stride is set to (2,&nbsp;1): it halves the height but keeps the width. Changing a stride does not change weight shapes, so the pretrained weights load unchanged. A 48&nbsp;×&nbsp;768 line becomes 192 columns of 64 features, two rows high. A mean over the height leaves one row. A sequence head of two residual blocks, each a depthwise (1,&nbsp;5) convolution and a 1&nbsp;×&nbsp;1 convolution with ReLU, then dropout 0.1 and a 1&nbsp;×&nbsp;1 classifier, gives 75 scores per column: 74 tokens and the CTC blank.</p>
+
+      <figure class="fig" id="f-reader">
+        <div class="fig-box dfig">
+          <div class="fig-title">Reader architecture, 48 × 768 input</div>
+          <div class="fig-sub">Slab height ∝ feature height, width ∝ feature width, depth ∝ channels. Labels give channels × height × width.</div>
+          <div id="d-reader-arch"></div>
+        </div>
+        <figcaption>Fig. # — The 48 px reader. Strides s2,2 halve both axes; s2,1 halve only the height, so 768 px become T = 192 columns of 4 px each. Shapes computed from the model definition.</figcaption>
+      </figure>
+
+      <p>The op set is deliberately narrow. After BatchNorm folding, the ONNX graph of the 32&nbsp;px model has 49 Conv, 32 Relu, 12 Add and one ReduceMean, and nothing else; the engine runs the ReduceMean as an average pool. There is no LSTM, attention, squeeze-excitation or hard-swish. <a class="xref" href="#t-variants">Table</a> lists the variants trained. The "three-stage" model stops after the third stage (96k parameters). The "tiny" model is a from-scratch control with plain depthwise-separable blocks whose widths were tuned to match the MobileNet's parameters and MACs.</p>
+
+      <figure class="fig table" id="t-variants">
+        <figcaption>Table # — Reader variants: parameters and multiply-accumulates (convolutions only) at several input sizes.</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>model</th><th class="num">params</th><th class="num">32 × 256</th><th class="num">48 × 384</th><th class="num">deployed input</th></tr></thead>
+          <tbody>
+            <tr><td><strong>mnv4s</strong>, 4 stages, ImageNet</td><td class="num">323.0k<span class="sub">317.5k BN-folded</span></td><td class="num">30.2M</td><td class="num">77.0M</td><td class="num"><strong>154M</strong> at 48 × 768<span class="sub">60.5M at 32 × 512</span></td></tr>
+            <tr><td>mnv4s3, 3 stages</td><td class="num">96.1k</td><td class="num">15.3M</td><td class="num">33.9M</td><td class="num">30.5M at 32 × 512</td></tr>
+            <tr><td>tiny, from scratch</td><td class="num">327.8k<span class="sub">324.1k BN-folded</span></td><td class="num">30.1M</td><td class="num">70.4M</td><td class="num">not deployed</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>Input lines are gray, scaled to the model height with their aspect kept, capped at 16 times the height in width, and normalised to [−1,&nbsp;1]. Training batches are padded to a multiple of 8 pixels, and the CTC input length uses each line's real width, ⌈w/4⌉, not the padded width. Online augmentation is light: horizontal scale 0.85–1.15, random padding, 10% inverted lines and a little noise. The deployed model has a static 48&nbsp;×&nbsp;768 input: a line is area-resized to 48&nbsp;px, padded on the right by repeating its last column, and squeezed only if it is wider than 768&nbsp;px.</p>
+      <p>Decoding is greedy (<a class="xref" href="#f-ctc">Figure</a>). With per-column scores <math><msub><mi>z</mi><mrow><mi>t</mi><mo>,</mo><mi>k</mi></mrow></msub></math>, the reader takes the best class in every column, merges repeats and drops blanks:</p>
+      <div class="eq"><math display="block"><mrow><msub><mi>π</mi><mi>t</mi></msub><mo>=</mo><munder><mrow><mi>arg</mi><mo>&#x2061;</mo><mi>max</mi></mrow><mi>k</mi></munder><mspace width="0.2em"></mspace><msub><mi>z</mi><mrow><mi>t</mi><mo>,</mo><mi>k</mi></mrow></msub><mo>,</mo><mspace width="1.2em"></mspace><mover><mi>y</mi><mo>^</mo></mover><mo>=</mo><mi mathvariant="script">B</mi><mo stretchy="false">(</mo><msub><mi>π</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>π</mi><mi>T</mi></msub><mo stretchy="false">)</mo></mrow></math><span class="eq-n">(1)</span></div>
+      <p>where <math><mi mathvariant="script">B</mi></math> removes consecutive repeats and then blanks. A blank between two equal kana keeps them apart, so んん can still be written. Ties go to the lowest class id, as in <code>numpy.argmax</code>. For display and filtering, each emitted character gets the peak softmax probability of its class over the run of columns <math><msub><mi>τ</mi><mi>i</mi></msub></math> that emitted it, and a line's confidence <math><mi>c</mi></math> is the mean over its <math><mi>n</mi></math> characters:</p>
+      <div class="eq"><math display="block"><mrow><msub><mi>p</mi><mi>t</mi></msub><mo stretchy="false">(</mo><mi>k</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><msup><mi>e</mi><msub><mi>z</mi><mrow><mi>t</mi><mo>,</mo><mi>k</mi></mrow></msub></msup><mrow><msub><mo>∑</mo><mi>j</mi></msub><msup><mi>e</mi><msub><mi>z</mi><mrow><mi>t</mi><mo>,</mo><mi>j</mi></mrow></msub></msup></mrow></mfrac><mo>,</mo><mspace width="1.2em"></mspace><mi>c</mi><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><munder><mi>max</mi><mrow><mi>t</mi><mo>∈</mo><msub><mi>τ</mi><mi>i</mi></msub></mrow></munder><msub><mi>p</mi><mi>t</mi></msub><mo stretchy="false">(</mo><msub><mover><mi>y</mi><mo>^</mo></mover><mi>i</mi></msub><mo stretchy="false">)</mo></mrow></math><span class="eq-n">(2)</span></div>
+
+      <figure class="fig" id="f-ctc">
+        <div class="fig-box"><div class="ctc" id="ctc"></div></div>
+        <figcaption>Fig. # — Greedy CTC on a real int8 output: the per-step argmax (row 1), repeats merged (row 2) and blanks removed (row 3). Each of the 192 steps (output columns) covers 4 px of the strip; the 73 steps over the padding all say blank and are cut off. The close-up shows the nine steps around the cursor. The shaded span is the part of the input that holds the central 80% of the gradient of that step's winning score, taken from the float model.</figcaption>
+      </figure>
+
+      <h3 id="vertical"><span class="sec-n">4.2</span> Vertical reader</h3>
+      <p>Manga bubbles are often written top to bottom. The reader cannot take a column as it is, so a vertical crop is turned 90° counter-clockwise: the first glyph ends up on the left and every glyph lies on its side. Turned glyphs collide with upright ones. ふ (a ⊃ shape) turned a quarter turn looks like う (∩), so a shared model would need to be told the orientation (<a class="xref" href="#f-vertical">Figure</a>). Vertical columns therefore go to a second reader of the same design, trained only on turned columns: the 150,576 vertical training columns of synth_v4, which share the horizontal lines' length distribution. The orientation is stored in the checkpoint and switches calibration, hold-out sets and golden vectors throughout the int8 chain.</p>
+
+      <figure class="fig" id="f-vertical">
+        <div class="fig-media fig-strips"><img src="img/synth/vertical.webp" alt="Vertical training columns upright on the left and turned 90 degrees counter-clockwise on the right." loading="lazy"></div>
+        <div class="fig-box dfig" style="margin-top:10px"><div class="gpanel" id="d-rotate"></div></div>
+        <figcaption>Fig. # — Top: vertical columns upright and as the vertical reader sees them. Bottom: why the orientation matters; some turned glyphs look like other upright glyphs. Glyphs drawn from the generator's stroke data.</figcaption>
+      </figure>
+
+      <h3 id="detector"><span class="sec-n">4.3</span> Line detector</h3>
+      <p>The detector is a DBNet-lite on the same pretrained backbone (<a class="xref" href="#f-det">Figure</a>). The four backbone stages give features at strides 4, 8, 16 and 32 with 16, 32, 48 and 64 channels. A light feature pyramid projects each to 48 channels with a 1&nbsp;×&nbsp;1 convolution and adds them top-down after nearest ×2 upsampling. Each level is then smoothed by a depthwise 3&nbsp;×&nbsp;3 and a 1&nbsp;×&nbsp;1 convolution down to 16 channels, upsampled to stride 4 and concatenated into 64 channels. The head is a 3&nbsp;×&nbsp;3 convolution to 32 channels, a ×2 upsampling, a 3&nbsp;×&nbsp;3 convolution to 16 channels and a 1&nbsp;×&nbsp;1 convolution to two output channels at stride 2: a text-kernel logit and a vertical-orientation logit. For a 640&nbsp;×&nbsp;640 letterbox that is a 320&nbsp;×&nbsp;320 map. A threshold head of the same shape is used only in training. Every layer uses ReLU, and BatchNorm is folded at export.</p>
+
+      <figure class="fig" id="f-det">
+        <div class="fig-box dfig">
+          <div class="fig-title">DBNet-lite detector</div>
+          <div class="fig-sub">640 × 640 gray letterbox in, two 320 × 320 maps out. Sizes are height = width × channels.</div>
+          <div class="scroll-x" id="d-det-arch"></div>
+          <div class="scroll-hint">scroll sideways to see the whole diagram →</div>
+        </div>
+        <figcaption>Fig. # — The detector: backbone strides 4 to 32, a top-down FPN-lite, and a head that ends at stride 2. The two full 3x3 convolutions at high resolution cost 947 M of the 1.57 G MACs.</figcaption>
+      </figure>
+
+      <p>The detector has 350k parameters (344k deployed, without the threshold head) and costs 1.57&nbsp;G MACs per 640&nbsp;×&nbsp;640 page: 442&nbsp;M in the backbone, 180&nbsp;M in the pyramid and 947&nbsp;M in the head. Almost all of the head's cost is in its two full 3&nbsp;×&nbsp;3 convolutions at high resolution; depthwise-separable versions would remove about 0.8&nbsp;G MACs. A stride-2 output was chosen for small text: the median line is 19&nbsp;px tall in a page, and much less once a page is shrunk to 640&nbsp;px. The detector never sees mirrored pages, because ま and せ are mirror-sensitive.</p>
+
+      <h4>Targets</h4>
+      <p>The page generator writes DBNet targets from each line's quad <a class="cite" href="#ref-3">[3]</a>. With area <math><mi>A</mi></math> and perimeter <math><mi>L</mi></math>, every edge moves inward by</p>
+      <div class="eq"><math display="block"><mrow><mi>D</mi><mo>=</mo><mfrac><mrow><mi>A</mi><mspace width="0.1em"></mspace><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>r</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mi>L</mi></mfrac><mo>,</mo><mspace width="1em"></mspace><mi>r</mi><mo>=</mo><mn>0.4</mn></mrow></math><span class="eq-n">(3)</span></div>
+      <p>and neighbouring moved edges are intersected (a mitred offset). Pixels whose centres lie inside a shrunk quad form the kernel map. Lines whose kernel collapses, or that are thinner than 3&nbsp;px, are masked out of the loss rather than labelled as background. The threshold target rises towards each quad's edges. For a pixel at distance <math><mi>d</mi></math> from the nearest edge,</p>
+      <div class="eq"><math display="block"><mrow><msup><mi>T</mi><mo>*</mo></msup><mo>=</mo><mn>0.3</mn><mo>+</mo><mn>0.4</mn><mspace width="0.15em"></mspace><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>min</mi><mo stretchy="false">(</mo><mn>1</mn><mo>,</mo><mi>d</mi><mo>/</mo><mi>D</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math><span class="eq-n">(4)</span></div>
+      <p>taking the maximum over quads, and its loss mask is the quad dilated by <math><mi>D</mi></math> with round joins. The orientation target is 1 on the kernels of vertical lines. <a class="xref" href="#f-geom">Figure</a> lets you vary a line's aspect ratio and see the geometry; <a class="xref" href="#f-targets">Figure</a> shows the maps on a real generated page. A numpy port of the Rust rule reproduces the kernels exactly. OpenCV's <code>fillPoly</code> would fill about 0.5&nbsp;px more on each side, so the trainer uses the numpy rule.</p>
+
+      <figure class="fig" id="f-geom">
+        <div class="fig-box dfig">
+          <div class="fig-title">Shrink, threshold band and unclip</div>
+          <div class="fig-sub">A rectangle of thickness h. Drag to change its length; the numbers are computed with equations (3) and (7).</div>
+          <div class="ctl" id="d-geom-ctl"></div>
+          <div id="d-geom"></div>
+          <div class="readout" id="d-geom-out" aria-live="polite"></div>
+        </div>
+        <figcaption>Fig. # — Target geometry for one line. The kernel (blue) of a long line is only r² = 0.16 of its thickness; DBNet's unclip with ratio 1.5 grows a perfect kernel back to only about 0.4 h (dashed), so it relies on the predicted map being fatter than the kernel.</figcaption>
+      </figure>
+
+      <figure class="fig" id="f-targets">
+        <div class="fig-media pad"><img src="img/deep/targets.webp" alt="One generated page in four panels: the page with line quads, the shrunk kernel map, the threshold map, and the threshold mask with vertical kernels in magenta." loading="lazy"></div>
+        <figcaption>Fig. # — DBNet targets for one pages_v2 page. From left: the page with its quads; the kernel map (white) over the faded page; the threshold map; the threshold loss mask, with vertical kernels in magenta.</figcaption>
+      </figure>
+
+      <h4>Loss</h4>
+      <p>The kernel map <math><mi>P</mi></math> and threshold map <math><mi>T</mi></math> are combined into DBNet's approximate binary map</p>
+      <div class="eq"><math display="block"><mrow><mover><mi>B</mi><mo>^</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>k</mi><mo stretchy="false">(</mo><mi>P</mi><mo>−</mo><mi>T</mi><mo stretchy="false">)</mo></mrow></msup></mrow></mfrac><mo>,</mo><mspace width="1em"></mspace><mi>k</mi><mo>=</mo><mn>50</mn></mrow></math><span class="eq-n">(5)</span></div>
+      <p>and the training loss is</p>
+      <div class="eq"><math display="block"><mrow><mi mathvariant="script">L</mi><mo>=</mo><mi>α</mi><msub><mi mathvariant="script">L</mi><mtext>kernel</mtext></msub><mo>+</mo><mi>β</mi><msub><mi mathvariant="script">L</mi><mtext>thresh</mtext></msub><mo>+</mo><msub><mi mathvariant="script">L</mi><mtext>dice</mtext></msub><mo>+</mo><mi>γ</mi><msub><mi mathvariant="script">L</mi><mtext>vert</mtext></msub><mo>,</mo><mspace width="1em"></mspace><mi>α</mi><mo>=</mo><mn>5</mn><mo>,</mo><mspace width="0.4em"></mspace><mi>β</mi><mo>=</mo><mn>10</mn><mo>,</mo><mspace width="0.4em"></mspace><mi>γ</mi><mo>=</mo><mn>1</mn></mrow></math><span class="eq-n">(6)</span></div>
+      <p>where <math><msub><mi mathvariant="script">L</mi><mtext>kernel</mtext></msub></math> is binary cross-entropy on the kernel logit with online hard-negative mining <a class="cite" href="#ref-7">[7]</a> (all positives and the hardest negatives, three per positive), <math><msub><mi mathvariant="script">L</mi><mtext>thresh</mtext></msub></math> is an L1 loss on the threshold map inside its mask, <math><msub><mi mathvariant="script">L</mi><mtext>dice</mtext></msub></math> is a Dice loss on <math><mover><mi>B</mi><mo>^</mo></mover></math>, and <math><msub><mi mathvariant="script">L</mi><mtext>vert</mtext></msub></math> is binary cross-entropy on the orientation logit inside text kernels.</p>
+
+      <h4 id="post">Post-processing</h4>
+      <p>Turning the int8 maps into lines is Rust code (<code>rust/hxh-detect</code>), no_std and allocation-free like the engine. The detector predicts shrunk kernels, so each one is grown back by DBNet's unclip: every side of a component's minimum-area rectangle, with area <math><msup><mi>A</mi><mo>′</mo></msup></math> and perimeter <math><msup><mi>L</mi><mo>′</mo></msup></math>, moves out by</p>
+      <div class="eq"><math display="block"><mrow><msup><mi>D</mi><mo>′</mo></msup><mo>=</mo><mfrac><mrow><msup><mi>A</mi><mo>′</mo></msup><mspace width="0.1em"></mspace><mi>ρ</mi></mrow><msup><mi>L</mi><mo>′</mo></msup></mfrac><mo>,</mo><mspace width="1em"></mspace><mi>ρ</mi><mo>=</mo><mn>1.5</mn></mrow></math><span class="eq-n">(7)</span></div>
+      <p>The whole post-processing runs ten steps:</p>
+      <ol>
+        <li><strong>Threshold</strong> in the integer domain: <math><mi>σ</mi><mo stretchy="false">(</mo><mi>q</mi><mo>·</mo><msup><mn>2</mn><mi>e</mi></msup><mo stretchy="false">)</mo><mo>&gt;</mo><mn>0.3</mn></math> becomes <math><mi>q</mi><mo>&gt;</mo><mi>t</mi></math> for one precomputed integer <math><mi>t</mi></math> (a logit above −0.8473).</li>
+        <li><strong>Connected components</strong> with 8-connectivity, each with its mean probability (the score) and the sum of its vertical logits.</li>
+        <li><strong>Convex hull</strong> of the component's pixel squares, so a kernel k pixels thick measures k (OpenCV's pixel-centre contours measure k − 1).</li>
+        <li><strong>Minimum-area rectangle</strong> by rotating calipers, identical to <code>cv2.minAreaRect</code> within 5×10⁻⁵&nbsp;px except for exact equal-area ties.</li>
+        <li><strong>Unclip</strong> by <math><msup><mi>D</mi><mo>′</mo></msup></math> (equation 7), or, as an option, by the exact inverse of the training shrink.</li>
+        <li><strong>Filters</strong>: score at least 0.5, short side at least 3 letterbox pixels, centre on the page rather than the letterbox padding.</li>
+        <li><strong>Orientation</strong> from the sign of the summed vertical logit.</li>
+        <li><strong>Quad</strong> clockwise from the top-left in reading orientation (a column starts at its top-right).</li>
+        <li><strong>Reading order</strong>: lines of one orientation join a block when their boxes are within one line thickness; blocks run top to bottom, lines inside a block top to bottom, columns right to left.</li>
+        <li><strong>Crops</strong>: a projective map of each quad, grown by margins of 0.3 line heights along the line and 0.2 across it, sampled bilinearly at the page's own resolution. Columns come out turned 90° counter-clockwise.</li>
+      </ol>
+      <p>All of it uses f64 with software <code>sqrt</code>, <code>exp</code> and <code>floor</code>, so host and WebAssembly builds give bit-identical lines and crops. Against OpenCV on about 100k random components, hulls are identical and rectangles agree within 5×10⁻⁵&nbsp;px except at ties. Post-processing a 320&nbsp;×&nbsp;320 map with 60 lines takes 0.7–2&nbsp;ms, and letterboxing an A4 scan at 300&nbsp;dpi takes 5–8&nbsp;ms.</p>
+
+      <!-- ============================================================ 5 -->
+      <h2 id="training"><span class="sec-n">5</span> Training</h2>
+      <p>All models were trained on one PC: an RTX 4080 SUPER (16&nbsp;GB) under Windows 11, with PyTorch 2.15 (CUDA 13.2) and timm 1.0.31. <a class="xref" href="#t-setup">Table</a> lists the settings from the run configurations. Readers use AdamW with a learning rate of 2×10⁻³ and weight decay 0.05 (none on BatchNorm and biases), 500 warm-up steps, then a cosine decay to 1%. They run in bf16 autocast with the CTC loss in fp32, gradient clipping at 5, and an exponential moving average (EMA) of the weights with decay 0.999, which is what gets evaluated and exported.</p>
+
+      <figure class="fig table" id="t-setup">
+        <figcaption>Table # — Training settings, from runs/*/config.json. Batch is lines (readers) or 512 px page crops (detector).</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>runs</th><th>data</th><th class="num">input</th><th class="num">steps</th><th class="num">batch</th><th class="num">lr</th><th class="num">warm-up</th><th class="num">BN re-est.</th><th class="num">eval</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="9">readers (AdamW, wd 0.05, EMA 0.999, dropout 0.1)</td></tr>
+            <tr><td>round 1: mnv4s, mnv4s scratch, tiny</td><td>synth_v1 + v2, 419,381 lines</td><td class="num">32 px</td><td class="num">30k</td><td class="num">128</td><td class="num">2e-3</td><td class="num">500</td><td class="num">50 batches</td><td class="num">1k / 2,000 lines</td></tr>
+            <tr><td>round 2: mnv4s 32, 48 px, mnv4s3</td><td>synth_v3, 349,558 lines</td><td class="num">32, 48 px</td><td class="num">30k</td><td class="num">128</td><td class="num">2e-3</td><td class="num">500</td><td class="num">50 batches</td><td class="num">1k / 2,000 lines</td></tr>
+            <tr><td>round 3: mnv4s 48 px, mnv4s3 32 px</td><td>synth_v4, 349,424 lines</td><td class="num">48, 32 px</td><td class="num">30k</td><td class="num">128</td><td class="num">2e-3</td><td class="num">500</td><td class="num">50 batches</td><td class="num">1k / 2,000 lines</td></tr>
+            <tr><td>vertical: mnv4s 48 px</td><td>synth_v4, 150,576 columns</td><td class="num">48 px</td><td class="num">30k</td><td class="num">128</td><td class="num">2e-3</td><td class="num">500</td><td class="num">50 batches</td><td class="num">1k / 2,000 lines</td></tr>
+            <tr class="group"><td colspan="9">quantisation-aware fine-tunes (AdamW, wd 0.01, from the EMA weights)</td></tr>
+            <tr><td>qat_v3_*, qat_v4_* (round 2, 3, vertical)</td><td>own data; calibration: 64 val lines</td><td class="num">deploy width</td><td class="num">4k + settle</td><td class="num">128</td><td class="num">1e-4</td><td class="num">200</td><td class="num">–</td><td class="num">500 / 2,000 lines</td></tr>
+            <tr class="group"><td colspan="9">detectors (AdamW, wd 0.05, EMA 0.999, bf16)</td></tr>
+            <tr><td>det_v1</td><td>pages_v2, 30,000 pages</td><td class="num">512 crop</td><td class="num">36k</td><td class="num">16</td><td class="num">2e-3</td><td class="num">1,000</td><td class="num">40 batches</td><td class="num">2k / 300 pages</td></tr>
+            <tr><td>det_v2</td><td>pages_v3 + v2, 60,000 pages; from det_v1</td><td class="num">512 crop</td><td class="num">16k</td><td class="num">16</td><td class="num">5e-4</td><td class="num">500</td><td class="num">40 batches</td><td class="num">2k / 300 pages</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">QAT "settle": after the 4,000 steps the exponents are recalibrated, and if any moved, 50 more steps are trained with the new ones (up to five rounds); logs end at step 4,250. Detector loss weights α, β, γ = 5, 10, 1 with k = 50 and 3:1 hard-negative mining.</p>
+      </figure>
+
+      <h3 id="emabn"><span class="sec-n">5.1</span> EMA weights need their own BatchNorm statistics</h3>
+      <p>At step 5,000 of the first pretrained run, validation CER jumped to 26%, then 50%, then 36%, while the training loss kept falling smoothly. The EMA averaged the weights over roughly the last 1,000 steps but copied the BatchNorm running statistics from the live model. Evaluation therefore paired averaged weights with statistics that belonged to different weights. Pretrained weights move fast at a learning rate of 2×10⁻³, so this run suffered most. A diagnosis on the step-5,000 checkpoint is unambiguous (<a class="xref" href="#t-emabn">Table</a>).</p>
+
+      <figure class="fig table" id="t-emabn">
+        <figcaption>Table # — The same step-5,000 checkpoint evaluated four ways (round 1, mnv4s 32 px).</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>weights</th><th>BatchNorm statistics</th><th class="num">val CER</th><th class="num">exact lines</th></tr></thead>
+          <tbody>
+            <tr><td>EMA (what evaluation used)</td><td>copied from the live model</td><td class="num">35.7%</td><td class="num">26.8%</td></tr>
+            <tr class="hi"><td><strong>EMA</strong></td><td><strong>re-estimated on 100 training batches</strong></td><td class="num"><strong>2.5%</strong></td><td class="num"><strong>89.0%</strong></td></tr>
+            <tr><td>raw</td><td>stored</td><td class="num">5.2%</td><td class="num">80.0%</td></tr>
+            <tr><td>raw</td><td>re-estimated</td><td class="num">4.4%</td><td class="num">82.1%</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>The fix re-estimates the BatchNorm statistics of a copy of the EMA model on 50 training batches (a cumulative average) before every evaluation, and saves that copy. The statistics folded into the convolutions at export are then the right ones. The bug had also corrupted best-checkpoint selection and every learning curve, so all three round-1 runs were restarted. The detector uses the same scheme with 40 batches.</p>
+
+      <h3 id="loading"><span class="sec-n">5.2</span> Data loading on Windows</h3>
+      <p>Two infrastructure problems cost more time than any model choice. First, the GPU sat at 9% utilisation, at about 830 images per second with 6 loader workers. A spawned worker processed an image in 0.69&nbsp;ms, but the main process took 4.19&nbsp;ms on files it had never read and 0.69&nbsp;ms on files it had. The first open of each small file on Windows costs milliseconds (file-system and most likely antivirus overhead), and with 420k JPEGs read in random order that cost hit almost every sample. Packing each split into one memory-mapped file fixed it: 4 workers went from 787 to 9,211 images per second (11.7×), and 8 workers from 1,294 to 16,240. Each worker opens the map lazily, so the pack is not copied into every worker.</p>
+      <p>Second, a later round crashed with "paging file too small" while the machine still had free RAM. Committed memory had reached 71.7 of 72.2&nbsp;GB. On Windows every spawned worker re-imports PyTorch and receives its own pickled copy of the dataset, which was then three Python lists of 350k items. Twelve workers at about 1.7&nbsp;GB each, plus three training processes, used up the commit limit. Storing paths, labels and targets as numpy arrays (107&nbsp;MB per worker copy), two workers per run and at most two runs at once fixed it. Two more lessons: three CUDA processes started at the same moment crashed under Windows' WDDM driver model, so runs now start one after another; and the dynamo ONNX exporter crashes when printing a ✓ to a cp1252 console unless <code>PYTHONUTF8=1</code> is set.</p>
+
+      <!-- ============================================================ 6 -->
+      <h2 id="quant"><span class="sec-n">6</span> Quantisation and the inference engine</h2>
+      <h3 id="scheme"><span class="sec-n">6.1</span> The int8 scheme</h3>
+      <p>Espressif's ESP-PPQ quantises an ONNX model for ESP-DL <a class="cite" href="#ref-11">[11]</a>. For the ESP32-S3 its <code>.espdl</code> files use one scale per tensor, symmetric int8 (zero point 0) and power-of-two scales stored as integer exponents. A tensor with exponent <math><mi>e</mi></math> stores</p>
+      <div class="eq"><math display="block"><mrow><mi>q</mi><mo>=</mo><mi>clamp</mi><mo stretchy="false">(</mo><mo>⌊</mo><mi>x</mi><mo>·</mo><msup><mn>2</mn><mrow><mo>−</mo><mi>e</mi></mrow></msup><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>⌋</mo><mo>,</mo><mspace width="0.2em"></mspace><mo>−</mo><mn>128</mn><mo>,</mo><mspace width="0.2em"></mspace><mn>127</mn><mo stretchy="false">)</mo><mo>,</mo><mspace width="1.2em"></mspace><mover><mi>x</mi><mo>^</mo></mover><mo>=</mo><mi>q</mi><mo>·</mo><msup><mn>2</mn><mi>e</mi></msup></mrow></math><span class="eq-n">(8)</span></div>
+      <p>with rounding half up: ties go towards +∞. Biases are int32 at the exponent <math><msub><mi>e</mi><mi>x</mi></msub><mo>+</mo><msub><mi>e</mi><mi>w</mi></msub></math>, limited to a 20-bit range. The input exponent is −7, so a pixel <math><mi>p</mi></math> normalised to <math><mo stretchy="false">(</mo><mi>p</mi><mo>/</mo><mn>255</mn><mo>−</mo><mn>0.5</mn><mo stretchy="false">)</mo><mo>/</mo><mn>0.5</mn></math> lands on roughly <math><mi>p</mi><mo>−</mo><mn>128</mn></math>; pixels 127 and 128 map to −1 and +1, so the int8 input is never 0. Weight exponents come from the 99.99th-percentile magnitude <math><msub><mi>r</mi><mi>w</mi></msub></math>, rounded up; activation exponents come from a KL-divergence calibration that picks a clipping threshold <math><mi>c</mi></math>, rounded to the nearest power of two:</p>
+      <div class="eq"><math display="block"><mrow><msub><mi>e</mi><mi>w</mi></msub><mo>=</mo><mo>⌈</mo><msub><mi>log</mi><mn>2</mn></msub><mo>⁡</mo><mo stretchy="false">(</mo><mn>2</mn><msub><mi>r</mi><mi>w</mi></msub><mo>/</mo><mn>255</mn><mo stretchy="false">)</mo><mo>⌉</mo><mo>,</mo><mspace width="1.2em"></mspace><msub><mi>e</mi><mi>a</mi></msub><mo>=</mo><mo>⌊</mo><msub><mi>log</mi><mn>2</mn></msub><mo>⁡</mo><mo stretchy="false">(</mo><mi>c</mi><mo>/</mo><mn>128</mn><mo stretchy="false">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>⌋</mo></mrow></math><span class="eq-n">(9)</span></div>
+      <p>(<code>hxh_ocr/qat.py</code> reimplements both rules from ESP-PPQ's source.) Because every scale is a power of two, a convolution's rescale is a shift. Its accumulator <math><mi>a</mi></math>, at exponent <math><msub><mi>e</mi><mi>x</mi></msub><mo>+</mo><msub><mi>e</mi><mi>w</mi></msub></math>, becomes an output at exponent <math><msub><mi>e</mi><mi>y</mi></msub></math> by</p>
+      <div class="eq"><math display="block"><mrow><mi>y</mi><mo>=</mo><mi>clamp</mi><mo stretchy="false">(</mo><mo stretchy="false">(</mo><mi>a</mi><mo>+</mo><msup><mn>2</mn><mrow><mi>s</mi><mo>−</mo><mn>1</mn></mrow></msup><mo stretchy="false">)</mo><mo>≫</mo><mi>s</mi><mo>,</mo><mspace width="0.2em"></mspace><mo>−</mo><mn>128</mn><mo>,</mo><mspace width="0.2em"></mspace><mn>127</mn><mo stretchy="false">)</mo><mo>,</mo><mspace width="1.2em"></mspace><mi>s</mi><mo>=</mo><msub><mi>e</mi><mi>y</mi></msub><mo>−</mo><msub><mi>e</mi><mi>x</mi></msub><mo>−</mo><msub><mi>e</mi><mi>w</mi></msub></mrow></math><span class="eq-n">(10)</span></div>
+      <p>with an arithmetic shift for <math><mi>s</mi><mo>&gt;</mo><mn>0</mn></math> and a left shift for <math><mi>s</mi><mo>≤</mo><mn>0</mn></math>, then a fused ReLU if the layer has one (<a class="xref" href="#f-requant">Figure</a>). <a class="xref" href="#f-int8">Figure</a> shows what a power-of-two grid means for a real tensor: one step of the exponent doubles both the range and the step size, so the calibration can only choose between ranges a factor of two apart.</p>
+
+      <figure class="fig" id="f-int8">
+        <div class="fig-box dfig">
+          <div class="fig-title">Power-of-two int8 grids on the deployed reader</div>
+          <div class="fig-sub">Pick a tensor. Each bar is the positive half of the int8 grid at one exponent (the negative half mirrors it); ticks mark grid points. The orange line is the KL clipping threshold c.</div>
+          <div class="ctl" id="d-int8-ctl"></div>
+          <div id="d-int8"></div>
+          <div class="readout" id="d-int8-out" aria-live="polite"></div>
+        </div>
+        <figcaption>Fig. # — The grid chosen by calibration (blue) and its neighbours at half and double the scale, for the 63 quantised tensors of the 48 px reader after QAT. Values above the top of the blue bar saturate at 127.</figcaption>
+      </figure>
+
+      <figure class="fig" id="f-requant">
+        <div class="fig-box dfig">
+          <div class="fig-title">One int8 convolution, as ESP-DL computes it</div>
+          <div class="fig-sub">No floating point anywhere: exponents are known in advance, so the rescale is one shift.</div>
+          <div id="d-requant"></div>
+        </div>
+        <figcaption>Fig. # — The integer path of a convolution. The shift s is precomputed per layer; rounding is half up, saturation comes before the fused ReLU.</figcaption>
+      </figure>
+
+      <p>Per-tensor scales are a known risk for depthwise convolutions, whose channels can differ widely in range. The deployed reader shows it (<a class="xref" href="#f-exp">Figure</a>): its 17 depthwise weight tensors have a median exponent of −3 (range −7 to 0), its 29 1&nbsp;×&nbsp;1 weight tensors a median of −6 (range −8 to −2). A typical depthwise grid is therefore eight times coarser.</p>
+
+      <figure class="fig" id="f-exp">
+        <div class="fig-box dfig">
+          <div class="fig-title">Exponents of the 49 convolutions in the deployed reader</div>
+          <div class="fig-sub">Weight exponent (filled, by kind) and output-activation exponent (open square) per layer, in network order. Hover for the shift s.</div>
+          <div id="d-exponents"></div>
+          <div class="readout" id="d-exp-out" aria-live="polite"></div>
+        </div>
+        <figcaption>Fig. # — Exponents of qat_v4_mnv4s_h48 after QAT. Depthwise weights sit far higher than 1x1 weights, so one scale per tensor quantises them coarsely.</figcaption>
+      </figure>
+
+      <h3 id="ptq"><span class="sec-n">6.2</span> From PTQ to QAT</h3>
+      <p>A spike first checked that every planned op exports for the ESP32-S3: a one-channel stride-2 first convolution, depthwise 3&nbsp;×&nbsp;3, 5&nbsp;×&nbsp;5 and 1&nbsp;×&nbsp;5 kernels, stride (2,&nbsp;1), average pooling, Add and ReLU. All exported with no warnings. The exporter adds two things: a ReLU after an Add becomes a separate op with a 256-entry lookup table, and a skip tensor reused at another scale gets a RequantizeLinear op. A random-weight toy model was useless for measuring error, because its 75 class scores were nearly tied (median top-1 margin 0.014). A toy trained for 7 minutes (19k parameters, fp32 CER 20.4%) was the one measured.</p>
+      <p>On that toy, post-training quantisation (PTQ) with KL calibration cost 2.1 points of CER, and TQT, which fine-tunes weights and biases without labels, recovered it (<a class="xref" href="#t-ptq">Table</a>). On the real 49-convolution reader the picture changed. PTQ lost 2.2 points (signal-to-noise ratio 9.8&nbsp;dB against the toy's 22.6&nbsp;dB), and TQT recovered only about half. The error was spread across all layers: percentile or minmax calibration and int16 for only the head or the first layers did not help.</p>
+
+      <figure class="fig table" id="t-ptq">
+        <figcaption>Table # — int8 recipes. Toy: 256 held-out validation lines; real: mnv4s 32 px from round 1 at a static 32 × 256 input (512 held-out v1 lines, or 1,500 v3 lines). SNR and agreement are against the fp32 model.</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>model, hold-out</th><th>recipe</th><th class="num">SNR</th><th class="num">argmax agree</th><th class="num">decoded as fp32</th><th class="num">fp32 CER</th><th class="num">int8 CER</th></tr></thead>
+          <tbody>
+            <tr><td rowspan="3">toy (19k params)</td><td>PTQ (KL)</td><td class="num">22.6 dB</td><td class="num">98.42%</td><td class="num">65.6%</td><td class="num" rowspan="3">20.4%</td><td class="num">22.5%</td></tr>
+            <tr><td>PTQ + TQT</td><td class="num">24.6–25.0 dB</td><td class="num">98.86%</td><td class="num">67–70%</td><td class="num">19.9–20.5%</td></tr>
+            <tr><td>int16 (w16a16)</td><td class="num">69.9 dB</td><td class="num">100%</td><td class="num">100%</td><td class="num">20.4%</td></tr>
+            <tr><td rowspan="2">mnv4s, v1 hold-out</td><td>PTQ (KL)</td><td class="num">9.8 dB</td><td class="num">98.0%</td><td class="num">85.2%</td><td class="num" rowspan="2">3.68%</td><td class="num">5.88%</td></tr>
+            <tr><td>PTQ + TQT</td><td class="num">14.3 dB</td><td class="num">98.7%</td><td class="num">90.4%</td><td class="num">4.87%</td></tr>
+            <tr class="hi"><td rowspan="2">mnv4s QAT, v1 hold-out</td><td><strong>QAT, then PTQ</strong></td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td><td class="num" rowspan="2">3.92%</td><td class="num"><strong>4.06%</strong></td></tr>
+            <tr><td>QAT, then PTQ + TQT</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">5.28%</td></tr>
+            <tr><td>mnv4s, v3 hold-out</td><td>PTQ (KL)</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">3.16%</td><td class="num">8.25%</td></tr>
+            <tr class="hi"><td>mnv4s QAT, v3 hold-out</td><td><strong>QAT, then PTQ</strong></td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">3.58%</td><td class="num"><strong>3.68%</strong></td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">n/r: not recorded. Lines wider than 256 px are squeezed at this static input, which is why fp32 CER is higher than in training evaluation. QAT ran 4k steps on synth_v3 (611 s).</p>
+      </figure>
+
+      <p>Quantisation-aware training <a class="cite" href="#ref-5">[5]</a> closes the gap. <code>hxh_ocr/qat.py</code> traces the BatchNorm-folded model with torch.fx and inserts fake quantisation that reproduces ESP-PPQ's rules: weight exponents from the 99.99th percentile, recomputed every step; int32 biases clamped to 20 bits; rounding half up; ReLU fused before quantising; Add inputs requantised to the Add's exponent; input exponent fixed at −7; activation exponents from a reimplementation of ESP-PPQ's KL calibration, recalibrated every 100 steps. Activation gradients use a clipped straight-through estimator. With the same weights and calibration lines, all 49 convolution exponents agree with ESP-PPQ's and every hold-out logit is identical.</p>
+      <p>After QAT, int8 CER sits within 0.10–0.14 points of the model's own fp32 CER, against 2.2–5 points for plain PTQ. Three further findings shaped the recipe:</p>
+      <ul>
+        <li><strong>KL calibration is unstable.</strong> A relative weight perturbation of 10⁻⁵ flips 2–10 of 51 activation exponents. Across six near-identical calibrations the baseline's PTQ int8 CER ranged from 5.6% to 8.9%, so the single 5.88% reading understated the risk. After QAT the spread is 4.2–4.5%.</li>
+        <li><strong>TQT after QAT hurts</strong> (4.06% → 5.28%): it pulls blocks back towards fp32 and undoes what QAT learned.</li>
+        <li><strong>Neither alternative helped</strong>: training under randomly sampled exponents (4.70% against 4.47%) and minmax calibration (deterministic, but less accurate and fragile when the calibration lines change).</li>
+      </ul>
+      <p>The recipe is therefore QAT from the model's own checkpoint on its own data, with the same calibration lines in QAT and ESP-PPQ, then plain ESP-PPQ PTQ, choosing the checkpoint by int8 validation CER. <a class="xref" href="#f-qat">Figure</a> shows the three round-3 fine-tunes. At step 0, fake quantisation of the fp32 checkpoint costs 3.5 points for the 48&nbsp;px reader; 500 steps later most of that is gone. The "float" curves run the QAT weights without fake quantisation, which is not what they are trained for, and they end higher than int8.</p>
+
+      <figure class="fig" id="f-qat">
+        <div class="fig-box dfig">
+          <div class="ctl" id="d-qat-ctl"></div>
+          <div id="d-qat"></div>
+        </div>
+        <figcaption>Fig. # — Validation CER during QAT (2,000-line subset, every 500 steps). Solid: with ESP-DL-exact fake quantisation. Dashed: the same weights in float. Step 0 is the fp32 checkpoint.</figcaption>
+      </figure>
+
+      <h3 id="engine"><span class="sec-n">6.3</span> The Rust engine</h3>
+      <p>The int8 models run in <code>hxh-infer</code>, a Rust engine written for this project: <code>#![no_std]</code>, no allocator and no dependencies. A converter reads the official <code>.espdl</code> (a 16-byte header plus a FlatBuffers model) and writes <code>.hxhm</code>, a minimal format: a 64-byte header, 16-byte tensor records (NHWC shape, exponent, arena offset), 40-byte op records and 16-byte-aligned blobs. There are eight op kinds: Conv, DwConv, Add, Lut, Requant, AvgPool, and, for the detector, nearest Resize and Concat. Weights use ESP-DL's packing of 16 output channels per block. A 256-entry table maps u8 pixels to int8 inputs, folding in normalisation and input quantisation, so the runtime does no float maths on the input. Tensor offsets come from first-fit planning over tensor lifetimes, so nothing is allocated at run time. The converter checks every unpacked filter against ESP-PPQ's own quantised values, and rejects graphs it does not support instead of guessing.</p>
+      <p>Bit-exactness required reading ESP-DL's C source closely. Rounding is half up, as in equation (10); every alternative changes every test vector (<a class="xref" href="#t-round">Table</a>). ESP-DL's int8 Add ignores exponents: it is an int32 add and a clip, which works only because ESP-PPQ inserts RequantizeLinear ops so that both inputs share the output's exponent. Lookup tables index with x + 128. A ReLU applies after saturation. Padded taps are skipped. Average pooling multiplies by a float reciprocal, and the engine reproduces that exact float32 sequence. For the detector, Concat is a plain memory copy that ignores exponents, and nearest Resize computes <math><mi>round</mi><mo stretchy="false">(</mo><mi>x</mi><mo>·</mo><msup><mn>2</mn><mrow><msub><mi>e</mi><mtext>in</mtext></msub><mo>−</mo><msub><mi>e</mi><mtext>out</mtext></msub></mrow></msup><mo stretchy="false">)</mo></math>. ESP-PPQ aligns both to their output exponent, so in the deployed detector every Resize is a pure copy; the converter rejects unequal exponents.</p>
+
+      <figure class="fig table" id="t-round">
+        <figcaption>Table # — Rounding modes. Left: how each rounds the ties; right: how many test-vector values and decodes change if the engine uses it instead of half up (69 vectors).</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>mode</th><th class="num">−2.5</th><th class="num">−1.5</th><th class="num">−0.5</th><th class="num">0.5</th><th class="num">1.5</th><th class="num">2.5</th><th class="num">logits changed</th><th class="num">decodes changed</th></tr></thead>
+          <tbody>
+            <tr class="hi"><td><strong>half up (ESP-DL)</strong></td><td class="num">−2</td><td class="num">−1</td><td class="num">0</td><td class="num">1</td><td class="num">2</td><td class="num">3</td><td class="num">0</td><td class="num">0</td></tr>
+            <tr><td>half to even (ONNX)</td><td class="num">−2</td><td class="num">−2</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td class="num">2</td><td class="num">250K</td><td class="num">11</td></tr>
+            <tr><td>half away from zero (TFLite, ESP-NN)</td><td class="num">−3</td><td class="num">−2</td><td class="num">−1</td><td class="num">1</td><td class="num">2</td><td class="num">3</td><td class="num">87K</td><td class="num">6</td></tr>
+            <tr><td>plain shift (floor)</td><td class="num">−3</td><td class="num">−2</td><td class="num">−1</td><td class="num">0</td><td class="num">1</td><td class="num">2</td><td class="num">317K</td><td class="num">35</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">One run on the real 32 px model hit 18.6 million exact .5 ties in convolution outputs, so the rounding rule is exercised constantly, not at the margins.</p>
+      </figure>
+
+      <p>All arithmetic goes through a <code>Kernels</code> trait. A portable scalar backend is the reference, and a WebAssembly SIMD128 backend overrides convolution, depthwise convolution, pooling, add, requantisation, Resize and Concat. Keeping it bit-exact meant handling several traps:</p>
+      <ul>
+        <li>one int8 product fits in i16, but two do not ((−128)·(−128)·2 = 32,768), so pairs go straight into i32 with <code>i32x4.dot_i16x8_s</code>;</li>
+        <li>the rounding constant <math><msup><mn>2</mn><mrow><mi>s</mi><mo>−</mo><mn>1</mn></mrow></msup></math> overflows i32 for shifts of 30 or more, which needs an equivalent formula;</li>
+        <li>negative shifts clamp before shifting;</li>
+        <li>the last block of the 75-class output is partial and needs masked loads;</li>
+        <li>the one-channel stem has an odd reduction length (3 terms per kernel row), so the last term pairs with a zero weight;</li>
+        <li>average pooling is float in ESP-DL, so the vector version does the same float32 operations in the same order.</li>
+      </ul>
+      <p>Verification was layered (<a class="xref" href="#t-bitexact">Table</a>): golden vectors from ESP-PPQ's simulator for every model, an independent naive reference, and randomised differential tests of each SIMD kernel against the scalar one over shapes the models never use. The randomised tests were themselves checked by confirming they catch a deliberately broken kernel.</p>
+
+      <figure class="fig table" id="t-bitexact">
+        <figcaption>Table # — Bit-exactness checks against ESP-PPQ's int8 simulation (ESP32-S3 semantics). "Bit-exact" means zero differing output values and identical CTC decodes.</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>check</th><th>scope</th><th class="num">result</th></tr></thead>
+          <tbody>
+            <tr><td>each deployed reader (h, v), each QAT reader</td><td>512 held-out lines or columns each, host and wasm</td><td class="num">512 / 512</td></tr>
+            <tr><td>toy sets and 5 real recognisers</td><td>3 × 69 + 5 × 512 vectors, SIMD and no-SIMD wasm</td><td class="num">0 differing values</td></tr>
+            <tr><td>detector det_v1</td><td>16 held-out pages; host, wasm SIMD and scalar</td><td class="num">16 / 16</td></tr>
+            <tr><td>toy detector (Resize ×2/×4/×8, 6-input Concat)</td><td>12 vectors and 54 intermediate tensors</td><td class="num">all exact</td></tr>
+            <tr><td>random SIMD vs scalar, recogniser ops</td><td>kernels 1–5, strides 1–3, odd channels, shifts −24..31</td><td class="num">0 / 58,757</td></tr>
+            <tr><td>random SIMD vs scalar, with Resize and Concat</td><td>factors 1–5, 1–70 channels, any offset and stride</td><td class="num">0 / 157,421</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>The SIMD kernels made every model about seven times faster than the scalar build (<a class="xref" href="#f-speed">Figure</a>), about 16&nbsp;G MAC/s on one thread. The 1&nbsp;×&nbsp;1 convolutions, which carry about 75% of the MACs, run at 28&nbsp;G MAC/s, about 90% of Zen&nbsp;2's limit of one <code>pmaddwd</code> per cycle. The detector takes 62&nbsp;ms per page with SIMD (25&nbsp;G MAC/s) against 683&nbsp;ms without. The SIMD module is 80&nbsp;KB (31&nbsp;KB gzipped) with the detector support; the scalar fallback is 38&nbsp;KB (16&nbsp;KB gzipped). The detector file is 367&nbsp;KB and each reader 338&nbsp;KB, about 1.0&nbsp;MB of models in all.</p>
+
+      <figure class="fig" id="f-speed">
+        <div class="fig-box"><div id="chart-speed"></div></div>
+        <figcaption>Fig. # — Milliseconds per line in node 24 on one thread of a Ryzen 7 3700X, scalar build against WebAssembly SIMD128. ARM phones were not measured.</figcaption>
+      </figure>
+
+      <p>One caution for a future microcontroller port: the S3 accumulates in 20-bit lanes, while ESP-PPQ simulates in float32. The largest accumulator seen is 73,193 against a limit of 524,287, so there is headroom, but every new model must be re-checked. ESP-NN's TFLite-style kernels are not a drop-in either: they round half away from zero, which is the 87K-value mismatch in <a class="xref" href="#t-round">Table</a>.</p>
+
+      <!-- ============================================================ 7 -->
+      <h2 id="experiments"><span class="sec-n">7</span> Experiments</h2>
+      <p><strong>Protocol.</strong> Every number in this section is measured on generated images that the models did not train on. Character error rate is the edit distance summed over lines, divided by the number of reference characters:</p>
+      <div class="eq"><math display="block"><mrow><mi>CER</mi><mo>=</mo><mfrac><mrow><msub><mo>∑</mo><mi>i</mi></msub><mi>edit</mi><mo stretchy="false">(</mo><msub><mover><mi>y</mi><mo>^</mo></mover><mi>i</mi></msub><mo>,</mo><msub><mi>y</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow><mrow><msub><mo>∑</mo><mi>i</mi></msub><mo stretchy="false">|</mo><msub><mi>y</mi><mi>i</mi></msub><mo stretchy="false">|</mo></mrow></mfrac></mrow></math><span class="eq-n">(11)</span></div>
+      <p>"Exact lines" is the share of lines read without any error. A detected line matches a ground-truth line at quadrilateral IoU of at least 0.5, one to one, best IoU first. End-to-end CER is computed over every ground-truth line, so a missed line counts as deleting all its characters. Page-level results marked "browser pipeline" run exactly the demo's JavaScript and WebAssembly in node (<code>web/test/page_e2e.mjs</code>), with every model in int8.</p>
+
+      <h3 id="e-readers"><span class="sec-n">7.1</span> Reader ablations</h3>
+      <p>Three rounds of reader experiments each trained 30k steps at batch 128 (<a class="xref" href="#t-rounds">Table</a>, <a class="xref" href="#f-curves">Figure</a>). Each round used its own generator version, so results compare within a round.</p>
+      <p><strong>Round 1: pretrained or not.</strong> The same MobileNetV4 network reached 1.16% CER from ImageNet weights and 1.47% from scratch, about 21% fewer errors, and it converged far faster: 3.0% against 7.5% at step 2,000. ImageNet's low-level filters transfer even to synthetic geometric glyphs. The from-scratch tiny network beat the from-scratch MobileNet (1.27% against 1.47%) and trained 30% faster in wall time with fewer, wider layers.</p>
+      <p><strong>Round 2: pixels or depth.</strong> On the cleaner v3 data, the same 32&nbsp;px model improved from 1.16% to 0.84% with no model change. Going to 48&nbsp;px cut errors by about a quarter (0.64%) at 2.5 times the MACs. Dropping the fourth stage cost 0.30 points for half the MACs and 30% of the parameters. More input pixels beat more layers for this task, because almost every remaining error is a voicing mark.</p>
+
+      <figure class="fig table" id="t-rounds">
+        <figcaption>Table # — Reader ablations, fp32. Full validation sets: synth_v2 val (round 1) and 6,998 horizontal synth_v3 val lines (round 2). Round 3 reports the best value on the 2,000-line subset.</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>model</th><th class="num">params</th><th class="num">MACs</th><th class="num">train time</th><th class="num">CER at 2k steps</th><th class="num">val CER</th><th class="num">exact lines</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="7">round 1 · synth_v1 + v2 · 32 px</td></tr>
+            <tr class="hi"><td><strong>mnv4s, ImageNet</strong></td><td class="num">323k</td><td class="num">30M</td><td class="num">1,727 s</td><td class="num">3.0%</td><td class="num"><strong>1.16%</strong></td><td class="num"><strong>94.4%</strong></td></tr>
+            <tr><td>mnv4s, from scratch</td><td class="num">323k</td><td class="num">30M</td><td class="num">1,757 s</td><td class="num">7.5%</td><td class="num">1.47%</td><td class="num">93.0%</td></tr>
+            <tr><td>tiny, from scratch</td><td class="num">328k</td><td class="num">30M</td><td class="num">1,218 s</td><td class="num">5.1%</td><td class="num">1.27%</td><td class="num">93.8%</td></tr>
+            <tr class="group"><td colspan="7">round 2 · synth_v3</td></tr>
+            <tr class="hi"><td><strong>mnv4s 48 px</strong></td><td class="num">323k</td><td class="num">77M</td><td class="num">1,977 s</td><td class="num">n/r</td><td class="num"><strong>0.64%</strong></td><td class="num"><strong>96.5%</strong></td></tr>
+            <tr><td>mnv4s 32 px</td><td class="num">323k</td><td class="num">30M</td><td class="num">1,921 s</td><td class="num">n/r</td><td class="num">0.84%</td><td class="num">95.4%</td></tr>
+            <tr><td>mnv4s3 32 px (3 stages)</td><td class="num">96k</td><td class="num">15M</td><td class="num">1,342 s</td><td class="num">n/r</td><td class="num">1.14%</td><td class="num">94.0%</td></tr>
+            <tr class="group"><td colspan="7">round 3 · synth_v4 · best val CER on the 2,000-line subset</td></tr>
+            <tr class="hi"><td><strong>mnv4s 48 px</strong></td><td class="num">323k</td><td class="num">77M</td><td class="num">1,963 s</td><td class="num">n/r</td><td class="num"><strong>0.95%</strong></td><td class="num">n/r</td></tr>
+            <tr><td>mnv4s3 32 px (3 stages)</td><td class="num">96k</td><td class="num">15M</td><td class="num">1,354 s</td><td class="num">n/r</td><td class="num">1.61%</td><td class="num">n/r</td></tr>
+            <tr><td>mnv4s 48 px, vertical columns</td><td class="num">323k</td><td class="num">77M</td><td class="num">1,968 s</td><td class="num">n/r</td><td class="num">0.55%</td><td class="num">n/r</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">MACs at 32 × 256 or 48 × 384. Runs shared the GPU with other runs, so train times are indicative. n/r: not recorded.</p>
+      </figure>
+
+      <figure class="fig" id="f-curves">
+        <div class="fig-box dfig">
+          <div class="ctl" id="d-curves-ctl"></div>
+          <div id="d-curves"></div>
+        </div>
+        <figcaption>Fig. # — Validation CER during training for each round (2,000-line subset of the run's own validation set, every 1,000 steps, EMA weights with re-estimated BatchNorm). Log scale. Pick a round above.</figcaption>
+      </figure>
+
+      <p><strong>Where the errors are.</strong> In every model, the most frequent confusions involve the voicing marks (<a class="xref" href="#f-conf">Figure</a>): a dot read as no mark, a ring read as a dot, or the reverse. Missing word spaces come next (17 for the round-2 32&nbsp;px model). Other recurring pairs are shapes that differ by one small part: the filled-dot も and ち are both a cross with a dot, and a single ら (⅃) cropped tight resembles た (⊥). The worst-32 grid of the round-2 model no longer shows v2's binarisation blobs or full-size neighbour lines. What remains is hard but legitimate: very low contrast or blur, heavy screentone, eroded strokes and small marks.</p>
+
+      <figure class="fig" id="f-conf">
+        <div class="fig-box dfig">
+          <div class="fig-title">Most frequent confusions, round-2 mnv4s 32 px</div>
+          <div class="fig-sub">True glyph → read as, with the count on the 6,998-line synth_v3 validation set</div>
+          <div class="gpanel" id="d-confusions"></div>
+        </div>
+        <figcaption>Fig. # — The top confusions are all voicing marks: one or two pixels at 32 px decide between は, ば and ぱ. Glyphs drawn from the generator's strokes; counts from the journal.</figcaption>
+      </figure>
+
+      <p><strong>Round 3: the official forms.</strong> Generator v4 was evaluated by cross-testing two 48&nbsp;px models (<a class="xref" href="#f-cross">Figure</a>). The v3 model tripped over v4's left-pointing ま, narrow せ, art beside the lines and heavy strokes: 3.07% against 0.90% for the v4 model. The v4 model lost almost nothing on the old conditions (0.69% against 0.63%). Mixing v3 data into round 3 was ruled out, because v3 drew ま only in its mirrored form.</p>
+
+      <figure class="fig" id="f-cross">
+        <div class="fig-box"><div id="chart-cross"></div></div>
+        <figcaption>Fig. # — Cross-evaluation of the 48 px reader trained on v3 or v4, on 3,000 validation lines of each set (fp32). v4 costs 0.06 points on clean data and is 3.4 times better on the new conditions.</figcaption>
+      </figure>
+
+      <h3 id="e-int8"><span class="sec-n">7.2</span>int8 against fp32</h3>
+      <p><a class="xref" href="#t-qat">Table</a> gives every model that went through the QAT recipe. On synthetic data QAT beat PTQ with TQT everywhere, and the 96k-parameter three-stage model in int8 (0.82%) beat the four-stage PTQ-plus-TQT model (1.16%). The deployed readers are the round-3 48&nbsp;px models: 0.84% int8 CER for horizontal lines and 0.71% for vertical columns on 512 held-out samples each. The vertical model is better, but its validation set differs in content (vertical columns use their own layout and degradation draws), so this is not a like-for-like comparison.</p>
+
+      <figure class="fig table" id="t-qat">
+        <figcaption>Table # — Deployable int8 readers. CER on 512 held-out lines of each model's data. "Float" for QAT models runs the QAT weights without fake quantisation.</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>model (input)</th><th>data</th><th class="num">float</th><th class="num">int8</th><th class="num">.espdl</th><th class="num">QAT time</th></tr></thead>
+          <tbody>
+            <tr><td>mnv4s 32 px, PTQ + TQT, no QAT (32 × 512)</td><td>v3</td><td class="num">0.68%</td><td class="num">1.16%</td><td class="num">400 KB</td><td class="num">–</td></tr>
+            <tr><td>QAT mnv4s3 32 px (32 × 512)</td><td>v3</td><td class="num">1.78%</td><td class="num">0.82%</td><td class="num">141 KB</td><td class="num">8 min</td></tr>
+            <tr><td>QAT mnv4s 32 px (32 × 512)</td><td>v3</td><td class="num">1.69%</td><td class="num">0.96%</td><td class="num">403 KB</td><td class="num">11 min</td></tr>
+            <tr><td>QAT mnv4s 48 px (48 × 768)</td><td>v3</td><td class="num">1.64%</td><td class="num">0.51%</td><td class="num">402 KB</td><td class="num">13 min</td></tr>
+            <tr><td>QAT mnv4s3 32 px (32 × 512)</td><td>v4</td><td class="num">2.06%</td><td class="num">1.75%</td><td class="num">141 KB</td><td class="num">n/r</td></tr>
+            <tr class="hi"><td><strong>QAT mnv4s 48 px, horizontal (48 × 768), deployed</strong></td><td>v4</td><td class="num">1.31%</td><td class="num"><strong>0.84%</strong></td><td class="num">402 KB</td><td class="num">n/r</td></tr>
+            <tr class="hi"><td><strong>QAT mnv4s 48 px, vertical (48 × 768), deployed</strong></td><td>v4 columns</td><td class="num">n/r</td><td class="num"><strong>0.71%</strong></td><td class="num">401 KB</td><td class="num">626 s</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">Every row is bit-exact in the Rust engine on its 512 held-out samples. The deployed readers are 338 KB each as .hxhm. n/r: not recorded.</p>
+      </figure>
+
+      <h3 id="e-det"><span class="sec-n">7.3</span> Detector</h3>
+      <p>det_v1 trained for 36k steps at batch 16 on 512&nbsp;px crops of pages_v2 (random scale, crop and rotation of up to ±5°) in 71 minutes on the shared GPU. Validation F1 was still rising at the end (<a class="xref" href="#f-detcurve">Figure</a>), so longer training would likely help. On the full validation set of 1,000 pages and 16,748 lines it reaches precision 0.935, recall 0.909 and F1 0.922 in fp32 (<a class="xref" href="#t-det">Table</a>).</p>
+
+      <figure class="fig" id="f-detcurve">
+        <div class="fig-box dfig"><div id="d-det-curve"></div></div>
+        <figcaption>Fig. # — det_v1 during training: precision, recall and F1 on 300 validation pages every 2,000 steps (fp32, EMA weights). F1 had not levelled off at 36k steps.</figcaption>
+      </figure>
+
+      <figure class="fig table" id="t-det">
+        <figcaption>Table # — det_v1 on generated validation pages. Top: full pages_v2 val in fp32. Bottom: 100 held-out pages (val[900:1000]) through ESP-PPQ int8.</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>metric</th><th class="num">value</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="2">full val, fp32 · 1,000 pages, 16,748 lines, quad IoU ≥ 0.5</td></tr>
+            <tr><td>precision / recall / <strong>F1</strong></td><td class="num">0.935 / 0.909 / <strong>0.922</strong></td></tr>
+            <tr><td>orientation accuracy</td><td class="num">98.9%</td></tr>
+            <tr><td>recall, horizontal / vertical</td><td class="num">0.921 / 0.816</td></tr>
+            <tr><td>end-to-end CER, horizontal (matched lines only)</td><td class="num">9.1% (4.9%)</td></tr>
+            <tr><td>end-to-end CER, vertical (matched lines only)</td><td class="num">15.3% (4.7%)</td></tr>
+            <tr><td>readers alone on ground-truth quads, horizontal / vertical</td><td class="num">3.8% / 3.2%</td></tr>
+          </tbody>
+        </table></div>
+        <div class="table-wrap" style="margin-top:14px"><table class="data compact">
+          <thead><tr><th>100 held-out pages</th><th class="num">F1</th><th class="num">CER h</th><th class="num">CER v</th></tr></thead>
+          <tbody>
+            <tr><td>fp32</td><td class="num">0.916</td><td class="num">8.6%</td><td class="num">16.4%</td></tr>
+            <tr><td>int8 PTQ (KL, 64 calibration pages)</td><td class="num">0.904</td><td class="num">9.7%</td><td class="num">16.5%</td></tr>
+            <tr class="hi"><td><strong>int8 PTQ + TQT (deployed)</strong></td><td class="num"><strong>0.914</strong></td><td class="num">9.1%</td><td class="num">18.2%</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">CER v covers only 222 vertical lines and is noisy. TQT took 28 minutes on the CPU. The int8 output exponent (−3) comes from calibration, so the app reads it from the model file.</p>
+      </figure>
+
+      <p>Missed lines dominate the end-to-end error. Most misses are boxes that exist but fall below IoU 0.5: split lines and wrong sizes. The other half of the gap is the readers. They score about 3.5% CER on lines cut from pages, against 0.9% on their own synthetic line sets, because page lines are smaller, tilted and framed differently from the training crops. For the detector, plain PTQ lost 1.2 points of F1 and TQT recovered almost all of it, unlike for the readers. <a class="xref" href="#f-detval">Figure</a> shows two validation pages.</p>
+
+      <figure class="fig" id="f-detval">
+        <div class="fig-media white"><img src="img/deep/det_val.webp" alt="Two generated validation pages with detected lines boxed and numbered, and a list of readings with ok or the ground truth in brackets." loading="lazy"></div>
+        <figcaption>Fig. # — det_v1 on two validation pages (fp32) with the readers' output. Each listed reading is marked ok or followed by the ground truth in brackets; one box on the right page matches no labelled line.</figcaption>
+      </figure>
+
+      <p>Small text is the main weakness (<a class="xref" href="#f-recall">Figure</a>). Lines 6–9&nbsp;px thick in the 640&nbsp;px letterbox are found 73% of the time, against 95–96% from 14&nbsp;px up. Vertical columns, which are often short, have the lowest recall (0.816).</p>
+
+      <figure class="fig" id="f-recall">
+        <div class="fig-box"><div id="chart-recall"></div></div>
+        <figcaption>Fig. # — Detector recall by line thickness, measured in pixels of the 640 x 640 letterbox (fp32, full pages_v2 val). Thin lines are missed most.</figcaption>
+      </figure>
+
+      <h3 id="e-post"><span class="sec-n">7.4</span> Unclip and crop margins</h3>
+      <p>Post-processing has two free choices: how far to grow a kernel back into a line, and how much margin to leave around the crop handed to a reader. At r&nbsp;=&nbsp;0.4 a long line's kernel is only 0.16 of its thickness. The exact inverse of the shrink amplifies kernel errors six-fold: one map pixel of error becomes 12 letterbox pixels of line height at stride 2. DBNet's ratio of 1.5 assumes a blurry map. Both were measured in the browser pipeline on 100 held-out pages (1,657 lines), first with an interim checkpoint (step 14k) and then with the final detector (<a class="xref" href="#t-unclip">Table</a>).</p>
+
+      <figure class="fig table" id="t-unclip">
+        <figcaption>Table # — Unclip and crop margins in the browser pipeline (all models int8, pages_v2 val[900:1000], 1,657 lines). Margins are along / across the line, in line heights.</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>post-processing</th><th class="num">margins</th><th class="num">F1</th><th class="num">CER h</th><th class="num">CER v</th><th class="num">CER, matched</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="6">interim detector, step 14k</td></tr>
+            <tr><td>exact inverse, r = 0.4</td><td class="num">0.3 / 0.2</td><td class="num">87.7%</td><td class="num">14.0%</td><td class="num">28.7%</td><td class="num">5.6%</td></tr>
+            <tr><td>unclip 1.0</td><td class="num">0.3 / 0.3</td><td class="num">89.0%</td><td class="num">11.6%</td><td class="num">20.4%</td><td class="num">4.9%</td></tr>
+            <tr class="hi"><td><strong>unclip 1.5</strong></td><td class="num">0.3 / 0.2</td><td class="num"><strong>89.6%</strong></td><td class="num"><strong>10.3%</strong></td><td class="num">20.6%</td><td class="num"><strong>4.4%</strong></td></tr>
+            <tr><td>unclip 1.5</td><td class="num">0 / 0</td><td class="num">89.6%</td><td class="num">23.1%</td><td class="num">26.2%</td><td class="num">17.3%</td></tr>
+            <tr><td>unclip 2.0</td><td class="num">0.3 / 0.2</td><td class="num">86.6%</td><td class="num">11.7%</td><td class="num">28.2%</td><td class="num">4.9%</td></tr>
+            <tr class="group"><td colspan="6">final detector det_v1</td></tr>
+            <tr class="hi"><td><strong>unclip 1.5</strong></td><td class="num">0.3 / 0.2</td><td class="num"><strong>91.0%</strong></td><td class="num"><strong>9.2%</strong></td><td class="num">18.2%</td><td class="num"><strong>4.4%</strong></td></tr>
+            <tr><td>unclip 1.0</td><td class="num">0.5 / 0.3</td><td class="num">90.3%</td><td class="num">10.7%</td><td class="num">17.7%</td><td class="num">4.4%</td></tr>
+            <tr><td>exact inverse, r = 0.4</td><td class="num">0.3 / 0.2</td><td class="num">89.5%</td><td class="num">11.0%</td><td class="num">26.5%</td><td class="num">5.2%</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>DBNet's 1.5 won for both checkpoints: the predicted map at threshold 0.3 is fatter than the hard kernel, as <a class="xref" href="#f-geom">Figure</a> anticipates. Margins mattered more than the unclip. Without them, matched-line CER rose from 4.4% to 17.3%: the readers were trained on lines with space around the glyphs, and tight crops roughly triple their error even when the box is right. Against the interim checkpoint, the final detector raised F1 from 89.6% to 91.0% and lowered CER from 10.3% to 9.2% (horizontal) and from 20.6% to 18.2% (vertical).</p>
+
+      <h3 id="e-confidence"><span class="sec-n">7.5</span> A confidence filter</h3>
+      <p>The readers' confidence (equation 2) separates good readings from bad ones. Hiding page lines whose confidence is below a threshold trades recall for precision (<a class="xref" href="#f-confsweep">Figure</a>, <a class="xref" href="#t-confsweep">Table</a>). At 0.85, precision rises from 92.1% to 94.5% and the CER of the lines still shown falls from 4.4% to 3.0%, for 2.8 points of recall (det_v1). End-to-end CER rises with the threshold, because a hidden line counts as missed. With det_v2, which already ignores most non-Hunter text, the demo uses 0.8 (Section 7.8).</p>
+
+      <figure class="fig" id="f-confsweep">
+        <div class="fig-box dfig">
+          <div id="d-conf-a"></div>
+          <div id="d-conf-b" style="margin-top:22px"></div>
+        </div>
+        <figcaption>Fig. # — Effect of the minimum line confidence on pages_v2 val[900:1000] (browser pipeline, det_v1 int8). Top: detection. Bottom: character error rates; matched-line CER falls while end-to-end CER rises.</figcaption>
+      </figure>
+
+      <figure class="fig table" id="t-confsweep">
+        <figcaption>Table # — Confidence-filter sweep (web/test/page_e2e.mjs --conf-sweep). The 0 row reproduces the final detector's numbers above.</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th class="num">min conf.</th><th class="num">precision</th><th class="num">recall</th><th class="num">F1</th><th class="num">CER h</th><th class="num">CER v</th><th class="num">CER, matched</th><th class="num">exact h</th><th class="num">exact v</th></tr></thead>
+          <tbody id="d-conf-rows"></tbody>
+        </table></div>
+      </figure>
+
+      <h3 id="e-tap"><span class="sec-n">7.6</span> Small text in a large photo</h3>
+      <p>The page pass shrinks every image to 640&nbsp;px on its long side, so text that is small relative to the whole image vanishes. To measure this, one generated page was pasted small into a 3000&nbsp;×&nbsp;3000 canvas. The page pass found only 4 of its 14 lines. Tapping the centre of each line, which runs the detector on windows around the tap at the image's own resolution (<a href="#apps">Section 8</a>), read 13 of 14 exactly at 75–110&nbsp;ms per tap. That included a vertical column (はくぶつかん) that the page pass had misread at its own resolution.</p>
+
+      <h3 id="e-timing"><span class="sec-n">7.7</span> Speed of the whole pipeline</h3>
+      <p><a class="xref" href="#f-timings">Figure</a> breaks down one page, the page in <a class="xref" href="#f-teaser">Figure</a>, run through the browser code in node. The detector and the line reads dominate; letterboxing and post-processing are small. In the browser pane, finding the lines took 130–190&nbsp;ms and each line 10–14&nbsp;ms, with the CPU shared with training jobs.</p>
+
+      <figure class="fig" id="f-timings">
+        <div class="fig-box dfig">
+          <div class="fig-title">Where the time goes on one page</div>
+          <div class="fig-sub" id="d-timings-sub">901 × 554 px page, node, one thread, wasm SIMD</div>
+          <div id="d-timings"></div>
+        </div>
+        <figcaption>Fig. # — Median timings of readPage on the example page: letterbox, int8 detector, Rust post-processing, then crop and read every detected line (empty boxes included).</figcaption>
+      </figure>
+
+      <h3 id="e-foreign"><span class="sec-n">7.8</span> False positives on ordinary text</h3>
+      <p>The negatives of <a href="#negatives">Section 3.4</a> were added after det_v1 boxed a whole web page of English and Japanese. To measure the problem, the browser pipeline with det_v1 (unclip 1.5, margins 0.3/0.2) was run on two sets with the confidence filter at several thresholds (<a class="xref" href="#t-nonhunter">Table</a>, <a class="xref" href="#f-fp">Figure</a>). A false line is a shown line (non-empty reading) that matches no Hunter line. It is counted "on text" or "on icons" if at least 40% of its area overlaps a foreign text run or an icon run, and "elsewhere" otherwise.</p>
+      <p>On 150 pages of pages_foreign, which are mostly not Hunter script, det_v1 shows 25 false lines per page on ordinary text, and precision is 7.98%. The confidence filter removes most of them: at 0.85, false lines on text fall to 2.39 per page and precision rises to 36.45%, at a cost of about one point of recall. On 100 mixed pages of pages_v3, the filter at 0.85 lifts F1 from 52.62% to 78.78%. The filter helps, but it hides symptoms. A misread Hunter line and a confident reading of English letters can look alike to it. The cure is in the data: det_v2 (below) learns from pages full of non-Hunter text and icons that these are background.</p>
+
+      <figure class="fig table" id="t-nonhunter">
+        <figcaption>Table # — Non-Hunter false positives in the browser pipeline (unclip 1.5, margins 0.3 / 0.2): det_v1 against det_v2, which was fine-tuned with non-Hunter text and icons as background. The 0.8 rows are the deployed setting.</figcaption>
+        <div class="table-wrap"><table class="data compact" id="det-v2-results">
+          <thead>
+            <tr><th>detector</th><th class="num">min conf.</th><th class="num">precision</th><th class="num">recall</th><th class="num">F1</th><th class="num">false / page: text</th><th class="num">icons</th><th class="num">elsewhere</th></tr>
+          </thead>
+          <tbody>
+            <tr class="group"><td colspan="8">pages_foreign · 150 pages, mostly not Hunter script</td></tr>
+            <tr><td>det_v1</td><td class="num">none</td><td class="num">7.98%</td><td class="num">56.78%</td><td class="num">13.99%</td><td class="num">25.00</td><td class="num">2.30</td><td class="num">2.67</td></tr>
+            <tr><td>det_v1</td><td class="num">0.85</td><td class="num">36.45%</td><td class="num">55.63%</td><td class="num">44.04%</td><td class="num">2.39</td><td class="num">0.95</td><td class="num">1.17</td></tr>
+            <tr><td>det_v1</td><td class="num">0.9</td><td class="num">46.29%</td><td class="num">55.21%</td><td class="num">50.36%</td><td class="num">1.35</td><td class="num">0.75</td><td class="num">0.87</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">none</td><td class="num">84.49%</td><td class="num">91.73%</td><td class="num">87.96%</td><td class="num">0.43</td><td class="num">0.16</td><td class="num">0.10</td></tr>
+            <tr class="best"><td><strong>det_v2</strong></td><td class="num">0.8 (deployed)</td><td class="num"><strong>92.53%</strong></td><td class="num">90.16%</td><td class="num"><strong>91.33%</strong></td><td class="num">0.15</td><td class="num">0.11</td><td class="num">0.07</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">0.85</td><td class="num">93.46%</td><td class="num">89.73%</td><td class="num">91.56%</td><td class="num">0.13</td><td class="num">0.10</td><td class="num">0.07</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">0.9</td><td class="num">94.26%</td><td class="num">89.02%</td><td class="num">91.56%</td><td class="num">0.11</td><td class="num">0.08</td><td class="num">0.07</td></tr>
+            <tr class="group"><td colspan="8">pages_v3 val[900:1000] · 100 mixed pages</td></tr>
+            <tr><td>det_v1</td><td class="num">none</td><td class="num">37.72%</td><td class="num">86.96%</td><td class="num">52.62%</td><td class="num">13.59</td><td class="num">0.63</td><td class="num">1.35</td></tr>
+            <tr><td>det_v1</td><td class="num">0.85</td><td class="num">76.05%</td><td class="num">81.70%</td><td class="num">78.78%</td><td class="num">1.96</td><td class="num">0.28</td><td class="num">0.60</td></tr>
+            <tr><td>det_v1</td><td class="num">0.9</td><td class="num">82.23%</td><td class="num">80.07%</td><td class="num">81.14%</td><td class="num">1.16</td><td class="num">0.23</td><td class="num">0.52</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">none</td><td class="num">84.57%</td><td class="num">81.88%</td><td class="num">83.20%</td><td class="num">0.80</td><td class="num">0.14</td><td class="num">0.59</td></tr>
+            <tr class="best"><td><strong>det_v2</strong></td><td class="num">0.8 (deployed)</td><td class="num"><strong>91.42%</strong></td><td class="num">80.07%</td><td class="num"><strong>85.37%</strong></td><td class="num">0.29</td><td class="num">0.08</td><td class="num">0.46</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">0.85</td><td class="num">92.13%</td><td class="num">79.53%</td><td class="num">85.37%</td><td class="num">0.26</td><td class="num">0.06</td><td class="num">0.43</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">0.9</td><td class="num">93.04%</td><td class="num">77.45%</td><td class="num">84.53%</td><td class="num">0.21</td><td class="num">0.05</td><td class="num">0.38</td></tr>
+            <tr class="group"><td colspan="8">pages_v2 val[900:1000] · 100 all-Hunter pages (regression check)</td></tr>
+            <tr><td>det_v1</td><td class="num">none</td><td class="num">92.09%</td><td class="num">89.92%</td><td class="num">90.99%</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">none</td><td class="num">92.30%</td><td class="num">87.51%</td><td class="num">89.84%</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">1.12</td></tr>
+            <tr class="best"><td><strong>det_v2</strong></td><td class="num">0.8 (deployed)</td><td class="num">94.66%</td><td class="num">85.64%</td><td class="num">89.92%</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.80</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">n/r: not recorded. det_v2 = det_v1 fine-tuned on pages with non-Hunter text and icons (pages_v3 + pages_v2), int8 PTQ + TQT, bit-exact in the engine on 16 held-out pages.</p>
+      </figure>
+
+      <p class="note"><strong>Result.</strong> det_v2 was fine-tuned from det_v1 on pages_v3 and pages_v2 together (60,000 pages, 16k steps, learning rate 5×10⁻⁴, 27 min), then quantised with PTQ + TQT (int8 F1 0.836 against fp32 0.847 on 100 held-out pages_v3 pages). Without any confidence filter, false lines on ordinary text fall from 25.0 to 0.43 per page on pages_foreign and from 13.6 to 0.80 on pages_v3, and recall on pages_foreign rises from 56.8% to 91.7%, because the web and document layouts are no longer unfamiliar. The cost is a small regression on all-Hunter pages (recall 89.9% → 87.5%, F1 91.0% → 89.8%). With det_v2 the best confidence threshold drops to 0.8, now the deployed setting (<a class="xref" href="#t-nonhunter">Table</a>).</p>
+
+      <figure class="fig" id="f-fp">
+        <div class="fig-box dfig"><div id="d-fp"></div></div>
+        <figcaption>Fig. # — Shown false lines per page, by what they cover. For det_v1 ordinary text is the main source and the confidence filter only trims it; det_v2, trained with non-Hunter text and icons as background, has almost none even without the filter.</figcaption>
+      </figure>
+
+      <!-- ============================================================ 8 -->
+      <h2 id="apps"><span class="sec-n">8</span> Applications</h2>
+      <p>The demo is a static page: HTML, JavaScript, the WebAssembly module and the three <code>.hxhm</code> files. It is served as static assets from a Cloudflare Worker over HTTPS, which the camera needs. Nothing leaves the device. The module is compiled once and instantiated once per model, because its bump allocator holds one model.</p>
+
+      <h3 id="a-page"><span class="sec-n">8.1</span> Full-page reading</h3>
+      <p>A page is converted to gray, letterboxed to 640&nbsp;×&nbsp;640 (long side to 640, top-left, white padding), detected, post-processed and cropped, and each crop goes to the horizontal or vertical reader (<a class="xref" href="#f-flow">Figure</a>). The page shows every line numbered in reading order with its kana and romaji; lines the reader finds nothing in are dropped, and lines under the confidence threshold are hidden. Tapping a box shows the line's uncertain characters and the exact strip the reader saw.</p>
+
+      <figure class="fig" id="f-flow">
+        <div class="fig-box"><div class="flow" id="flow"></div></div>
+        <figcaption>Fig. # — The browser pipeline on the page in Fig. 1 with its real intermediate images and timings. The text-kernel map is the detector's raw int8 output; the strips are exactly what the readers saw.</figcaption>
+      </figure>
+
+      <h3 id="a-tap"><span class="sec-n">8.2</span> Tap a line</h3>
+      <p>Tapping text that has no box runs the detector again on square windows around the tap, cut from the original image: first 640&nbsp;px, the detector's own input size, so the window is not shrunk at all; then 1,280&nbsp;px; then 320&nbsp;px (<a class="xref" href="#f-tap">Figure</a>). The first window that has a line under the tap, or within 1.5 line thicknesses of it, wins. Dragging a box remains as a fallback and reads the box as one horizontal line.</p>
+
+      <figure class="fig" id="f-tap">
+        <div class="fig-box dfig">
+          <div class="fig-title">Tap a line</div>
+          <div class="fig-sub">The page pass sees a 3,000 px photo at 640 px. A tap re-detects inside native-resolution windows.</div>
+          <div id="d-tap"></div>
+        </div>
+        <figcaption>Fig. # — Windows tried around a tap, in order. In the 3,000 px test the page pass found 4 of 14 lines; taps read 13 of 14 exactly at 75–110 ms each.</figcaption>
+      </figure>
+
+      <h3 id="a-live"><span class="sec-n">8.3</span> Live camera</h3>
+      <p>Live mode reads the camera in a loop. Each cycle grabs a frame at 960&nbsp;px on its long side, detects lines and reads up to ten of them, biggest first. Reading every frame independently makes labels flicker, so a tracker keeps them steady (<a class="xref" href="#f-track">Figure</a>). Each detected line is matched to a track from earlier frames by quadrilateral IoU, best pairs first; unmatched lines start new tracks, and tracks unseen for a few frames are dropped. A track shows the reading it got most often over its last five frames (ties go to the latest), and appears only after it has been seen twice. A line that has read the same text three times running reuses it for up to two frames instead of being read again, which cuts reading time on a still scene. Freezing, or tapping a line, turns the current frame into the normal page view.</p>
+
+      <figure class="fig" id="f-track">
+        <div class="fig-box dfig">
+          <div class="fig-title">Track and vote</div>
+          <div class="fig-sub">Schematic: one line over eight frames. Readings are illustrative.</div>
+          <div class="scroll-x" id="d-track"></div>
+          <div class="scroll-hint">scroll sideways to see all frames →</div>
+        </div>
+        <figcaption>Fig. # — How a tracked line's label is chosen. The vote over the last five readings hides a single misread frame; three equal readings in a row let the next two frames skip the reader.</figcaption>
+      </figure>
+
+      <p>In the browser pane, with the CPU shared, live mode ran at 2–2.5 frames per second: about 195&nbsp;ms to detect and 145–210&nbsp;ms to read ten lines. Phone timings have not been measured.</p>
+
+      <!-- ============================================================ 9 -->
+      <h2 id="limits"><span class="sec-n">9</span> Limitations and future work</h2>
+      <ul>
+        <li><strong>No real-image evaluation.</strong> Every number in this report is on generated images. Real scans, photos and anime frames will be harder, and how much harder is unknown. A first set of 26 real lines, all from anime title cards with one template and about 100 characters, was too small and too uniform to rank models, so it was used only to find failure modes (which drove generator v4). The scraped images are copyrighted, stay local and were never used for training. A varied, hand-labelled real test set is the most important missing piece.</li>
+        <li><strong>Readers are weaker on page crops.</strong> About 3.5% CER on lines cut from pages against under 1% on their own line sets. Fine-tuning the readers on detector crops is the obvious next step.</li>
+        <li><strong>Small text and short columns are missed.</strong> Recall is 73% for lines 6–9&nbsp;px thick in the letterbox, and 0.816 for vertical columns. Tiling large pages at native resolution, as the tap gesture already does, should help.</li>
+        <li><strong>The detector reads non-Hunter text.</strong> The confidence filter hides most of it; det_v2, trained with negatives, fixes most of it: false lines on foreign text drop from 25 to 0.43 per page, at a small cost on all-Hunter pages (<a class="xref" href="#t-nonhunter">Table</a>).</li>
+        <li><strong>The detector is undertrained and heavy.</strong> F1 was still rising at 36k steps, and 947&nbsp;M of its 1.57&nbsp;G MACs sit in two full 3&nbsp;×&nbsp;3 convolutions that depthwise-separable versions would mostly remove, which matters for phones and live mode.</li>
+        <li><strong>Reading order is local.</strong> Inside a block columns are read right to left, but manga panel order across the page is not modelled.</li>
+        <li><strong>Output is simplified.</strong> There is no punctuation, and katakana and small kana come out as full-size hiragana, because the glyphs do not distinguish them.</li>
+        <li><strong>Phones are not measured.</strong> V8 lowers the dot-product instruction to three ops on arm64; an extmul-based kernel set might roughly double phone speed if phone timings disappoint.</li>
+        <li><strong>The microcontroller port is parked.</strong> The models follow ESP-DL's rules and <code>rust/KERNELS.md</code> describes what an ESP32-S3 SIMD backend needs, but 20-bit accumulator lanes, non-power-of-two pooling areas and the device's requantisation rounding are unverified without a board.</li>
+      </ul>
+
+      <!-- ============================================================ 10 -->
+      <h2 id="conclusion"><span class="sec-n">10</span> Conclusion</h2>
+      <p>An OCR for an invented script can be built without any real training data, if the generator is treated as the main research object and revised whenever a model's worst predictions point at it. Four line-generator versions and three page-generator versions carried most of the gains: cleaner labels (1.16% → 0.84% with no model change), official glyph forms (3.07% → 0.90% on the new conditions), and negatives for ordinary text. A pretrained MobileNetV4-small, restricted to convolutions and ReLU, is enough for both reading and detection at under 400k parameters each. Exact agreement on the integer rules, from QAT through ESP-PPQ to a small Rust engine, made int8 almost free and made every result reproducible bit for bit in the browser. What the project cannot yet say is how well any of this works on real images. That is the next measurement to make.</p>
+
+      <!-- ============================================================ refs -->
+      <h2 id="references">References</h2>
+      <ol class="refs">
+        <li id="ref-1">A. Graves, S. Fernández, F. Gomez and J. Schmidhuber. Connectionist Temporal Classification: Labelling Unsegmented Sequence Data with Recurrent Neural Networks. <em>ICML</em>, 2006.</li>
+        <li id="ref-2">B. Shi, X. Bai and C. Yao. An End-to-End Trainable Neural Network for Image-based Sequence Recognition and Its Application to Scene Text Recognition. <a href="https://arxiv.org/abs/1507.05717">arXiv:1507.05717</a>.</li>
+        <li id="ref-3">M. Liao, Z. Wan, C. Yao, K. Chen and X. Bai. Real-time Scene Text Detection with Differentiable Binarization. <em>AAAI</em>, 2020. <a href="https://arxiv.org/abs/1911.08947">arXiv:1911.08947</a>.</li>
+        <li id="ref-4">D. Qin et al. MobileNetV4: Universal Models for the Mobile Ecosystem. <a href="https://arxiv.org/abs/2404.10518">arXiv:2404.10518</a>.</li>
+        <li id="ref-5">B. Jacob et al. Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference. <em>CVPR</em>, 2018. <a href="https://arxiv.org/abs/1712.05877">arXiv:1712.05877</a>.</li>
+        <li id="ref-6">S. R. Jain et al. Trained Quantization Thresholds for Accurate and Efficient Fixed-Point Inference of Deep Neural Networks. <a href="https://arxiv.org/abs/1903.08066">arXiv:1903.08066</a>.</li>
+        <li id="ref-7">A. Shrivastava, A. Gupta and R. Girshick. Training Region-based Object Detectors with Online Hard Example Mining. <a href="https://arxiv.org/abs/1604.03540">arXiv:1604.03540</a>.</li>
+        <li id="ref-8">Y. Du et al. PP-OCR: A Practical Ultra Lightweight OCR System. <a href="https://arxiv.org/abs/2009.09941">arXiv:2009.09941</a>.</li>
+        <li id="ref-9">M. Jaderberg, K. Simonyan, A. Vedaldi and A. Zisserman. Synthetic Data and Artificial Neural Networks for Natural Scene Text Recognition. <a href="https://arxiv.org/abs/1406.2227">arXiv:1406.2227</a>.</li>
+        <li id="ref-10">A. Gupta, A. Vedaldi and A. Zisserman. Synthetic Data for Text Localisation in Natural Images. <a href="https://arxiv.org/abs/1604.06646">arXiv:1604.06646</a>.</li>
+        <li id="ref-11">Espressif Systems. ESP-DL and ESP-PPQ. <a href="https://github.com/espressif/esp-dl">github.com/espressif/esp-dl</a>, <a href="https://github.com/espressif/esp-ppq">github.com/espressif/esp-ppq</a>.</li>
+      </ol>
+
+      <!-- ============================================================ appendix -->
+      <h2 id="appendix">Appendix</h2>
+      <h3 id="app-repro"><span class="sec-n">A</span> Reproduction</h3>
+      <p>Python 3.10+ with the project's virtual environment for training (<code>.venv</code>) and a separate one for ESP-PPQ 1.3.15 (<code>.venv-ppq</code>); Rust with the wasm32 target; node 24 for the browser tests. The main entry points, run from the repository root:</p>
+      <pre class="cmd"><span class="c"># 1 line data (generator v4) and packing for fast loading on Windows</span>
+python scripts/generate.py --out data/synth_v4 --train 500000 --val 10000 --seed 3 --gray
+python scripts/pack_dataset.py data/synth_v4
+
+<span class="c"># 2 readers (round 3) and the vertical reader; launch_round3.sh staggers the starts</span>
+bash scripts/launch_round3.sh
+python scripts/train.py --data data/synth_v4 --arch mnv4s --height 48 --max-width 768 --orient v --name v4_mnv4s_h48_vert
+
+<span class="c"># 3 QAT -> ONNX -> ESP-PPQ PTQ -> .hxhm -> bit-exact check, one command per model</span>
+DATA=data/synth_v4 bash scripts/qat_pipeline.sh qat_v4_mnv4s_h48 v4_mnv4s_h48 48 768
+HXH_ORIENT=v DATA=data/synth_v4 bash scripts/qat_pipeline.sh qat_v4_mnv4s_h48_vert v4_mnv4s_h48_vert 48 768
+
+<span class="c"># 4 pages, detector, int8 detector</span>
+cargo build --release -p hxh-synth --manifest-path rust/Cargo.toml
+rust/target/release/hxh-synth pages --out data/pages_v3 --train 30000 --val 1000 --seed 3 --threads 8
+python scripts/train_det.py --data data/pages_v2 --name det_v1 --steps 36000
+python scripts/export_det.py --run runs/det_v1
+python scripts/quantize_det.py --onnx exports/det_v1.onnx --tag det_v1_tqt --tqt
+
+<span class="c"># 5 browser build and the page-level tests</span>
+pwsh scripts/build_web.ps1
+node web/test/page_e2e.mjs --sweep
+node web/test/page_e2e.mjs --conf-sweep</pre>
+      <p>Exact arguments of every run are in <code>runs/&lt;name&gt;/config.json</code>; dataset sizes are in <a class="xref" href="#t-datasets">Table</a> and the deployed inference settings in <a class="xref" href="#t-hparams">Table</a>; the generator flags for the negatives and the check set are in <code>rust/hxh-synth/FOREIGN.md</code> and the README.</p>
+
+      <h3 id="app-compute"><span class="sec-n">B</span> Compute</h3>
+      <p>One Windows 11 PC: an RTX 4080 SUPER (16&nbsp;GB), an AMD Ryzen 7 3700X (8 cores) and a 72.2&nbsp;GB commit limit. Reader runs took 1,218–1,977&nbsp;s each (30k steps, usually two runs sharing the GPU); QAT fine-tunes 8–13 minutes; det_v1 71 minutes; ESP-PPQ PTQ of a reader about 11 minutes on a busy CPU; TQT for the detector 28 minutes on the CPU. Generating 500k lines took about 15 minutes (552 lines/s for synth_v2) and 31,000 pages 3 minutes. All browser timings are node 24 on one thread of the same CPU, usually shared with training jobs, so they are upper bounds.</p>
+
+      <h3 id="app-data"><span class="sec-n">C</span> Dataset statistics</h3>
+      <figure class="fig table" id="t-datasets">
+        <figcaption>Table # — Generated datasets. Lines are 64 px thick crops; pages are 512–1024 px on the long side.</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>set</th><th>generator</th><th class="num">train + val</th><th>notes</th></tr></thead>
+          <tbody>
+            <tr><td class="k">synth_v1</td><td>lines v1, seed 0</td><td class="num">100k + 5k</td><td>69,970 horizontal training lines; 572 samples/s on 14 workers</td></tr>
+            <tr><td class="k">synth_v2</td><td>lines v2, seed 1</td><td class="num">500k + 10k</td><td>gray, JPEG q90; 905 s; with v1, 419,381 horizontal lines</td></tr>
+            <tr><td class="k">synth_v3</td><td>lines v3</td><td class="num">n/r</td><td>349,558 horizontal training lines; 6,998 horizontal val lines</td></tr>
+            <tr><td class="k">synth_v4</td><td>lines v4, seed 3</td><td class="num">500k + 10k</td><td>349,424 horizontal + 150,576 vertical training lines; 3,030 vertical val columns</td></tr>
+            <tr><td class="k">pages_v1</td><td>hxh-synth</td><td class="num">2,000 + 200</td><td>smoke set: 16 lines per page, median line height 19 px, 11% vertical</td></tr>
+            <tr><td class="k">pages_v2</td><td>hxh-synth, seed 1</td><td class="num">30,000 + 1,000</td><td>500,141 training lines (16.7 per page, max 56), 11.2% vertical, 905 art-only pages; val 16,748 lines; 3.2 GB</td></tr>
+            <tr><td class="k">pages_v3</td><td>hxh-synth with fonts, seed 3</td><td class="num">30,000 + 1,000</td><td>adds unlabelled foreign text and icons, web layout on 15% of pages</td></tr>
+            <tr><td class="k">pages_foreign</td><td>hxh-synth with fonts, seed 4</td><td class="num">0 + 300</td><td>evaluation only: 55% web layouts, 35% negative pages</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <h3 id="app-hparams"><span class="sec-n">D</span> Inference hyper-parameters</h3>
+      <figure class="fig table" id="t-hparams">
+        <figcaption>Table # — Deployed parameters (web/models/det.json, model.json, model_v.json).</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>parameter</th><th class="num">value</th><th>meaning</th></tr></thead>
+          <tbody>
+            <tr><td class="k">detector input</td><td class="num">640 × 640</td><td>long side to 640, top-left, pad 255</td></tr>
+            <tr><td class="k">bin_thresh</td><td class="num">0.3</td><td>text pixel if sigmoid(kernel logit) &gt; 0.3</td></tr>
+            <tr><td class="k">min_score</td><td class="num">0.5</td><td>minimum mean kernel probability of a component</td></tr>
+            <tr><td class="k">min_side</td><td class="num">3</td><td>minimum short side, letterbox pixels</td></tr>
+            <tr><td class="k">unclip_ratio</td><td class="num">1.5</td><td>D′ = A′ ρ / L′</td></tr>
+            <tr><td class="k">block_gap</td><td class="num">1.0</td><td>reading-order blocks: gap in line thicknesses</td></tr>
+            <tr><td class="k">crop margins</td><td class="num">0.3 / 0.2</td><td>along / across the line, in line heights</td></tr>
+            <tr><td class="k">min_conf</td><td class="num">0.8</td><td>hide page lines with lower mean character confidence (0.85 with det_v1)</td></tr>
+            <tr><td class="k">reader input</td><td class="num">48 × 768</td><td>area resize, replicate-right padding, squeeze if wider; 75 classes, blank 0</td></tr>
+            <tr><td class="k">live mode</td><td class="num">960 px, 10 lines</td><td>frame long side; lines read per frame, biggest first; vote over 5 frames</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <h3 id="app-v6"><span class="sec-n">E</span> Numbers in the lettering (readers v6, November 2026)</h3>
+      <p>The readers in the Reader today, the model family, have a 91-class output: the kana and space, the digits and <code>! ? : / . -</code>, and the CTC blank. They saw digits only in plain text fonts, so numbers drawn as part of display lettering defeated them. On a held-out test of such lines, they got 61–64% of the digit and punctuation characters wrong. Typical cases are a bold, condensed model number such as <code>07</code>, a date, or an italic <code>!!</code> after a title. The fix was the same as everywhere else in this report: change the generator first.</p>
+      <p><strong>Generator v6</strong> (<code>hxh-synth --v6 1</code>, off by default; v5 output is unchanged byte for byte):</p>
+      <ul>
+        <li>On 55% of the lines with numbers, every digit and mark is drawn as a stroke skeleton. It goes through the same transform, hand jitter, stroke width, stroke ends and effects as the glyphs beside it, so a <code>07</code> comes out in the line's own ink and weight. Digits are tall or condensed, touching or spaced, and <code>!</code> and <code>?</code> are often italic or tapered.</li>
+        <li>On the other 45%, the digits come from bold, black and condensed open display fonts, with the outline thickened to the glyphs' stroke weight.</li>
+        <li>The content is realistic: model numbers, years, dates, times, prices, ranges, and <code>! !! !? ?!</code>. There are no Latin letters, because the vocabulary has none.</li>
+        <li>Small kana reading guides (furigana) are drawn above lines. They are unlabelled: a reader must not read them.</li>
+        <li>Sticker lettering with thick outlines and soft shadows, and a merchandise promo scene (<a class="xref" href="#f-v6pages">Figure</a>).</li>
+        <li>Dakuten dots smaller than a stroke, which bold printed lettering often has. Earlier generators never drew one.</li>
+      </ul>
+
+      <figure class="fig" id="f-v6pages">
+        <div class="fig-media"><img src="img/deep/v6_pages.webp" alt="Two generated pages from generator v6: three lines of thick sticker lettering with exclamation marks beside a product on a marble ground, and a still with a line of large Hunter glyphs under a row of small kana reading guides, a date, a time and a fraction." loading="lazy"></div>
+        <figcaption>Fig. # — Two pages_v6 validation pages. Left: the promo scene, with sticker lettering, <code>!!</code> and a logo. Right: a still where the large line has a reading guide above it (orange: unlabelled), and lines carry a year, a time and <code>1/3</code>. Green: labelled Hunter lines.</figcaption>
+      </figure>
+
+      <p><strong>Training.</strong> Both horizontal readers were fine-tuned from their family checkpoints in two stages. Stage 1 made v6 lines 43% of the mix. It learned the numbers but doubled the tiny reader's int8 error on the old synth_v4 hold-out (1.61% to 3.06%) and added stray <code>!</code> at line ends. Stage 2 (3,000 steps at lr 3e-4) put synth_v4 back to about 70% of the lines. Then came the usual QAT, ESP-PPQ PTQ and <code>.hxhm</code> export. Both readers match bit for bit (512/512) in the host engine, the naive reference, and WASM SIMD and scalar. The detectors and vertical readers are unchanged.</p>
+
+      <figure class="fig table" id="t-v6">
+        <figcaption>Table # — The family readers in the Reader against v6, int8, through the app's own code. Line sets are horizontal lines read with <code>readCrop</code>. Page sets use the full browser pipeline at reading confidence 0.8; the detectors are the deployed ones, so F1 moves only through that filter.</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>measure</th><th class="num">Fast</th><th class="num">Fast v6</th><th class="num">Accurate</th><th class="num">Accurate v6</th></tr></thead>
+          <tbody>
+            <tr><td class="k">digit test CER (7,859 lines)</td><td class="num">24.84%</td><td class="num"><strong>10.56%</strong></td><td class="num">23.41%</td><td class="num"><strong>8.54%</strong></td></tr>
+            <tr><td class="k">digit and punctuation characters wrong</td><td class="num">64.1%</td><td class="num"><strong>19.8%</strong></td><td class="num">60.9%</td><td class="num"><strong>14.6%</strong></td></tr>
+            <tr><td class="k">lines_v5b val CER</td><td class="num">9.22%</td><td class="num"><strong>7.68%</strong></td><td class="num">8.85%</td><td class="num"><strong>6.88%</strong></td></tr>
+            <tr><td class="k">synth_v4 val CER (3,000 lines)</td><td class="num">1.50%</td><td class="num">1.57%</td><td class="num">1.16%</td><td class="num"><strong>0.96%</strong></td></tr>
+            <tr><td class="k">stray digits or marks, plain lines_v5b lines</td><td class="num">21 / 5,924</td><td class="num">23 / 5,924</td><td class="num">5 / 5,924</td><td class="num">17 / 5,924</td></tr>
+            <tr><td class="k">pages_v5 val, F1</td><td class="num">76.34%</td><td class="num">77.13%</td><td class="num">83.07%</td><td class="num">83.49%</td></tr>
+            <tr><td class="k">pages_v6 val, F1</td><td class="num">74.26%</td><td class="num">74.63%</td><td class="num">85.28%</td><td class="num">85.79%</td></tr>
+            <tr><td class="k">pages_v6 val, CER of found lines</td><td class="num">14.62%</td><td class="num"><strong>8.04%</strong></td><td class="num">14.33%</td><td class="num"><strong>7.51%</strong></td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">The digit test is a held-out set (lines_v6_digits val, 1,500 pages, a seed of its own) where 4,425 of the 7,859 horizontal lines carry numbers or marks. No page set got worse: F1 rose by 0.1 to 0.8 points on pages_v2, v3o, foreign_open, v5 and v6, with false lines level.</p>
+      </figure>
+
+      <figure class="fig" id="f-v6lines">
+        <div class="fig-media white"><img src="img/deep/v6_lines_en.webp" alt="Ten generated lines with numbers, each with what it says, the current Accurate reader's reading and the v6 reader's reading. The current reader gets 3 of 10 exact, the v6 reader 6 of 10." loading="lazy"></div>
+        <figcaption>Fig. # — Ten digit-test lines with numbers, drawn at random, read by the Accurate reader in the Reader and by its v6 version (int8). Red: wrong characters. Faint and struck through: characters the reader dropped. ✓: exact. Three of ten are exact before, six after. Both still read the blurred line 9 and the に in line 7 wrong.</figcaption>
+      </figure>
+
+      <p><strong>Costs and open problems.</strong></p>
+      <ul>
+        <li><strong>Stray digits.</strong> Accurate v6 reads stray digits or marks on 0.29% of plain photo-style lines, against 0.08% before. Most are a blurred last glyph read as <code>!</code>: き, し and に are bar-and-dot shapes.</li>
+        <li><strong>The detectors miss lines with numbers.</strong> They find these lines less often than plain ones: det_v2 63.8% against 71.7% on pages_v6, the 960&nbsp;px detector 78.6% against 84.3%. They have only ever seen digits as text to ignore. A detector fine-tune on v6 pages is the next step.</li>
+        <li><strong>Runs of <code>!</code> after short lines.</strong> int8 readers can emit these in the padding after a short line. The app pads every line to 768&nbsp;px by repeating its last column, and training never supervises those frames as blank. The deployed Fast reader does it on 8 of 3,000 synth_v4 lines.</li>
+        <li><strong>Small dakuten</strong> in bold lettering are still the most common miss.</li>
+      </ul>
+      <p>The v6 readers are drop-in replacements (<code>experiments/family/tiny_v6</code> and <code>base_v6</code>), but the Reader keeps the family readers for now. The training is in <code>scripts/launch_v6.sh</code> and the journal entry of 2026-11-25.</p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <p>HxH OCR is a fan project. <em>Hunter&nbsp;×&nbsp;Hunter</em> belongs to Yoshihiro Togashi, Shueisha and its studios; this project is not affiliated with them. The glyph shapes were traced from fan references; every training image was generated.</p>
+  </div>
+</footer>
+
+<script type="module" src="blog.js"></script>
+<script type="module" src="deep.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "det_v2",
+  "description": "Text-line detector: DBNet-lite on MobileNetV4-small (ImageNet-pretrained), 350k params, 1.57 G MACs. det_v1 fine-tuned on pages with non-Hunter text and icons as background (pages_v3 + pages_v2). Input 640x640 letterbox (long side to 640, top-left, pad 255); output [2,320,320] int8: text-kernel logit + vertical-orientation logit. int8 via ESP-PPQ PTQ + TQT, .hxhm v2 (raw output), bit-exact with ESP-PPQ.",
+  "file": "det.hxhm",
+  "input": {
+    "size": 640,
+    "letterbox": "long side to 640, top-left, pad 255"
+  },
+  "params": {
+    "bin_thresh": 0.3,
+    "min_score": 0.5,
+    "min_side": 3,
+    "unclip_ratio": 1.5,
+    "shrink_ratio": 0,
+    "block_gap": 1.0
+  },
+  "pad": {
+    "along": 0.3,
+    "across": 0.2
+  },
+  "tuning": "browser pipeline, int8: pages_v2 val[900:1000] F1 89.8% (no filter) / 89.9% (0.8); pages_v3 val F1 83.2% / 85.4%; pages_foreign F1 88.0% / 91.3%; false lines on non-Hunter text 0.43 / 0.15 per page (det_v1: 25.0); with the model-family tiny readers (the Fast set since 2026-11-25): see experiments/family/eval/v2tiny_*",
+  "min_conf": 0.8,
+  "min_conf_note": "page lines whose mean character confidence is below this are hidden as probably not Hunter script; 0.8 gives det_v2 the best F1 on all three test sets (web/test/page_e2e.mjs --conf-sweep)",
+  "min_show_score": 0.55,
+  "min_show_score_note": "page lines whose detector score (mean text-kernel probability) is below this are hidden too: on real photos it hides UI icons and captions read as kana; neutral on the synthetic test sets (web/test/page_e2e.mjs --score-sweep)"
+}

@@ -1,0 +1,61 @@
+{
+  "args": {
+    "onnx": "exports/q_qat_fam_tiny_h48_eq.onnx",
+    "tag": "qat_fam_tiny_h48_eq_ptq",
+    "target": "esp32s3",
+    "quant_type": "w8a8",
+    "calib_n": 64,
+    "calib_bs": 8,
+    "calib_algo": null,
+    "eval_n": 512,
+    "tqt": false,
+    "tqt_steps": 500,
+    "tqt_lr": 1e-05,
+    "tqt_block": 4,
+    "tqt_int_lambda": 0.25,
+    "test_values": false,
+    "no_qdq": false,
+    "save_outputs": true,
+    "debug": false,
+    "mixed": []
+  },
+  "quantize_seconds": 26.81266689300537,
+  "calib": {
+    "n": 64,
+    "cos_mean": 0.9758417405025122,
+    "cos_min": 0.8707781332255428,
+    "snr_db_mean": 13.764822471875913,
+    "snr_db_min": 4.339467154134854,
+    "argmax_agree_mean": 0.9959309895833334,
+    "argmax_agree_min": 0.9635416666666666,
+    "timesteps_disagree": 50,
+    "timesteps_total": 12288,
+    "greedy_seq_identical": 0.96875,
+    "fp32_top1_margin_median": 10.065096259117126,
+    "max_abs_err": 45.34153366088867
+  },
+  "simplified_vs_original_maxabs": 0.0,
+  "holdout": {
+    "n": 512,
+    "cos_mean": 0.9779252142354782,
+    "cos_min": 0.869085878467419,
+    "snr_db_mean": 14.071307812855336,
+    "snr_db_min": 4.718365396915049,
+    "argmax_agree_mean": 0.995086669921875,
+    "argmax_agree_min": 0.96875,
+    "timesteps_disagree": 483,
+    "timesteps_total": 98304,
+    "greedy_seq_identical": 0.935546875,
+    "fp32_top1_margin_median": 9.974343538284302,
+    "max_abs_err": 42.85800552368164
+  },
+  "holdout_cer": {
+    "fp32": 0.016146993318485525,
+    "ppq_int8": 0.01586859688195991
+  },
+  "qdq_error": "InvalidGraph: [ONNXRuntimeError] : 10 : INVALID_GRAPH : Load model from experiments\\esp_ppq_spike\\out\\qat_fam_tiny_h48_eq_ptq\\model_qdq.onnx failed:This is an invalid model. In Node, (\"/head/ReduceMean\", ReduceMean, \"\", -1) : (\"/blocks/blocks.3/blocks.3.5/Add_output_0\": tensor(float),\"_v_196\": tensor(int64),) -> (\"PPQ_Variable_624\": tensor(float),) , Error Node(/head/ReduceMean) with schema(::ReduceMean:13) has input size 2 not in range [min=1, max=1].",
+  "sizes": {
+    "fp32_onnx": 1300647,
+    "espdl": 403536
+  }
+}

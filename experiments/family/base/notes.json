@@ -1,0 +1,12 @@
+{
+  "det": {
+    "description": "Model family 'base' text-line detector for still photos: DBNet-lite on MobileNetV4-small 1.0 (32/64/96/128 ch), FPN 64, levels 24, fuse 96, depthwise-separable head (1.18M params, 4.44 G MACs at 960), trained from ImageNet on pages_v2 + pages_v3 at 960, then on pages_v2 / pages_v3o / pages_v5 25/25/50%, then detector QAT; int8 via ESP-PPQ PTQ, .hxhm v2 (raw output), bit-exact with ESP-PPQ (host, wasm SIMD, wasm scalar). Input 960x960 letterbox (long side to 960, top-left, pad 255); output [2,480,480] int8. Reads real photos well without tiles; tiles cost about 1 s more and added false lines in the tests.",
+    "tuning": "browser pipeline, int8, reading confidence 0.8: see docs/research/JOURNAL.md (2026-11-25, model family) and experiments/family/eval"
+  },
+  "rec": {
+    "description": "Model family 'base' horizontal reader: MobileNetV4-small 1.0 CTC (1.18M params, 555 M MACs), 48x768, 91 classes (74 kana + space + 0-9 ! ? : / . -), ImageNet -> synth_v4 -> lines_v5b + synth_v4, cross-layer equalized then QAT (per-tensor int8 flattens the width-1.0 depthwise layers otherwise), int8 via ESP-PPQ PTQ, bit-exact."
+  },
+  "rec_v": {
+    "description": "Model family 'base' vertical reader: as the horizontal one, on vertical columns turned 90 degrees counter-clockwise (top glyph first, on the left)."
+  }
+}

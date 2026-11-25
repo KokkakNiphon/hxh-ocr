@@ -1,0 +1,27 @@
+{
+  "name": "det_base_v1_qat",
+  "description": "Model family 'base' text-line detector for still photos: DBNet-lite on MobileNetV4-small 1.0 (32/64/96/128 ch), FPN 64, levels 24, fuse 96, depthwise-separable head (1.18M params, 4.44 G MACs at 960), trained from ImageNet on pages_v2 + pages_v3 at 960, then on pages_v2 / pages_v3o / pages_v5 25/25/50%, then detector QAT; int8 via ESP-PPQ PTQ, .hxhm v2 (raw output), bit-exact with ESP-PPQ (host, wasm SIMD, wasm scalar). Input 960x960 letterbox (long side to 960, top-left, pad 255); output [2,480,480] int8. Reads real photos well without tiles; tiles cost about 1 s more and added false lines in the tests.",
+  "file": "det.hxhm",
+  "input": {
+    "size": 960,
+    "letterbox": "long side to 960, top-left, pad 255"
+  },
+  "params": {
+    "bin_thresh": 0.3,
+    "min_score": 0.5,
+    "min_side": 3,
+    "unclip_ratio": 1.5,
+    "shrink_ratio": 0,
+    "block_gap": 1.0
+  },
+  "pad": {
+    "along": 0.3,
+    "across": 0.2
+  },
+  "tuning": "browser pipeline, int8, reading confidence 0.8: see docs/research/JOURNAL.md (2026-11-25, model family) and experiments/family/eval",
+  "min_conf": 0.8,
+  "min_conf_note": "page lines whose mean character confidence is below this are hidden as probably not Hunter script (web/test/page_e2e.mjs --conf-sweep)",
+  "min_show_score": 0.55,
+  "min_show_score_note": "page lines whose detector score (mean text-kernel probability) is below this are hidden too (web/test/page_e2e.mjs --score-sweep)",
+  "macs": 4444300800
+}

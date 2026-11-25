@@ -1,0 +1,45 @@
+/* Site-wide pieces shared by the reader and the blog (loaded after style.css / blog.css):
+   the logo mark and the language menu. Colours come from the page's own tokens. */
+
+/* logo: ハンター ("Hunter") written in the Hunter × Hunter alphabet, as a 2 x 2 seal */
+.brand svg.mark { width: 24px; height: 24px; flex: none; display: block; background: none; border-radius: 0; }
+.brand svg.mark rect { fill: var(--accent); }
+.brand svg.mark path { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.brand svg.mark circle { fill: #fff; }
+.brand svg.mark::before, .brand svg.mark::after { content: none; }
+
+/* language menu (web/lang.js) */
+.lang-menu { position: relative; margin-left: auto; flex: none; }
+.site-nav .theme-toggle { flex: none; }
+.lang-menu + .theme-toggle { margin-left: 8px; }
+.lang-btn {
+  height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px;
+  border: 1px solid var(--line-strong); border-radius: 6px; background: transparent; color: var(--text);
+  font: 500 13px var(--head, system-ui); cursor: pointer; white-space: nowrap;
+}
+.lang-btn:hover, .lang-btn[aria-expanded="true"] { border-color: var(--text); }
+.lang-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.lang-list {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 150px; margin: 0; padding: 6px;
+  list-style: none; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(12, 14, 19, 0.12);
+}
+.lang-list a, .lang-list span { display: block; padding: 8px 10px; border-radius: 5px; color: var(--text); text-decoration: none; font: 500 14px var(--sans, system-ui); }
+.lang-list a:hover, .lang-list a:focus-visible { background: var(--accent-soft); color: var(--accent); outline: none; }
+.lang-list a[aria-current="page"] { color: var(--accent); font-weight: 700; }
+.lang-list a[aria-current="page"]::after { content: " ✓"; }
+.lang-list .soon { color: var(--muted); cursor: default; }
+.lang-list .soon::after { content: " · soon"; font-size: 12px; }
+/* phones: the nav keeps one line, so the logo drops its word and the globe its label */
+@media (max-width: 560px) {
+  .brand { font-size: 0; gap: 0; }
+  .site-nav .nav-cta { display: none; }
+  .lang-btn { width: 34px; padding: 0; justify-content: center; }
+  .lang-btn span { display: none; }
+  .lang-menu + .theme-toggle { margin-left: 6px; }
+}
+@media (max-width: 400px) {
+  .site-nav .nav-inner { gap: 10px; }
+  .site-nav nav { gap: 10px; }
+  .site-nav nav a { font-size: 13px; }
+}

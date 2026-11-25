@@ -1,0 +1,100 @@
+
+    ___________ ____        ____  ____  ____
+   / ____/ ___// __ \      / __ \/ __ \/ __ \
+  / __/  \__ \/ /_/ /_____/ /_/ / /_/ / / / /
+ / /___ ___/ / ____/_____/ ____/ ____/ /_/ /
+/_____//____/_/         /_/   /_/    \___\_\
+
+
+  version 2 (raw output), 89 ops, 90 tensors, file 366592 B (weights 338272 B, biases 22976 B), arena 6144000 B, MACs 1,568,825,600
+  op0   Conv     /conv_stem/Conv                        -> 320x320x32 e-4 @409600
+  op1   Conv     /stages.0/stages.0.0/conv/Conv         -> 160x160x16 e-4 @3686400
+  op2   Conv     /stages.0/stages.0.1/conv/Conv         -> 160x160x16 e-4 @409600
+  op3   Conv     /stages.1/stages.1.0/conv/Conv         -> 80x80x48 e-4 @819200
+  op4   Conv     /lat.0/lat.0.0/Conv                    -> 160x160x48 e-2 @1126400
+  op5   Conv     /stages.1/stages.1.1/conv/Conv         -> 80x80x32 e-5 @409600
+  op6   DwConv   /stages.2/stages.2.0/dw_start/conv/Con -> 80x80x32 e-3 @614400
+  op7   Conv     /lat.1/lat.1.0/Conv                    -> 80x80x48 e-3 @819200
+  op8   Conv     /stages.2/stages.2.0/pw_exp/conv/Conv  -> 80x80x96 e-3 @2355200
+  op9   DwConv   /stages.2/stages.2.0/dw_mid/conv/Conv  -> 40x40x96 e-4 @409600
+  op10  Conv     /stages.2/stages.2.0/pw_proj/conv/Conv -> 40x40x48 e-4 @563200
+  op11  Conv     /stages.2/stages.2.1/pw_exp/conv/Conv  -> 40x40x96 e-3 @409600
+  op12  DwConv   /stages.2/stages.2.1/dw_mid/conv/Conv  -> 40x40x96 e-4 @640000
+  op13  Conv     /stages.2/stages.2.1/pw_proj/conv/Conv -> 40x40x48 e-4 @409600
+  op14  Add      /stages.2/stages.2.1/Add               -> 40x40x48 e-4 @409600 (in place)
+  op15  Conv     /stages.2/stages.2.2/pw_exp/conv/Conv  -> 40x40x96 e-3 @486400
+  op16  Requant  PPQ_Operation_0                        -> 40x40x48 e-3 @409600 (in place)
+  op17  DwConv   /stages.2/stages.2.2/dw_mid/conv/Conv  -> 40x40x96 e-4 @640000
+  op18  Conv     /stages.2/stages.2.2/pw_proj/conv/Conv -> 40x40x48 e-3 @486400
+  op19  Add      /stages.2/stages.2.2/Add               -> 40x40x48 e-3 @486400 (in place)
+  op20  Conv     /stages.2/stages.2.3/pw_exp/conv/Conv  -> 40x40x96 e-3 @563200
+  op21  DwConv   /stages.2/stages.2.3/dw_mid/conv/Conv  -> 40x40x96 e-4 @2355200
+  op22  Conv     /stages.2/stages.2.3/pw_proj/conv/Conv -> 40x40x48 e-3 @409600
+  op23  Add      /stages.2/stages.2.3/Add               -> 40x40x48 e-3 @409600 (in place)
+  op24  Conv     /stages.2/stages.2.4/pw_exp/conv/Conv  -> 40x40x96 e-2 @486400
+  op25  Requant  PPQ_Operation_1                        -> 40x40x48 e-2 @409600 (in place)
+  op26  DwConv   /stages.2/stages.2.4/dw_mid/conv/Conv  -> 40x40x96 e-4 @640000
+  op27  Conv     /stages.2/stages.2.4/pw_proj/conv/Conv -> 40x40x48 e-2 @486400
+  op28  Add      /stages.2/stages.2.4/Add               -> 40x40x48 e-2 @486400 (in place)
+  op29  DwConv   /stages.2/stages.2.5/dw_start/conv/Con -> 40x40x48 e-3 @409600
+  op30  Requant  PPQ_Operation_2                        -> 40x40x48 e0 @486400 (in place)
+  op31  Conv     /stages.2/stages.2.5/pw_exp/conv/Conv  -> 40x40x192 e-4 @2355200
+  op32  Conv     /stages.2/stages.2.5/pw_proj/conv/Conv -> 40x40x48 e0 @409600
+  op33  Add      /stages.2/stages.2.5/Add               -> 40x40x48 e0 @409600 (in place)
+  op34  DwConv   /stages.3/stages.3.0/dw_start/conv/Con -> 40x40x48 e-3 @486400
+  op35  Conv     /lat.2/lat.2.0/Conv                    -> 40x40x48 e-3 @563200
+  op36  Conv     /stages.3/stages.3.0/pw_exp/conv/Conv  -> 40x40x288 e-3 @2355200
+  op37  DwConv   /stages.3/stages.3.0/dw_mid/conv/Conv  -> 20x20x288 e-3 @409600
+  op38  Conv     /stages.3/stages.3.0/pw_proj/conv/Conv -> 20x20x64 e-2 @524800
+  op39  DwConv   /stages.3/stages.3.1/dw_start/conv/Con -> 20x20x64 e-4 @409600
+  op40  Conv     /stages.3/stages.3.1/pw_exp/conv/Conv  -> 20x20x256 e-3 @640000
+  op41  DwConv   /stages.3/stages.3.1/dw_mid/conv/Conv  -> 20x20x256 e-3 @409600
+  op42  Conv     /stages.3/stages.3.1/pw_proj/conv/Conv -> 20x20x64 e-2 @640000
+  op43  Add      /stages.3/stages.3.1/Add               -> 20x20x64 e-2 @640000 (in place)
+  op44  Conv     /stages.3/stages.3.2/pw_exp/conv/Conv  -> 20x20x256 e-2 @409600
+  op45  DwConv   /stages.3/stages.3.2/dw_mid/conv/Conv  -> 20x20x256 e-3 @665600
+  op46  Conv     /stages.3/stages.3.2/pw_proj/conv/Conv -> 20x20x64 e-2 @409600
+  op47  Add      /stages.3/stages.3.2/Add               -> 20x20x64 e-2 @409600 (in place)
+  op48  Conv     /stages.3/stages.3.3/pw_exp/conv/Conv  -> 20x20x192 e-2 @435200
+  op49  DwConv   /stages.3/stages.3.3/dw_mid/conv/Conv  -> 20x20x192 e-3 @640000
+  op50  Conv     /stages.3/stages.3.3/pw_proj/conv/Conv -> 20x20x64 e-2 @435200
+  op51  Add      /stages.3/stages.3.3/Add               -> 20x20x64 e-2 @435200 (in place)
+  op52  Conv     /stages.3/stages.3.4/pw_exp/conv/Conv  -> 20x20x256 e-2 @460800
+  op53  Requant  PPQ_Operation_3                        -> 20x20x64 e-1 @435200 (in place)
+  op54  DwConv   /stages.3/stages.3.4/dw_mid/conv/Conv  -> 20x20x256 e-3 @640000
+  op55  Conv     /stages.3/stages.3.4/pw_proj/conv/Conv -> 20x20x64 e-1 @409600
+  op56  Add      /stages.3/stages.3.4/Add               -> 20x20x64 e-1 @409600 (in place)
+  op57  Conv     /stages.3/stages.3.5/pw_exp/conv/Conv  -> 20x20x256 e-3 @435200
+  op58  DwConv   /stages.3/stages.3.5/dw_mid/conv/Conv  -> 20x20x256 e-3 @640000
+  op59  Conv     /stages.3/stages.3.5/pw_proj/conv/Conv -> 20x20x64 e-1 @435200
+  op60  Add      /stages.3/stages.3.5/Add               -> 20x20x64 e-1 @435200 (in place)
+  op61  Conv     /lat.3/lat.3.0/Conv                    -> 20x20x48 e-3 @409600
+  op62  Resize   /Resize                                -> 40x40x48 e-3 @428800
+  op63  DwConv   /smooth.3/dw/dw.0/Conv                 -> 20x20x48 e-4 @505600
+  op64  Add      /Add                                   -> 40x40x48 e-3 @563200 (in place)
+  op65  Conv     /smooth.3/pw/pw.0/Conv                 -> 20x20x16 e-4 @409600
+  op66  Resize   /Resize_1                              -> 80x80x48 e-3 @2355200
+  op67  DwConv   /smooth.2/dw/dw.0/Conv                 -> 40x40x48 e-4 @416000
+  op68  Resize   /Resize_6                              -> 40x40x16 e-4 @492800
+  op69  Add      /Add_1                                 -> 80x80x48 e-3 @819200 (in place)
+  op70  Conv     /smooth.2/pw/pw.0/Conv                 -> 40x40x16 e-4 @518400
+  op71  Resize   /Resize_7                              -> 80x80x16 e-4 @544000
+  op72  Requant  PPQ_Operation_4                        -> 80x80x48 e-2 @2355200
+  op73  DwConv   /smooth.1/dw/dw.0/Conv                 -> 80x80x48 e-4 @2662400
+  op74  Resize   /Resize_4                              -> 80x80x16 e-4 @409600
+  op75  Resize   /Resize_8                              -> 160x160x16 e-4 @646400
+  op76  Resize   /Resize_2                              -> 160x160x48 e-2 @2969600
+  op77  Conv     /smooth.1/pw/pw.0/Conv                 -> 80x80x16 e-4 @512000
+  op78  Resize   /Resize_5                              -> 160x160x16 e-4 @2355200
+  op79  Add      /Add_2                                 -> 160x160x48 e-2 @1126400 (in place)
+  op80  Resize   /Resize_3                              -> 160x160x16 e-4 @2764800
+  op81  DwConv   /smooth.0/dw/dw.0/Conv                 -> 160x160x48 e-4 @3174400
+  op82  Conv     /smooth.0/pw/pw.0/Conv                 -> 160x160x16 e-4 @1056000
+  op83  Concat   /Concat                                -> 160x160x64 e-4 @3174400
+  op84  Conv     /fuse/fuse.0/Conv                      -> 160x160x64 e-4 @409600
+  op85  Conv     /head/c1/c1.0/Conv                     -> 160x160x32 e-4 @2048000
+  op86  Resize   /head/Resize                           -> 320x320x32 e-4 @2867200
+  op87  Conv     /head/c2/c2.0/Conv                     -> 320x320x16 e-2 @409600
+  op88  Conv     /head/out/Conv                         -> 320x320x2 e-3 @2048000
+golden: 16 vectors, 0 intermediate tensors -> experiments\det_engine\det_tiny_v3_qat_ptq
+ops: {'Conv': 41, 'DwConv': 19, 'Add': 13, 'Lut': 0, 'Requant': 5, 'AvgPool': 0, 'Resize': 10, 'Concat': 1}; output 320x320x2 exp -3; share of kernel logits > 0 per vector: [0.0, 0.01, 0.009, 0.01, 0.007, 0.019, 0.003, 0.01, 0.008, 0.011, 0.007, 0.0, 0.001, 0.0, 0.0, 0.0]

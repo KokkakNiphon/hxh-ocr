@@ -1,0 +1,61 @@
+{
+  "args": {
+    "onnx": "exports/q_qat_v4_mnv4s3_h32.onnx",
+    "tag": "qat_v4_mnv4s3_h32_ptq",
+    "target": "esp32s3",
+    "quant_type": "w8a8",
+    "calib_n": 64,
+    "calib_bs": 8,
+    "calib_algo": null,
+    "eval_n": 512,
+    "tqt": false,
+    "tqt_steps": 500,
+    "tqt_lr": 1e-05,
+    "tqt_block": 4,
+    "tqt_int_lambda": 0.25,
+    "test_values": false,
+    "no_qdq": false,
+    "save_outputs": true,
+    "debug": false,
+    "mixed": []
+  },
+  "quantize_seconds": 10.634395122528076,
+  "calib": {
+    "n": 64,
+    "cos_mean": 0.9618455554963052,
+    "cos_min": 0.8312601536801955,
+    "snr_db_mean": 11.61495874914435,
+    "snr_db_min": 5.012726907257803,
+    "argmax_agree_mean": 0.9937744140625,
+    "argmax_agree_min": 0.96875,
+    "timesteps_disagree": 51,
+    "timesteps_total": 8192,
+    "greedy_seq_identical": 0.84375,
+    "fp32_top1_margin_median": 3.8544472455978394,
+    "max_abs_err": 62.516746520996094
+  },
+  "simplified_vs_original_maxabs": 0.0,
+  "holdout": {
+    "n": 512,
+    "cos_mean": 0.9644560348210593,
+    "cos_min": 0.7420486469507889,
+    "snr_db_mean": 11.885471933981979,
+    "snr_db_min": 3.306309682199676,
+    "argmax_agree_mean": 0.9929046630859375,
+    "argmax_agree_min": 0.3984375,
+    "timesteps_disagree": 465,
+    "timesteps_total": 65536,
+    "greedy_seq_identical": 0.91015625,
+    "fp32_top1_margin_median": 3.993314266204834,
+    "max_abs_err": 114.54556274414062
+  },
+  "holdout_cer": {
+    "fp32": 0.02060133630289532,
+    "ppq_int8": 0.017538975501113586
+  },
+  "qdq_error": "InvalidGraph: [ONNXRuntimeError] : 10 : INVALID_GRAPH : Load model from experiments\\esp_ppq_spike\\out\\qat_v4_mnv4s3_h32_ptq\\model_qdq.onnx failed:This is an invalid model. In Node, (\"/head/ReduceMean\", ReduceMean, \"\", -1) : (\"/blocks/blocks.2/blocks.2.5/Add_output_0\": tensor(float),\"_v_119\": tensor(int64),) -> (\"PPQ_Variable_342\": tensor(float),) , Error Node(/head/ReduceMean) with schema(::ReduceMean:13) has input size 2 not in range [min=1, max=1].",
+  "sizes": {
+    "fp32_onnx": 392496,
+    "espdl": 140560
+  }
+}

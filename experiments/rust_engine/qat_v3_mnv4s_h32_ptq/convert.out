@@ -1,0 +1,78 @@
+
+    ___________ ____        ____  ____  ____
+   / ____/ ___// __ \      / __ \/ __ \/ __ \
+  / __/  \__ \/ /_/ /_____/ /_/ / /_/ / / / /
+ / /___ ___/ / ____/_____/ ____/ ____/ /_/ /
+/_____//____/_/         /_/   /_/    \___\_\
+
+
+wrote experiments\rust_engine\qat_v3_mnv4s_h32_ptq\model.hxhm
+  68 ops, 69 tensors, file 338512 B (weights 312352 B, biases 22016 B), arena 163840 B, MACs 60,469,248
+  op0   Conv     /conv_stem/Conv                        -> 16x256x32 e-4 @16384
+  op1   Conv     /blocks/blocks.0/blocks.0.0/conv/Conv  -> 8x128x16 e-4 @147456
+  op2   Conv     /blocks/blocks.0/blocks.0.1/conv/Conv  -> 8x128x16 e-4 @16384
+  op3   Conv     /blocks/blocks.1/blocks.1.0/conv/Conv  -> 4x128x48 e-4 @32768
+  op4   Conv     /blocks/blocks.1/blocks.1.1/conv/Conv  -> 4x128x32 e-4 @16384
+  op5   DwConv   /blocks/blocks.2/blocks.2.0/dw_start/c -> 4x128x32 e-3 @32768
+  op6   Conv     /blocks/blocks.2/blocks.2.0/pw_exp/con -> 4x128x96 e-2 @49152
+  op7   DwConv   /blocks/blocks.2/blocks.2.0/dw_mid/con -> 2x128x96 e-4 @16384
+  op8   Conv     /blocks/blocks.2/blocks.2.0/pw_proj/co -> 2x128x48 e-3 @40960
+  op9   Conv     /blocks/blocks.2/blocks.2.1/pw_exp/con -> 2x128x96 e-3 @16384
+  op10  Requant  PPQ_Operation_0                        -> 2x128x48 e-4 @40960 (in place)
+  op11  DwConv   /blocks/blocks.2/blocks.2.1/dw_mid/con -> 2x128x96 e-4 @53248
+  op12  Conv     /blocks/blocks.2/blocks.2.1/pw_proj/co -> 2x128x48 e-4 @16384
+  op13  Add      /blocks/blocks.2/blocks.2.1/Add        -> 2x128x48 e-4 @16384 (in place)
+  op14  Conv     /blocks/blocks.2/blocks.2.2/pw_exp/con -> 2x128x96 e-3 @28672
+  op15  Requant  PPQ_Operation_1                        -> 2x128x48 e-3 @16384 (in place)
+  op16  DwConv   /blocks/blocks.2/blocks.2.2/dw_mid/con -> 2x128x96 e-4 @53248
+  op17  Conv     /blocks/blocks.2/blocks.2.2/pw_proj/co -> 2x128x48 e-3 @28672
+  op18  Add      /blocks/blocks.2/blocks.2.2/Add        -> 2x128x48 e-3 @28672 (in place)
+  op19  Conv     /blocks/blocks.2/blocks.2.3/pw_exp/con -> 2x128x96 e-2 @40960
+  op20  DwConv   /blocks/blocks.2/blocks.2.3/dw_mid/con -> 2x128x96 e-4 @65536
+  op21  Conv     /blocks/blocks.2/blocks.2.3/pw_proj/co -> 2x128x48 e-3 @16384
+  op22  Add      /blocks/blocks.2/blocks.2.3/Add        -> 2x128x48 e-3 @16384 (in place)
+  op23  Conv     /blocks/blocks.2/blocks.2.4/pw_exp/con -> 2x128x96 e-2 @28672
+  op24  Requant  PPQ_Operation_2                        -> 2x128x48 e-1 @16384 (in place)
+  op25  DwConv   /blocks/blocks.2/blocks.2.4/dw_mid/con -> 2x128x96 e-3 @53248
+  op26  Conv     /blocks/blocks.2/blocks.2.4/pw_proj/co -> 2x128x48 e-1 @28672
+  op27  Add      /blocks/blocks.2/blocks.2.4/Add        -> 2x128x48 e-1 @28672 (in place)
+  op28  DwConv   /blocks/blocks.2/blocks.2.5/dw_start/c -> 2x128x48 e-3 @16384
+  op29  Requant  PPQ_Operation_3                        -> 2x128x48 e1 @28672 (in place)
+  op30  Conv     /blocks/blocks.2/blocks.2.5/pw_exp/con -> 2x128x192 e-3 @40960
+  op31  Conv     /blocks/blocks.2/blocks.2.5/pw_proj/co -> 2x128x48 e1 @16384
+  op32  Add      /blocks/blocks.2/blocks.2.5/Add        -> 2x128x48 e1 @16384 (in place)
+  op33  DwConv   /blocks/blocks.3/blocks.3.0/dw_start/c -> 2x128x48 e-2 @28672
+  op34  Conv     /blocks/blocks.3/blocks.3.0/pw_exp/con -> 2x128x288 e-2 @40960
+  op35  DwConv   /blocks/blocks.3/blocks.3.0/dw_mid/con -> 1x128x288 e-3 @114688
+  op36  Conv     /blocks/blocks.3/blocks.3.0/pw_proj/co -> 1x128x64 e-2 @16384
+  op37  DwConv   /blocks/blocks.3/blocks.3.1/dw_start/c -> 1x128x64 e-2 @24576
+  op38  Requant  PPQ_Operation_4                        -> 1x128x64 e-1 @16384 (in place)
+  op39  Conv     /blocks/blocks.3/blocks.3.1/pw_exp/con -> 1x128x256 e-1 @32768
+  op40  DwConv   /blocks/blocks.3/blocks.3.1/dw_mid/con -> 1x128x256 e-4 @65536
+  op41  Conv     /blocks/blocks.3/blocks.3.1/pw_proj/co -> 1x128x64 e-1 @24576
+  op42  Add      /blocks/blocks.3/blocks.3.1/Add        -> 1x128x64 e-1 @24576 (in place)
+  op43  Conv     /blocks/blocks.3/blocks.3.2/pw_exp/con -> 1x128x256 e-1 @32768
+  op44  DwConv   /blocks/blocks.3/blocks.3.2/dw_mid/con -> 1x128x256 e-3 @65536
+  op45  Conv     /blocks/blocks.3/blocks.3.2/pw_proj/co -> 1x128x64 e-1 @16384
+  op46  Add      /blocks/blocks.3/blocks.3.2/Add        -> 1x128x64 e-1 @16384 (in place)
+  op47  Conv     /blocks/blocks.3/blocks.3.3/pw_exp/con -> 1x128x192 e-1 @24576
+  op48  DwConv   /blocks/blocks.3/blocks.3.3/dw_mid/con -> 1x128x192 e-3 @49152
+  op49  Conv     /blocks/blocks.3/blocks.3.3/pw_proj/co -> 1x128x64 e-1 @24576
+  op50  Add      /blocks/blocks.3/blocks.3.3/Add        -> 1x128x64 e-1 @24576 (in place)
+  op51  Conv     /blocks/blocks.3/blocks.3.4/pw_exp/con -> 1x128x256 e-1 @32768
+  op52  Requant  PPQ_Operation_5                        -> 1x128x64 e0 @24576 (in place)
+  op53  DwConv   /blocks/blocks.3/blocks.3.4/dw_mid/con -> 1x128x256 e-3 @65536
+  op54  Conv     /blocks/blocks.3/blocks.3.4/pw_proj/co -> 1x128x64 e0 @16384
+  op55  Add      /blocks/blocks.3/blocks.3.4/Add        -> 1x128x64 e0 @16384 (in place)
+  op56  Conv     /blocks/blocks.3/blocks.3.5/pw_exp/con -> 1x128x256 e0 @24576
+  op57  Requant  PPQ_Operation_6                        -> 1x128x64 e-1 @16384 (in place)
+  op58  DwConv   /blocks/blocks.3/blocks.3.5/dw_mid/con -> 1x128x256 e-4 @57344
+  op59  Conv     /blocks/blocks.3/blocks.3.5/pw_proj/co -> 1x128x64 e-1 @24576
+  op60  Add      /blocks/blocks.3/blocks.3.5/Add        -> 1x128x64 e-1 @24576 (in place)
+  op61  DwConv   /head/blocks/blocks.0/dw/Conv          -> 1x128x64 e-2 @16384
+  op62  Conv     /head/blocks/blocks.0/pw/Conv          -> 1x128x64 e-1 @32768
+  op63  Add      /head/blocks/blocks.0/Add              -> 1x128x64 e-1 @24576 (in place)
+  op64  DwConv   /head/blocks/blocks.1/dw/Conv          -> 1x128x64 e-1 @16384
+  op65  Conv     /head/blocks/blocks.1/pw/Conv          -> 1x128x64 e-1 @32768
+  op66  Add      /head/blocks/blocks.1/Add              -> 1x128x64 e-1 @24576 (in place)
+  op67  Conv     /head/cls/Conv                         -> 1x128x75 e0 @32768

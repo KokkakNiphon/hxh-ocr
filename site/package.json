@@ -1,0 +1,13 @@
+{
+  "name": "hxh-ocr",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare deployment of the browser demo (web/): static assets only.",
+  "scripts": {
+    "build": "python ../scripts/build_site.py",
+    "deploy": "python ../scripts/build_site.py && cf deploy ./dist"
+  },
+  "devDependencies": {
+    "cf": "1.0.0-rc.5"
+  }
+}

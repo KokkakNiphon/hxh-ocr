@@ -1,0 +1,1134 @@
+{
+ "about": "One example page through exactly the browser pipeline (web/ocr.js readPage) in node: letterbox -> int8 detector -> Rust post-processing -> padded crops -> int8 horizontal / vertical readers. Quads are page px (pixel centres at integers), clockwise from the top-left in reading orientation (vertical: q0 is the column's top-right). status: shown | low_confidence (hidden by det.json min_conf) | empty (no glyph read; the app drops it). badge = number drawn in 05_boxes.webp. ground_truth: the generated page's own label, matched at quad IoU >= 0.5.",
+ "source": {
+  "page": "web/examples/page1.jpg",
+  "generated_from": "data/pages_v2/val/images/0000/00000049.jpg",
+  "wasm": "web/hxh_infer.wasm",
+  "models": [
+   "web/models/det.hxhm",
+   "web/models/model.hxhm",
+   "web/models/model_v.hxhm"
+  ],
+  "params": "web/models/det.json (params, pad, min_conf)",
+  "script": "scripts/blog/pipeline_assets.mjs"
+ },
+ "images": {
+  "05_boxes.webp": {
+   "scale": 2.0,
+   "note": "image px = (page px + 0.5) * scale - 0.5"
+  },
+  "02_letterbox.webp": {
+   "note": "page drawn at content_width x content_height in the top-left, rest 255"
+  },
+  "03_kernel.webp": {
+   "note": "sigmoid(channel 0 logit) as alpha of #2340d8 over the letterbox (faded)"
+  },
+  "04_orient.webp": {
+   "note": "where the kernel probability is high: #2340d8 horizontal, #7a4fd6 vertical, mixed by sigmoid(channel 1 logit)"
+  }
+ },
+ "page": {
+  "width": 901,
+  "height": 554
+ },
+ "letterbox": {
+  "size": 640,
+  "content_width": 640,
+  "content_height": 394,
+  "pad_value": 255
+ },
+ "maps": {
+  "height": 320,
+  "width": 320,
+  "channels": 2,
+  "exp": -3,
+  "layout": "NHWC int8; channel 0 text-kernel logit, channel 1 vertical-orientation logit"
+ },
+ "detector": {
+  "name": "det_v1",
+  "macs": 1568825600,
+  "params": {
+   "bin_thresh": 0.3,
+   "min_score": 0.5,
+   "min_side": 3,
+   "unclip_ratio": 1.5,
+   "shrink_ratio": 0,
+   "block_gap": 1
+  },
+  "pad": {
+   "along": 0.3,
+   "across": 0.2
+  },
+  "min_conf": 0.85
+ },
+ "readers": {
+  "h": {
+   "width": 768,
+   "height": 48,
+   "macs": 153993216
+  },
+  "v": {
+   "width": 768,
+   "height": 48,
+   "macs": 153993216
+  }
+ },
+ "timings_ms": {
+  "letterbox": 4.83,
+  "detector": 69.85,
+  "post": 0.39,
+  "read_all_lines": 107.25,
+  "read_per_line_mean": 6.7,
+  "page_total": 182.36,
+  "runs": 7,
+  "warmup": 2,
+  "line_reps": 5,
+  "note": "median over `runs` readPage calls after 2 warm-ups (readPage reads every detected line, empty ones included; read_all_lines covers crop + prepareLine + reader for all of them); read_ms per line is the median of `line_reps` crop + prepareLine + reader calls; node, one thread, wasm SIMD, CPU shared with other jobs"
+ },
+ "machine": {
+  "node": "v24.11.1",
+  "cpu": "AMD Ryzen 7 3700X 8-Core Processor",
+  "threads": 1,
+  "simd": true,
+  "cpu_shared": true
+ },
+ "line_count": 16,
+ "counts": {
+  "detected": 16,
+  "empty_dropped": 2,
+  "low_confidence_hidden": 2,
+  "shown": 12,
+  "ground_truth_lines": 14,
+  "ground_truth_vertical": 5,
+  "matched_ground_truth": 13,
+  "shown_matched": 11,
+  "shown_exact": 10
+ },
+ "lines": [
+  {
+   "index": 0,
+   "quad": [
+    779.43,
+    52.93,
+    796.32,
+    52.93,
+    796.32,
+    64.18,
+    779.43,
+    64.18
+   ],
+   "vertical": false,
+   "block": 0,
+   "length": 16.89,
+   "thickness": 11.25,
+   "det_score": 0.5283,
+   "text": "",
+   "romaji": "",
+   "confidence": 0,
+   "chars": [],
+   "crop": {
+    "w": 24,
+    "h": 16
+   },
+   "strip": {
+    "file": "strip_0.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 72,
+    "natural_width": 72,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.45,
+   "status": "empty",
+   "badge": null,
+   "ground_truth": null,
+   "crop_file": null
+  },
+  {
+   "index": 1,
+   "quad": [
+    468.79,
+    81.97,
+    468.79,
+    111.07,
+    462.18,
+    111.07,
+    462.18,
+    81.97
+   ],
+   "vertical": true,
+   "block": 1,
+   "length": 29.11,
+   "thickness": 6.62,
+   "det_score": 0.7318,
+   "text": "つらひ",
+   "romaji": "tsurahi",
+   "confidence": 0.7399,
+   "chars": [
+    {
+     "ch": "つ",
+     "p": 0.6602,
+     "alt": "る",
+     "alt_p": 0.0542
+    },
+    {
+     "ch": "ら",
+     "p": 0.5616,
+     "alt": "ふ",
+     "alt_p": 0.3407
+    },
+    {
+     "ch": "ひ",
+     "p": 0.9979,
+     "alt": "は",
+     "alt_p": 0.0009
+    }
+   ],
+   "crop": {
+    "w": 33,
+    "h": 9
+   },
+   "strip": {
+    "file": "strip_1.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 176,
+    "natural_width": 176,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.56,
+   "status": "low_confidence",
+   "badge": null,
+   "ground_truth": {
+    "text": "ききよ",
+    "romaji": "kikiyo",
+    "orient": "v",
+    "iou": 0.624,
+    "exact": false
+   },
+   "crop_file": "crop_1.webp"
+  },
+  {
+   "index": 2,
+   "quad": [
+    457.21,
+    62.83,
+    462.91,
+    131.12,
+    442.07,
+    132.85,
+    436.38,
+    64.56
+   ],
+   "vertical": true,
+   "block": 1,
+   "length": 68.52,
+   "thickness": 20.91,
+   "det_score": 0.6631,
+   "text": "はくぶつかん",
+   "romaji": "hakubutsukan",
+   "confidence": 0.9989,
+   "chars": [
+    {
+     "ch": "は",
+     "p": 0.9994,
+     "alt": "ば",
+     "alt_p": 0.0006
+    },
+    {
+     "ch": "く",
+     "p": 0.9975,
+     "alt": "ぐ",
+     "alt_p": 0.0025
+    },
+    {
+     "ch": "ぶ",
+     "p": 0.9989,
+     "alt": "ふ",
+     "alt_p": 0.0006
+    },
+    {
+     "ch": "つ",
+     "p": 1,
+     "alt": "づ",
+     "alt_p": 0
+    },
+    {
+     "ch": "か",
+     "p": 0.9975,
+     "alt": "が",
+     "alt_p": 0.0025
+    },
+    {
+     "ch": "ん",
+     "p": 1,
+     "alt": "い",
+     "alt_p": 0
+    }
+   ],
+   "crop": {
+    "w": 81,
+    "h": 29
+   },
+   "strip": {
+    "file": "strip_2.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 134,
+    "natural_width": 134,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.49,
+   "status": "shown",
+   "badge": 1,
+   "ground_truth": {
+    "text": "はくぶつかん",
+    "romaji": "hakubutsukan",
+    "orient": "v",
+    "iou": 0.872,
+    "exact": true
+   },
+   "crop_file": "crop_2.webp"
+  },
+  {
+   "index": 3,
+   "quad": [
+    790.51,
+    117.79,
+    790.51,
+    198.99,
+    748.63,
+    198.99,
+    748.63,
+    117.79
+   ],
+   "vertical": true,
+   "block": 2,
+   "length": 81.2,
+   "thickness": 41.88,
+   "det_score": 0.83,
+   "text": "かち",
+   "romaji": "kachi",
+   "confidence": 1,
+   "chars": [
+    {
+     "ch": "か",
+     "p": 1,
+     "alt": "が",
+     "alt_p": 0
+    },
+    {
+     "ch": "ち",
+     "p": 1,
+     "alt": "も",
+     "alt_p": 0
+    }
+   ],
+   "crop": {
+    "w": 106,
+    "h": 59
+   },
+   "strip": {
+    "file": "strip_3.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 86,
+    "natural_width": 86,
+    "squeezed": false,
+    "upscaled": false
+   },
+   "read_ms": 6.71,
+   "status": "shown",
+   "badge": 2,
+   "ground_truth": {
+    "text": "かち",
+    "romaji": "kachi",
+    "orient": "v",
+    "iou": 0.784,
+    "exact": true
+   },
+   "crop_file": "crop_3.webp"
+  },
+  {
+   "index": 4,
+   "quad": [
+    745.7,
+    120.19,
+    741.47,
+    251.25,
+    698.9,
+    249.87,
+    703.13,
+    118.82
+   ],
+   "vertical": true,
+   "block": 2,
+   "length": 131.12,
+   "thickness": 42.59,
+   "det_score": 0.8223,
+   "text": "てぬう",
+   "romaji": "tenuu",
+   "confidence": 1,
+   "chars": [
+    {
+     "ch": "て",
+     "p": 1,
+     "alt": "で",
+     "alt_p": 0
+    },
+    {
+     "ch": "ぬ",
+     "p": 1,
+     "alt": "う",
+     "alt_p": 0
+    },
+    {
+     "ch": "う",
+     "p": 1,
+     "alt": "ゔ",
+     "alt_p": 0
+    }
+   ],
+   "crop": {
+    "w": 157,
+    "h": 60
+   },
+   "strip": {
+    "file": "strip_4.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 126,
+    "natural_width": 126,
+    "squeezed": false,
+    "upscaled": false
+   },
+   "read_ms": 6.75,
+   "status": "shown",
+   "badge": 3,
+   "ground_truth": {
+    "text": "てぬう",
+    "romaji": "tenuu",
+    "orient": "v",
+    "iou": 0.853,
+    "exact": true
+   },
+   "crop_file": "crop_4.webp"
+  },
+  {
+   "index": 5,
+   "quad": [
+    171.96,
+    168.93,
+    181.81,
+    168.93,
+    181.81,
+    178.78,
+    171.96,
+    178.78
+   ],
+   "vertical": false,
+   "block": 3,
+   "length": 9.85,
+   "thickness": 9.84,
+   "det_score": 0.5111,
+   "text": "",
+   "romaji": "",
+   "confidence": 0,
+   "chars": [],
+   "crop": {
+    "w": 16,
+    "h": 14
+   },
+   "strip": {
+    "file": "strip_5.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 55,
+    "natural_width": 55,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.47,
+   "status": "empty",
+   "badge": null,
+   "ground_truth": null,
+   "crop_file": null
+  },
+  {
+   "index": 6,
+   "quad": [
+    328.72,
+    222.76,
+    391.5,
+    235.3,
+    385.45,
+    265.56,
+    322.66,
+    253.02
+   ],
+   "vertical": false,
+   "block": 4,
+   "length": 64.02,
+   "thickness": 30.86,
+   "det_score": 0.7539,
+   "text": "じか",
+   "romaji": "jika",
+   "confidence": 0.9999,
+   "chars": [
+    {
+     "ch": "じ",
+     "p": 1,
+     "alt": "し",
+     "alt_p": 0
+    },
+    {
+     "ch": "か",
+     "p": 0.9999,
+     "alt": "が",
+     "alt_p": 0.0001
+    }
+   ],
+   "crop": {
+    "w": 83,
+    "h": 43
+   },
+   "strip": {
+    "file": "strip_6.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 93,
+    "natural_width": 93,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.55,
+   "status": "shown",
+   "badge": 4,
+   "ground_truth": {
+    "text": "じか",
+    "romaji": "jika",
+    "orient": "h",
+    "iou": 0.7,
+    "exact": true
+   },
+   "crop_file": "crop_6.webp"
+  },
+  {
+   "index": 7,
+   "quad": [
+    488.54,
+    226.41,
+    535.35,
+    226.41,
+    535.35,
+    239.41,
+    488.54,
+    239.41
+   ],
+   "vertical": false,
+   "block": 5,
+   "length": 46.81,
+   "thickness": 13.01,
+   "det_score": 0.8153,
+   "text": "そねだ",
+   "romaji": "soneda",
+   "confidence": 0.9992,
+   "chars": [
+    {
+     "ch": "そ",
+     "p": 0.9975,
+     "alt": "ぞ",
+     "alt_p": 0.0025
+    },
+    {
+     "ch": "ね",
+     "p": 1,
+     "alt": "め",
+     "alt_p": 0
+    },
+    {
+     "ch": "だ",
+     "p": 1,
+     "alt": "た",
+     "alt_p": 0
+    }
+   ],
+   "crop": {
+    "w": 55,
+    "h": 18
+   },
+   "strip": {
+    "file": "strip_7.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 147,
+    "natural_width": 147,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.49,
+   "status": "shown",
+   "badge": 5,
+   "ground_truth": {
+    "text": "そねだ",
+    "romaji": "soneda",
+    "orient": "h",
+    "iou": 0.845,
+    "exact": true
+   },
+   "crop_file": "crop_7.webp"
+  },
+  {
+   "index": 8,
+   "quad": [
+    236.31,
+    323.2,
+    292.03,
+    323.2,
+    292.03,
+    342.29,
+    236.31,
+    342.29
+   ],
+   "vertical": false,
+   "block": 6,
+   "length": 55.72,
+   "thickness": 19.09,
+   "det_score": 0.7452,
+   "text": "でらい",
+   "romaji": "derai",
+   "confidence": 1,
+   "chars": [
+    {
+     "ch": "で",
+     "p": 1,
+     "alt": "て",
+     "alt_p": 0
+    },
+    {
+     "ch": "ら",
+     "p": 1,
+     "alt": "ふ",
+     "alt_p": 0
+    },
+    {
+     "ch": "い",
+     "p": 1,
+     "alt": "き",
+     "alt_p": 0
+    }
+   ],
+   "crop": {
+    "w": 67,
+    "h": 27
+   },
+   "strip": {
+    "file": "strip_8.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 119,
+    "natural_width": 119,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.53,
+   "status": "shown",
+   "badge": 6,
+   "ground_truth": {
+    "text": "でらいぶ",
+    "romaji": "deraibu",
+    "orient": "h",
+    "iou": 0.588,
+    "exact": false
+   },
+   "crop_file": "crop_8.webp"
+  },
+  {
+   "index": 9,
+   "quad": [
+    286.13,
+    327.96,
+    315.41,
+    327.96,
+    315.41,
+    340.34,
+    286.13,
+    340.34
+   ],
+   "vertical": false,
+   "block": 6,
+   "length": 29.28,
+   "thickness": 12.37,
+   "det_score": 0.5344,
+   "text": "いぶ",
+   "romaji": "ibu",
+   "confidence": 0.9724,
+   "chars": [
+    {
+     "ch": "い",
+     "p": 0.9993,
+     "alt": "と",
+     "alt_p": 0.0001
+    },
+    {
+     "ch": "ぶ",
+     "p": 0.9456,
+     "alt": "ふ",
+     "alt_p": 0.0471
+    }
+   ],
+   "crop": {
+    "w": 37,
+    "h": 17
+   },
+   "strip": {
+    "file": "strip_9.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 104,
+    "natural_width": 104,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.48,
+   "status": "shown",
+   "badge": 7,
+   "ground_truth": null,
+   "crop_file": "crop_9.webp"
+  },
+  {
+   "index": 10,
+   "quad": [
+    256.48,
+    351.78,
+    294.38,
+    351.78,
+    294.38,
+    369.95,
+    256.48,
+    369.95
+   ],
+   "vertical": false,
+   "block": 6,
+   "length": 37.9,
+   "thickness": 18.17,
+   "det_score": 0.792,
+   "text": "ほに",
+   "romaji": "honi",
+   "confidence": 1,
+   "chars": [
+    {
+     "ch": "ほ",
+     "p": 0.9999,
+     "alt": "ぼ",
+     "alt_p": 0.0001
+    },
+    {
+     "ch": "に",
+     "p": 1,
+     "alt": "し",
+     "alt_p": 0
+    }
+   ],
+   "crop": {
+    "w": 49,
+    "h": 25
+   },
+   "strip": {
+    "file": "strip_10.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 94,
+    "natural_width": 94,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.51,
+   "status": "shown",
+   "badge": 8,
+   "ground_truth": {
+    "text": "ほに",
+    "romaji": "honi",
+    "orient": "h",
+    "iou": 0.868,
+    "exact": true
+   },
+   "crop_file": "crop_10.webp"
+  },
+  {
+   "index": 11,
+   "quad": [
+    431.32,
+    332.42,
+    624.16,
+    336.79,
+    623.56,
+    362.85,
+    430.73,
+    358.48
+   ],
+   "vertical": false,
+   "block": 7,
+   "length": 192.88,
+   "thickness": 26.07,
+   "det_score": 0.8757,
+   "text": "いをせいのぼをて",
+   "romaji": "iwoseinobowote",
+   "confidence": 1,
+   "chars": [
+    {
+     "ch": "い",
+     "p": 1,
+     "alt": "き",
+     "alt_p": 0
+    },
+    {
+     "ch": "を",
+     "p": 1,
+     "alt": "な",
+     "alt_p": 0
+    },
+    {
+     "ch": "せ",
+     "p": 1,
+     "alt": "ぜ",
+     "alt_p": 0
+    },
+    {
+     "ch": "い",
+     "p": 1,
+     "alt": "き",
+     "alt_p": 0
+    },
+    {
+     "ch": "の",
+     "p": 1,
+     "alt": "ん",
+     "alt_p": 0
+    },
+    {
+     "ch": "ぼ",
+     "p": 0.9998,
+     "alt": "ぽ",
+     "alt_p": 0.0002
+    },
+    {
+     "ch": "を",
+     "p": 1,
+     "alt": "や",
+     "alt_p": 0
+    },
+    {
+     "ch": "て",
+     "p": 1,
+     "alt": "で",
+     "alt_p": 0
+    }
+   ],
+   "crop": {
+    "w": 209,
+    "h": 36
+   },
+   "strip": {
+    "file": "strip_11.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 279,
+    "natural_width": 279,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.78,
+   "status": "shown",
+   "badge": 9,
+   "ground_truth": {
+    "text": "いをせいのぼをて",
+    "romaji": "iwoseinobowote",
+    "orient": "h",
+    "iou": 0.95,
+    "exact": true
+   },
+   "crop_file": "crop_11.webp"
+  },
+  {
+   "index": 12,
+   "quad": [
+    84.81,
+    357.49,
+    128.17,
+    357.49,
+    128.17,
+    364.24,
+    84.81,
+    364.24
+   ],
+   "vertical": false,
+   "block": 8,
+   "length": 43.36,
+   "thickness": 6.75,
+   "det_score": 0.9755,
+   "text": "こみら",
+   "romaji": "komira",
+   "confidence": 0.5762,
+   "chars": [
+    {
+     "ch": "こ",
+     "p": 0.219,
+     "alt": "つ",
+     "alt_p": 0.1329
+    },
+    {
+     "ch": "み",
+     "p": 0.6291,
+     "alt": "る",
+     "alt_p": 0.0516
+    },
+    {
+     "ch": "ら",
+     "p": 0.8804,
+     "alt": "ふ",
+     "alt_p": 0.0002
+    }
+   ],
+   "crop": {
+    "w": 47,
+    "h": 9
+   },
+   "strip": {
+    "file": "strip_12.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 251,
+    "natural_width": 251,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.58,
+   "status": "low_confidence",
+   "badge": null,
+   "ground_truth": {
+    "text": "でーた",
+    "romaji": "dēta",
+    "orient": "h",
+    "iou": 0.575,
+    "exact": false
+   },
+   "crop_file": "crop_12.webp"
+  },
+  {
+   "index": 13,
+   "quad": [
+    91.85,
+    370.15,
+    121.14,
+    370.15,
+    121.14,
+    382.52,
+    91.85,
+    382.52
+   ],
+   "vertical": false,
+   "block": 8,
+   "length": 29.28,
+   "thickness": 12.37,
+   "det_score": 0.7462,
+   "text": "たた",
+   "romaji": "tata",
+   "confidence": 0.9979,
+   "chars": [
+    {
+     "ch": "た",
+     "p": 0.9959,
+     "alt": "だ",
+     "alt_p": 0.0041
+    },
+    {
+     "ch": "た",
+     "p": 1,
+     "alt": "だ",
+     "alt_p": 0
+    }
+   ],
+   "crop": {
+    "w": 37,
+    "h": 17
+   },
+   "strip": {
+    "file": "strip_13.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 104,
+    "natural_width": 104,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.51,
+   "status": "shown",
+   "badge": 10,
+   "ground_truth": {
+    "text": "たた",
+    "romaji": "tata",
+    "orient": "h",
+    "iou": 0.812,
+    "exact": true
+   },
+   "crop_file": "crop_13.webp"
+  },
+  {
+   "index": 14,
+   "quad": [
+    94.93,
+    421.62,
+    94.93,
+    477.28,
+    75.82,
+    477.28,
+    75.82,
+    421.62
+   ],
+   "vertical": true,
+   "block": 9,
+   "length": 55.65,
+   "thickness": 19.12,
+   "det_score": 0.7488,
+   "text": "いんく",
+   "romaji": "inku",
+   "confidence": 0.9994,
+   "chars": [
+    {
+     "ch": "い",
+     "p": 0.9998,
+     "alt": "よ",
+     "alt_p": 0
+    },
+    {
+     "ch": "ん",
+     "p": 1,
+     "alt": "い",
+     "alt_p": 0
+    },
+    {
+     "ch": "く",
+     "p": 0.9984,
+     "alt": "ぐ",
+     "alt_p": 0.0015
+    }
+   ],
+   "crop": {
+    "w": 67,
+    "h": 27
+   },
+   "strip": {
+    "file": "strip_14.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 119,
+    "natural_width": 119,
+    "squeezed": false,
+    "upscaled": true
+   },
+   "read_ms": 6.6,
+   "status": "shown",
+   "badge": 11,
+   "ground_truth": {
+    "text": "いんく",
+    "romaji": "inku",
+    "orient": "v",
+    "iou": 0.834,
+    "exact": true
+   },
+   "crop_file": "crop_14.webp"
+  },
+  {
+   "index": 15,
+   "quad": [
+    550.77,
+    463.42,
+    706.38,
+    449.6,
+    709.4,
+    483.5,
+    553.79,
+    497.31
+   ],
+   "vertical": false,
+   "block": 10,
+   "length": 156.22,
+   "thickness": 34.03,
+   "det_score": 0.8926,
+   "text": "しあはか",
+   "romaji": "shiahaka",
+   "confidence": 0.9999,
+   "chars": [
+    {
+     "ch": "し",
+     "p": 1,
+     "alt": "じ",
+     "alt_p": 0
+    },
+    {
+     "ch": "あ",
+     "p": 1,
+     "alt": "け",
+     "alt_p": 0
+    },
+    {
+     "ch": "は",
+     "p": 0.9998,
+     "alt": "ば",
+     "alt_p": 0.0002
+    },
+    {
+     "ch": "か",
+     "p": 1,
+     "alt": "が",
+     "alt_p": 0
+    }
+   ],
+   "crop": {
+    "w": 177,
+    "h": 48
+   },
+   "strip": {
+    "file": "strip_15.u8",
+    "width": 768,
+    "height": 48,
+    "content_width": 177,
+    "natural_width": 177,
+    "squeezed": false,
+    "upscaled": false
+   },
+   "read_ms": 6.77,
+   "status": "shown",
+   "badge": 12,
+   "ground_truth": {
+    "text": "しあはか",
+    "romaji": "shiahaka",
+    "orient": "h",
+    "iou": 0.962,
+    "exact": true
+   },
+   "crop_file": "crop_15.webp"
+  }
+ ],
+ "missed_ground_truth": [
+  {
+   "text": "いも",
+   "orient": "h",
+   "kind": "filler",
+   "quad": [
+    724.1,
+    45.1,
+    756.8,
+    45.3,
+    756.6,
+    73.0,
+    723.9,
+    72.7
+   ]
+  }
+ ]
+}

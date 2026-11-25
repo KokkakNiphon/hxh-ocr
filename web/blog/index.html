@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en" data-fig="Fig." data-table="Table">
+<head>
+<meta charset="utf-8">
+<script src="../theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>How the first Hunter × Hunter alphabet OCR works · HxH OCR</title>
+<meta name="description" content="How the first OCR for the Hunter × Hunter alphabet works, in pictures: a beginner-friendly tour of computer vision, from pixels and filters to neural networks, training on made-up pictures and reading a line step by step.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="blog.css">
+<link rel="stylesheet" href="explain.css">
+<!-- site:begin (scripts/site_meta.py) -->
+<link rel="canonical" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/">
+<link rel="alternate" hreflang="en" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/">
+<link rel="alternate" hreflang="th" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/index-th">
+<link rel="alternate" hreflang="ja" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/index-ja">
+<link rel="alternate" hreflang="x-default" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/">
+<meta name="author" content="KokkakNiphon">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#2340d8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HxH OCR">
+<meta property="og:title" content="How the first Hunter × Hunter alphabet OCR works · HxH OCR">
+<meta property="og:description" content="How the first OCR for the Hunter × Hunter alphabet works, in pictures: a beginner-friendly tour of computer vision, from pixels and filters to neural networks, training on made-up pictures and reading a line step by step.">
+<meta property="og:url" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/">
+<meta property="og:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HxH OCR: the first OCR for the Hunter × Hunter alphabet, reading a manga page.">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="th_TH">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How the first Hunter × Hunter alphabet OCR works · HxH OCR">
+<meta name="twitter:description" content="How the first OCR for the Hunter × Hunter alphabet works, in pictures: a beginner-friendly tour of computer vision, from pixels and filters to neural networks, training on made-up pictures and reading a line step by step.">
+<meta name="twitter:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../site.css">
+<script src="../lang.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "url": "https://hxh-ocr.kokkakniphon.workers.dev/blog/", "inLanguage": "en", "description": "How the first OCR for the Hunter × Hunter alphabet works, in pictures: a beginner-friendly tour of computer vision, from pixels and filters to neural networks, training on made-up pictures and reading a line step by step.", "image": "https://hxh-ocr.kokkakniphon.workers.dev/og.png", "author": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "headline": "How the first Hunter × Hunter alphabet OCR works · HxH OCR", "datePublished": "2026-11-25", "dateModified": "2026-11-25", "publisher": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "mainEntityOfPage": "https://hxh-ocr.kokkakniphon.workers.dev/blog/", "about": [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}], "isPartOf": {"@type": "WebSite", "name": "HxH OCR", "url": "https://hxh-ocr.kokkakniphon.workers.dev/"}}</script>
+<!-- site:end -->
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M5.6 6.52H14.4M5.6 13.48H14.4M10 6.52V13.48M19.28 14.39L26.14 5.61M9.92 18.45V25.55M5.73 25.55H14.27M16.8 18.52L19.36 22.04L16.8 25.48M19.36 22.04H24.56M27.2 18.52L24.56 22.04L27.2 25.48"/><circle cx="19.7" cy="7.95" r="1.84"/></svg>HxH OCR</a>
+    <nav aria-label="Site">
+      <a href="../index.html">Reader</a>
+      <a href="index.html" aria-current="page">How it works</a>
+      <a href="deep-dive.html">Deep dive</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="Theme" data-auto="auto" data-light="light" data-dark="dark" aria-label="Theme: auto">
+      <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      <svg class="ic-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ic-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="nav-cta" href="../index.html">Try the reader</a>
+  </div>
+</header>
+
+<main class="post">
+  <div class="post-head">
+    <p class="kicker">Explainer <span>·</span> A first look at computer vision</p>
+    <p class="meta">By <a class="byline" href="https://github.com/KokkakNiphon" rel="author">KokkakNiphon</a> <span>·</span> November 25, 2026 <span>·</span> 15 min read <span>·</span> <a href="deep-dive.html">Technical deep dive →</a></p>
+    <h1>How a tiny AI learned to read the Hunter&nbsp;×&nbsp;Hunter alphabet</h1>
+    <p class="dek">How do you teach a computer to read a secret alphabet it has never seen? Here is the whole journey, step by step and in pictures, from how a computer sees a photo to how it learns from its mistakes. No math or coding needed.</p>
+    <p class="post-update"><b>Update, November 25, 2026.</b> The <a href="../index.html">Reader</a> now has two sets of newer models. Fast is the small reader from this article, trained further on photo-like pictures; it also reads digits and some punctuation. Accurate uses bigger models that read real photos much better. Everything below still works the same way.</p>
+    <p class="post-update"><b>Update, November 26, 2026.</b> We have also trained readers that read numbers drawn as part of the lettering, such as a model number “07” or a “!!” after a title. They are not in the Reader yet; the <a href="deep-dive.html#app-v6">deep dive</a> has the details.</p>
+  </div>
+
+  <div class="post-grid">
+    <aside class="toc-rail">
+      <nav class="toc" aria-label="Table of contents">
+        <p class="label">Contents</p>
+        <ol id="toc"></ol>
+      </nav>
+      <a class="rail-card" href="deep-dive.html">
+        <span class="label">For the curious</span>
+        <span class="rail-title">Read the deep dive</span>
+        <span class="rail-text">Architectures, training, int8 quantisation, every experiment and its numbers.</span>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+    </aside>
+
+    <article id="article">
+      <figure class="fig decoder-fig">
+        <div class="decoder" id="decoder" role="img" aria-label="Animation: Hunter glyphs turn into Japanese kana, then into Latin letters."></div>
+        <figcaption>Fig. # — The whole idea in one line. Each Hunter symbol stands for one Japanese sound. The computer turns symbols into Japanese, and Japanese into Latin letters.</figcaption>
+      </figure>
+
+      <p class="lede">Your phone can unlock when it sees your face, find every photo of your dog, and read a sign through its camera. All of that is <strong>computer vision</strong>: teaching computers to understand pictures. This page shows how one small computer-vision project works from start to finish. It is a reader for the made-up alphabet of the anime <em>Hunter&nbsp;×&nbsp;Hunter</em>, and it fits on a phone. As far as we know, it is the <strong>first</strong> program anywhere that can read this alphabet from pictures.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="big-picture">The big picture</h2>
+      <p>Before the details, here is the whole trip a photo takes. Each stop is a small idea you will meet below. Tap a stop to jump to it.</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="journey" id="journey"></div></div>
+        <figcaption>Fig. # — From photo to words. Two small AI models (the line finder and the reader) do the hard parts; everything else is simple steps.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="code">A secret code for Japanese</h2>
+      <p>The writing on signs and title cards in <em>Hunter&nbsp;×&nbsp;Hunter</em> looks like a whole new alphabet, but it is a <strong>code</strong>. Japanese has an alphabet of sounds called <em>kana</em>, like あ (a), か (ka) and ん (n), and every Hunter symbol stands for one of them. There are 47 symbols. A small dot in the corner changes the sound: か (ka) becomes が (ga). A small ring turns は (ha) into ぱ (pa).</p>
+
+      <figure class="fig">
+        <div class="fig-box">
+          <div class="fig-title">The 47 symbols</div>
+          <div class="fig-sub">Tap or hover a symbol to see it large</div>
+          <div class="glyph-chart" id="glyph-chart" role="list"></div>
+          <div class="glyph-detail" id="glyph-detail" aria-live="polite"></div>
+        </div>
+        <figcaption>Fig. # — The alphabet, in the order Japanese children learn their sounds: a, i, u, e, o, then ka, ki, ku…</figcaption>
+      </figure>
+
+      <figure class="fig">
+        <div class="fig-box">
+          <div class="fig-title">Write your own</div>
+          <div class="fig-sub">Type in Japanese kana, or tap a name</div>
+          <div class="encoder">
+            <input id="enc-input" type="text" lang="ja" value="ごん" aria-label="Kana to write in Hunter script" autocomplete="off" spellcheck="false">
+            <div class="enc-presets" id="enc-presets"></div>
+            <div class="enc-out" id="enc-out" aria-live="polite"></div>
+            <div class="enc-romaji" id="enc-romaji"></div>
+          </div>
+        </div>
+        <figcaption>Fig. # — Writing in code is easy: look each sound up in the table. Reading is the hard part, because the computer only gets a picture.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="see">What a computer sees</h2>
+      <p>When you look at a photo you see shapes, colours and meaning. A computer sees <strong>numbers</strong>. Every picture is a grid of tiny squares called <strong>pixels</strong>, and each pixel is a number. In a black-and-white picture, 0 means black, 255 means white, and everything in between is a shade of gray.</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="pixels" id="pixels"></div></div>
+        <figcaption>Fig. # — Zooming into one symbol of a real line the reader read. Each square is one pixel; turn on the numbers to see what the computer actually gets.</figcaption>
+      </figure>
+      <p>The strip in this picture is 48 pixels tall and 768 wide: 36,864 numbers. The computer's whole job is to turn those numbers into the right letters. Nobody can write rules for that by hand ("if pixel 1,203 is dark and pixel 1,204 is light…"), so instead we let the computer <em>learn</em> the rules from examples.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="filters">Finding edges with a tiny stencil</h2>
+      <p>The first trick in computer vision is the <strong>filter</strong>: a tiny 3×3 stencil of numbers. The computer slides it over the picture. At each spot it multiplies the 9 pixels under the stencil by the 9 numbers in it and adds them up. If the pattern in the picture matches the stencil, the answer is big; if not, it is close to zero. One stencil finds edges that go up and down, another finds edges that go across, another blurs.</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="conv" id="conv"></div></div>
+        <figcaption>Fig. # — A filter sliding over the symbol. Pick a stencil and watch the right-hand picture light up wherever its pattern appears. Real arithmetic on the real pixels.</figcaption>
+      </figure>
+
+      <h3>Layers: from edges to symbols</h3>
+      <p>One filter only finds simple things like edges. A <strong>neural network</strong> stacks many layers of them. The first layers find edges, the next layers combine edges into strokes and curves, later layers find parts of symbols, and the last layer decides which symbol it is. The reader here has dozens of layers and about 320,000 numbers inside its filters. Nobody chose those numbers by hand: the computer found them by practising.</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="layers" id="layers"></div></div>
+        <figcaption>Fig. # — A simplified picture of what the layers do. The first two panels are computed from the real symbol; the middle ones are drawings of the kind of thing deeper layers respond to.</figcaption>
+      </figure>
+
+      <h3>A neural network you can poke</h3>
+      <p>Here is a real neural network, small enough to see all of it. It knows only six symbols. On the left are its inputs: a 16&nbsp;×&nbsp;16 grid of pixels, 256 numbers. Each circle is a <strong>neuron</strong>, a tiny calculator. It takes the numbers coming in, multiplies each one by its own <strong>weight</strong>, adds them all up, and passes the total on if it is more than zero. The lines are the weights. A thick line is a big weight; a blue line pushes the next neuron up and a purple one pushes it down. The six neurons on the right give each symbol a score, and the biggest score wins.</p>
+      <figure class="fig">
+        <div class="fig-box"><div id="tinynet"></div></div>
+        <figcaption>Fig. # — A real 256&nbsp;→&nbsp;12&nbsp;→&nbsp;8&nbsp;→&nbsp;6 network, running in your browser. It practised (the way the next section explains) on 24,000 wobbly drawings of these six symbols, and gets about 95 out of 100 new drawings right. Erase the dot of ぐ and it changes its mind to く. The real reader works the same way, only much bigger.</figcaption>
+      </figure>
+      <p>Look at what a neuron in the first column wants. Its weights form a pattern on the grid: blue where it wants ink, purple where it wants none. Nobody drew those patterns. The network found them while it practised, because they helped it tell the symbols apart.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="jobs">Reading is two jobs</h2>
+      <p>When you read a manga page, you do two things without noticing. First you <strong>find</strong> the bits of writing: this bubble, that sign. Then you <strong>read</strong> each one. This app does the same, with one small neural network for each job.</p>
+
+      <div class="steps3" id="steps3">
+        <figure class="step">
+          <div class="step-media"><img src="img/pipeline/05_boxes.webp" alt="A manga page with every line of writing boxed and numbered." loading="lazy"></div>
+          <figcaption><span class="step-n">1</span><strong>Find</strong> every line of writing, and the order to read them in.</figcaption>
+        </figure>
+        <figure class="step">
+          <div class="step-media strips" id="step-strips"></div>
+          <figcaption><span class="step-n">2</span><strong>Cut out</strong> each line and straighten it into a strip.</figcaption>
+        </figure>
+        <figure class="step">
+          <div class="step-media reads" id="step-reads"></div>
+          <figcaption><span class="step-n">3</span><strong>Read</strong> each strip into kana, then into Latin letters.</figcaption>
+        </figure>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2 id="examples">Where the examples come from</h2>
+      <p>Neural networks learn from <strong>examples</strong>: lots of pictures, each with the right answer attached. That collection is called a <strong>dataset</strong>. To learn to read, the reader needs hundreds of thousands of them. But nobody has collected and labelled that many Hunter-script pictures; only a few dozen real ones exist. So every training picture here is <strong>made up</strong>. A program draws the symbols and then messes them up on purpose, so the network is ready for real-world mess. Because the program drew them, it always knows the right answer.</p>
+
+      <figure class="fig">
+        <div class="fig-box">
+          <div class="fig-title">Make a training picture</div>
+          <div class="fig-sub">Step through how one fake example is made. The answer, ごん (Gon), is known from the start.</div>
+          <div class="maker" id="maker"></div>
+        </div>
+        <figcaption>Fig. # — Each step makes the picture harder to read, so the network learns what real pictures look like. The real program picks every setting at random.</figcaption>
+      </figure>
+
+      <p>Repeat that half a million times with random choices, and you have a textbook to learn from. The program went through four versions. Each time the network failed on something real, like a different way of drawing ま, or a cartoon character standing next to the words, the program learned to draw that too.</p>
+
+      <figure class="fig">
+        <div class="fig-media fig-strips"><img src="img/synth/lines_v4.webp" alt="A grid of made-up training lines in Hunter script, in many styles and on many backgrounds." loading="lazy"></div>
+        <figcaption>Fig. # — Some of the half a million made-up training lines. None of these are from the show.</figcaption>
+      </figure>
+
+      <p>To learn to find lines on a page, a second program draws whole made-up manga pages, with panels, speech bubbles and signs. It also adds plenty of things that are <em>not</em> Hunter script, like English, Japanese and icons, so the line finder learns to ignore them.</p>
+      <figure class="fig">
+        <div class="fig-media"><img src="img/synth/pages_v2.webp" alt="Six made-up manga pages with their lines of Hunter script boxed." loading="lazy"></div>
+        <figcaption>Fig. # — Made-up training pages with every line of Hunter script boxed: the right answers the line finder learns from.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="practice">How it learns: guess, check, adjust</h2>
+      <p>At the start, the numbers inside the network are random, so its guesses are nonsense. Then it practises, round after round:</p>
+      <ol class="learn-steps">
+        <li><strong>Show</strong> it a batch of examples (here, 128 made-up lines at a time).</li>
+        <li>Let it <strong>guess</strong> what each one says.</li>
+        <li><strong>Check</strong> the guesses against the right answers and measure how wrong they were.</li>
+        <li><strong>Adjust</strong> every one of its numbers a tiny bit, in the direction that would have made the guesses less wrong.</li>
+      </ol>
+      <p>Each adjustment is tiny, but after thousands of rounds the network gets very good. It is a bit like practising free throws, where every miss tells you how to change your aim.</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="learn" id="learn"></div></div>
+        <figcaption>Fig. # — Left: the practice loop. Right: the reader's real mistakes while it trained, measured on lines it never practised on. After 1,000 rounds it got about 3 or 4 symbols wrong in every 100; after 30,000 rounds, fewer than 1.</figcaption>
+      </figure>
+      <p>One important rule: the test lines are kept <strong>separate</strong> from the practice lines. Otherwise the network could just memorise the answers, like a student who has seen the test in advance, and we would think it was smarter than it is.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="read">How it reads a line</h2>
+      <p>The reader looks at a strip the way you might run your finger along it. It moves along in small steps, 192 of them, one for every 4 pixels, and at each step it says which symbol it sees, or "nothing here".</p>
+      <p>First the strip goes through the network's layers, the way the six-symbol network above works, only with many more neurons. Each layer turns its input into a stack of new pictures called <strong>feature maps</strong>, and each map lights up wherever it finds its own pattern. Layer after layer, the pictures get <strong>shorter</strong> (48 pixels tall, then 24, 12, 6, 3 and 2) but there are <strong>more</strong> of them (up to 64). In the end, each step along the strip is described by a list of 64 numbers, and the last layer turns that list into a score for each of the 75 possible answers.</p>
+
+      <figure class="fig">
+        <div class="fig-box"><div id="inside"></div></div>
+        <figcaption>Fig. # — The real reader's insides while it reads ぐりーどあいらんど. Each row shows a few of the feature maps after one stage of layers; brighter means a stronger signal. Move along the figure to pick a step: the box on the strip shows the part of the picture that step pays most attention to, and the bottom rows show its scores.</figcaption>
+      </figure>
+
+      <p>Most steps say "nothing here", because they fall between symbols. So the reader tidies up in two moves. First, several steps in a row that saw the same symbol are glued together and count once. Then the "nothing here" steps are thrown away. What's left is the text.</p>
+
+      <figure class="fig">
+        <div class="fig-box"><div class="ctc" id="ctc"></div></div>
+        <figcaption>Fig. # — The real reader on a real line, one step at a time. Row 1: what each step says, with a colour for each symbol and grey for "nothing here". Row 2: repeats glued together. Row 3: the "nothing here" steps (called blanks) dropped; at the end the symbols close up into the reading. Below: a close-up of the nine steps around the cursor, and the reader's top three guesses there.</figcaption>
+      </figure>
+      <p>Why have a "nothing here" answer at all? Because some words have the same symbol twice in a row, like ここ (koko). Without a "nothing here" step between them, the two こ would be glued into one.</p>
+      <p>Notice the guesses. When the reader sees ぐ (gu), its second choice is く (ku): the same shape without the dot. At ど (do), its runner-up is と (to). The network doesn't just pick an answer; it gives every possible answer a <strong>confidence</strong>, and the app uses those confidences to decide which readings it trusts.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="find">How it finds the lines</h2>
+      <p>The line finder doesn't draw boxes directly. It colours in the <strong>middle</strong> of every line of writing, like a highlighter that only touches the centre of each line. Then simple geometry grows each highlighted streak back out into a box. Highlighting only the middle keeps lines that sit close together from merging into one blob. A second colouring marks whether each line runs across or down.</p>
+
+      <figure class="fig">
+        <div class="swipe" id="swipe">
+          <img src="img/pipeline/02_letterbox.webp" alt="The page as the line finder sees it." class="swipe-base">
+          <div class="swipe-top"><img src="img/pipeline/03_kernel.webp" alt="The same page with the line finder's highlights."></div>
+          <div class="swipe-handle" aria-hidden="true"><span>‹ ›</span></div>
+          <input type="range" min="0" max="100" value="50" aria-label="Drag to compare the page with what the line finder highlights">
+          <span class="swipe-label left label">What you see</span>
+          <span class="swipe-label right label">What it highlights</span>
+        </div>
+        <figcaption>Fig. # — Drag the handle. The blue streaks are the line finder's own output: the middle of every line it found.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="tiny">Small, fast and private</h2>
+      <p>Most AI models are far too big for a phone's web browser. These three are tiny: about <strong>1&nbsp;MB together</strong>, smaller than a single photo from a phone camera. Two tricks make that possible.</p>
+      <p>First, the networks are small to begin with. They are based on <strong>MobileNet</strong>, a design made for phones. Second, every number inside them is stored in <strong>1 byte instead of 4</strong>, a bit like rounding prices to whole dollars. Done carefully, the rounding costs almost no accuracy.</p>
+
+      <figure class="fig">
+        <div class="fig-box">
+          <div class="fig-title">One number, two ways</div>
+          <div class="fig-sub">The models hold about a million of these numbers</div>
+          <div class="bytes" id="bytes"></div>
+        </div>
+        <figcaption>Fig. # — Storing each number in one byte (int8) instead of four (float32) makes the models four times smaller, and lets the phone use fast whole-number maths.</figcaption>
+      </figure>
+
+      <figure class="fig">
+        <div class="fig-box"><div id="chart-sizes"></div></div>
+        <figcaption>Fig. # — How long each step takes on an ordinary computer's processor (one core), in milliseconds. A blink of an eye takes about 100–400 ms.</figcaption>
+      </figure>
+
+      <p>All of this runs <strong>on your device</strong>. The models are downloaded once with the page, and your picture never leaves your phone. The program that runs them is written in a language called Rust and turned into WebAssembly, a format every modern browser can run.</p>
+
+      <figure class="fig">
+        <div class="fig-box privacy" id="privacy"></div>
+        <figcaption>Fig. # — Everything happens inside the browser on your phone. Nothing is uploaded.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="vertical">Sideways writing</h2>
+      <p>Japanese is often written top to bottom, and manga speech bubbles usually are. The app turns those columns on their side so they become a normal left-to-right strip. Then a second reader, trained only on turned columns, reads them.</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="turn" id="turn"></div></div>
+        <figcaption>Fig. # — A vertical column is turned a quarter turn, so the first symbol ends up on the left, then read by the vertical reader.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="live">Live camera</h2>
+      <p>Point your phone's camera at Hunter script and the reader reads the picture a few times a second. A single look can get one symbol wrong, which makes the label flicker. So each line remembers its last five readings and shows the one it saw most often.</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="vote" id="vote"></div></div>
+        <figcaption>Fig. # — Five quick looks at the same sign. One look misreads a symbol, but the majority wins, so the label stays steady.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="limits">What it can't do yet</h2>
+      <ul class="limits">
+        <li><strong>It has only practised on made-up pictures.</strong> Real scans and photos can be harder, and there isn't a big set of real examples to test on yet.</li>
+        <li><strong>Very small writing gets missed.</strong> Tap it in the reader and the line finder takes a closer look.</li>
+        <li><strong>Other writing can still slip through.</strong> The first version boxed English, Japanese and icons too. The line finder was then retrained on pages full of such writing and learned to ignore it: on test pages that are mostly not Hunter script, false boxes on ordinary text fell from 25 per page to under 1. The app also hides any line it isn't sure about.</li>
+        <li><strong>No punctuation</strong>, and the small kana (ゃ, っ) come out full size.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <h2 id="words">Words to know</h2>
+      <dl class="glossary">
+        <div><dt>Computer vision</dt><dd>Teaching computers to understand pictures and video.</dd></div>
+        <div><dt>Pixel</dt><dd>One tiny square of a picture, stored as a number (or three numbers for colour).</dd></div>
+        <div><dt>Filter</dt><dd>A small stencil of numbers slid over a picture to find a pattern, like an edge.</dd></div>
+        <div><dt>Neural network</dt><dd>Many layers of filters stacked together, whose numbers are learned instead of written by hand.</dd></div>
+        <div><dt>Dataset</dt><dd>The collection of examples, each with its right answer, that a network learns from.</dd></div>
+        <div><dt>Training</dt><dd>The guess, check, adjust loop that tunes the network's numbers.</dd></div>
+        <div><dt>Test set</dt><dd>Examples kept aside to check the network fairly, never used for practice.</dd></div>
+        <div><dt>Confidence</dt><dd>How sure the network is about each possible answer, from 0% to 100%.</dd></div>
+        <div><dt>Model</dt><dd>A trained network, ready to use. This app has three, about 1&nbsp;MB together.</dd></div>
+      </dl>
+
+      <!-- ============================================================ -->
+      <h2 id="your-turn">Your turn</h2>
+      <p>Everything on this page was made on one home computer, with free tools and a lot of curiosity. You can start exploring computer vision today:</p>
+      <ul class="your-turn">
+        <li><strong>Try the reader</strong> on the example pages, then on a screenshot of your own. Find where it goes wrong, and think about why.</li>
+        <li><strong>Invent your own secret alphabet</strong> on paper. Then think: how would you make thousands of fake practice pictures of it?</li>
+        <li><strong>Train your own image model in a browser.</strong> Free tools like Google's Teachable Machine let you teach a model to tell things apart using your webcam, in a few minutes, with no code.</li>
+        <li><strong>Learn a little programming.</strong> Python is the most common language for AI, and there are free beginner courses everywhere. The ideas on this page (pixels, filters, training) are where every computer vision course starts.</li>
+      </ul>
+
+      <h2 id="try">Try it</h2>
+      <p>Open the reader and pick a photo or screenshot, try an example page, or point your camera at Hunter script.</p>
+      <p class="cta-row"><a class="button" href="../index.html">Open the reader →</a> <a class="button ghost" href="deep-dive.html">Read the deep dive</a></p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <p>HxH OCR is a fan project. <em>Hunter&nbsp;×&nbsp;Hunter</em> belongs to Yoshihiro Togashi, Shueisha and its studios; this project is not affiliated with them. The glyph shapes were traced from fan references; every training image was generated.</p>
+  </div>
+</footer>
+
+<script type="module" src="blog.js"></script>
+<script type="module" src="explain.js"></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+HxH OCR
+Copyright 2026 KokkakNiphon
+
+This product includes software and model weights developed by KokkakNiphon
+(https://github.com/KokkakNiphon/hxh-ocr), licensed under the Apache License,
+Version 2.0. The synthetic datasets are licensed under CC BY 4.0 (LICENSE-DATA.md).
+
+Attribution
+-----------
+Credit: HxH OCR by KokkakNiphon - https://github.com/KokkakNiphon/hxh-ocr
+
+Under section 4(d) of the Apache License 2.0, this credit and the rest of this
+NOTICE must be kept in every copy of the code or the model weights that you
+redistribute, and in every work derived from them that you distribute:
+fine-tuned, quantised, pruned or converted models (ONNX, ESP-DL, TFLite, Core ML,
+...), and apps, services or devices that bundle them. Show it wherever your work
+shows third-party notices (an "About" or "Licences" screen, documentation).
+
+Built with Claude Code (Anthropic).
+
+Fan project notice
+------------------
+Hunter x Hunter and its alphabet are (c) Yoshihiro Togashi / Shueisha. HxH OCR is
+an unofficial fan project and is not affiliated with or endorsed by them. The
+repository contains no images from the manga or the anime. The glyph shapes are
+an independent vector tracing, cross-checked against the alphabet charts on
+Hunterpedia and Omniglot and against two official charts (not included).
+
+Third-party components
+----------------------
+Model weights. The released models were fine-tuned from the ImageNet-1k
+pretrained weights of timm "mobilenetv4_conv_small_050.e3000_r224_in1k" (the v4
+and tiny sets; https://huggingface.co/timm/mobilenetv4_conv_small_050.e3000_r224_in1k)
+and "mobilenetv4_conv_small.e2400_r224_in1k" (the base set;
+https://huggingface.co/timm/mobilenetv4_conv_small.e2400_r224_in1k), both
+Apache-2.0; architecture: MobileNetV4, Qin et al., arXiv:2404.10518.
+
+Fonts in the generated data. The page generator rasterises ordinary writing
+and icons from font files read at run time; none are included. The published
+datasets used only openly licensed fonts (SIL Open Font License 1.1: Noto Sans,
+Noto Sans JP / KR / TC / CJK SC, Noto Sans Symbols 2, Noto Emoji, Go Noto
+Kurrent, Lato, Inter, Inter Tight, Font Awesome 4.3; Apache-2.0: Roboto, Roboto
+Slab, Roboto Mono, Open Sans, GenEi Gothic Pro, Droid Sans Fallback), listed
+with versions and hashes in rust/hxh-synth/fonts.lock.json.
+
+Quantisation semantics. hxh-infer and hxh_ocr/qat.py reimplement the int8
+arithmetic of Espressif's ESP-DL (MIT) and ESP-PPQ (Apache-2.0); no Espressif
+source code is included. The .espdl files under experiments/ were written by
+ESP-PPQ.
+
+Rust crates (rust/Cargo.lock). hxh-infer, hxh-detect, hxh-infer-wasm and
+hxh-cli have no third-party dependencies; the WebAssembly builds in web/ contain
+only this project's code and the Rust core library (MIT OR Apache-2.0).
+hxh-synth (the page generator, a build-time tool) uses: ab_glyph,
+ab_glyph_rasterizer, owned_ttf_parser (Apache-2.0); ttf-parser, serde,
+serde_json, rayon, png, flate2, crc32fast and others (MIT OR Apache-2.0);
+tiny-skia, tiny-skia-path (BSD-3-Clause); arrayref (BSD-2-Clause);
+zune-jpeg, zune-core (MIT OR Apache-2.0 OR Zlib); jpeg-encoder
+((MIT OR Apache-2.0) AND IJG); zlib-rs (Zlib); memchr (Unlicense OR MIT);
+unicode-ident ((MIT OR Apache-2.0) AND Unicode-3.0); strict-num,
+simd-adler32, zmij (MIT). See each crate for its licence text.
+
+Python packages (requirements*.txt, installed separately, not distributed):
+numpy (BSD-3-Clause), opencv-python (Apache-2.0 / MIT), Pillow (MIT-CMU),
+PyTorch and torchvision (BSD-3-Clause), timm (Apache-2.0), onnx (Apache-2.0),
+onnxruntime (MIT), onnxscript (MIT), matplotlib (Matplotlib licence, PSF-based),
+esp-ppq (Apache-2.0).
+
+Web fonts. The demo and blog load Geist, Geist Mono, Manrope, Noto Sans JP and
+Noto Sans Thai from Google Fonts at run time (SIL Open Font License 1.1). No
+font files are included in this repository.
+
+Hosting tooling. site/ uses the Cloudflare "cf" CLI as a development
+dependency (MIT OR Apache-2.0; its own dependencies include sharp/libvips,
+LGPL-3.0-or-later). It is not distributed with the project.

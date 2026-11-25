@@ -1,0 +1,19 @@
+[package]
+name = "hxh-infer-wasm"
+description = "Thin wasm32 wrapper (raw extern \"C\" exports) around hxh-infer and hxh-detect"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+hxh-infer = { path = "../hxh-infer" }
+hxh-detect = { path = "../hxh-detect" }
+
+[features]
+# hxh_selftest export: randomised scalar-vs-SIMD kernel comparison (test builds only)
+selftest = []
+# hxh_profile export: per-op timing, imports `env.hxh_now() -> f64` (ms) from JS (dev builds only)
+profile = []

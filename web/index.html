@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>HxH OCR: read the Hunter × Hunter alphabet from any picture</title>
+<meta name="description" content="The first OCR for the Hunter × Hunter alphabet. Take, paste or drop a picture to read Hunter script, whole pages, across and down, as kana and romaji. Free and private: it runs in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<!-- site:begin (scripts/site_meta.py) -->
+<link rel="canonical" href="https://hxh-ocr.kokkakniphon.workers.dev/">
+<link rel="alternate" hreflang="en" href="https://hxh-ocr.kokkakniphon.workers.dev/">
+<link rel="alternate" hreflang="th" href="https://hxh-ocr.kokkakniphon.workers.dev/index-th">
+<link rel="alternate" hreflang="ja" href="https://hxh-ocr.kokkakniphon.workers.dev/index-ja">
+<link rel="alternate" hreflang="x-default" href="https://hxh-ocr.kokkakniphon.workers.dev/">
+<meta name="author" content="KokkakNiphon">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#2340d8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HxH OCR">
+<meta property="og:title" content="HxH OCR: read the Hunter × Hunter alphabet from any picture">
+<meta property="og:description" content="The first OCR for the Hunter × Hunter alphabet. Take, paste or drop a picture to read Hunter script, whole pages, across and down, as kana and romaji. Free and private: it runs in your browser.">
+<meta property="og:url" content="https://hxh-ocr.kokkakniphon.workers.dev/">
+<meta property="og:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HxH OCR: the first OCR for the Hunter × Hunter alphabet, reading a manga page.">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="th_TH">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HxH OCR: read the Hunter × Hunter alphabet from any picture">
+<meta name="twitter:description" content="The first OCR for the Hunter × Hunter alphabet. Take, paste or drop a picture to read Hunter script, whole pages, across and down, as kana and romaji. Free and private: it runs in your browser.">
+<meta name="twitter:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="site.css">
+<script src="lang.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "url": "https://hxh-ocr.kokkakniphon.workers.dev/", "inLanguage": "en", "description": "The first OCR for the Hunter × Hunter alphabet. Take, paste or drop a picture to read Hunter script, whole pages, across and down, as kana and romaji. Free and private: it runs in your browser.", "image": "https://hxh-ocr.kokkakniphon.workers.dev/og.png", "author": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "name": "HxH OCR", "alternateName": "Hunter × Hunter alphabet reader", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any (runs in a web browser)", "browserRequirements": "Requires JavaScript and WebAssembly", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "about": [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}]}</script>
+<!-- site:end -->
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M5.6 6.52H14.4M5.6 13.48H14.4M10 6.52V13.48M19.28 14.39L26.14 5.61M9.92 18.45V25.55M5.73 25.55H14.27M16.8 18.52L19.36 22.04L16.8 25.48M19.36 22.04H24.56M27.2 18.52L24.56 22.04L27.2 25.48"/><circle cx="19.7" cy="7.95" r="1.84"/></svg>HxH OCR</a>
+    <nav aria-label="Site">
+      <a href="index.html" aria-current="page">Reader</a>
+      <a href="blog/index.html">How it works</a>
+      <a href="blog/deep-dive.html">Deep dive</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="Theme" data-auto="auto" data-light="light" data-dark="dark" aria-label="Theme: auto">
+      <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      <svg class="ic-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ic-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="nav-cta" href="blog/index.html">Read the story</a>
+  </div>
+</header>
+<header class="top">
+  <h1>Read the Hunter&nbsp;×&nbsp;Hunter alphabet</h1>
+  <p class="lede">Point it at Hunter&nbsp;×&nbsp;Hunter script and it reads the kana: every line on the page, across or down. Small int8 models (<span id="model-size">4.7&nbsp;MB</span>) run here in your browser, so your picture never leaves your device. As far as we know, it is the first OCR for this alphabet.</p>
+  <p class="byline">Made by <a href="https://github.com/KokkakNiphon" rel="author">KokkakNiphon</a></p>
+</header>
+
+<main class="reader">
+  <section class="source" id="pick" aria-label="Choose a picture">
+    <div class="source-row">
+      <div class="source-actions">
+        <label class="btn primary file">
+          <input type="file" id="file" accept="image/*">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M4 7h3l2-3h6l2 3h3v12H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          Take a photo or pick an image
+        </label>
+        <button type="button" class="btn" id="btn-paste" hidden>
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M9 3.5h6v3H9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 5H6.5A1.5 1.5 0 0 0 5 6.5v13A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 17.5 5H15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>Paste</span>
+          <kbd class="key" id="paste-key" aria-hidden="true">Ctrl+V</kbd>
+        </button>
+        <button type="button" class="btn" id="btn-live" disabled>
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10l5-3v10l-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          Live camera
+        </button>
+      </div>
+      <div class="source-settings">
+        <span class="setting-label" id="quality-label">Models</span>
+        <div class="seg" id="quality" role="radiogroup" aria-labelledby="quality-label">
+          <label title="Small models (1 MB): quick. The live camera always uses these."><input type="radio" name="quality" value="fast"> Fast</label>
+          <label class="on" title="Bigger models (3.6 MB): better on photos, slower."><input type="radio" name="quality" value="accurate" checked> Accurate</label>
+        </div>
+        <details class="options" id="options">
+          <summary class="btn">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            <span>Options</span>
+          </summary>
+          <div class="options-panel">
+            <label class="check"><input type="checkbox" id="opt-invert"> Light text on dark</label>
+            <label class="check"><input type="checkbox" id="opt-fit" checked> Auto-fit boxes</label>
+            <button type="button" class="btn small" id="btn-page">Read page</button>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div class="loading" id="loading" role="status">
+      <span class="bar" aria-hidden="true"></span>
+      <span data-step="download">Loading the reader models…</span>
+      <span data-step="start" hidden>Starting the reader…</span>
+      <span data-step="failed" hidden>The reader could not load. Reload the page to try again.</span>
+    </div>
+    <div class="examples-row">
+      <span class="setting-label" id="examples-title">Examples</span>
+      <div class="examples" id="examples" role="group" aria-labelledby="examples-title"></div>
+    </div>
+  </section>
+
+  <label class="empty" id="empty" for="file">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15.5V4.5M7.5 9L12 4.5 16.5 9M4 15.5V19a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="empty-title">Drop a picture here</span>
+    <span class="empty-text">Or paste one, take a photo, or try an example. Pages, screenshots and photos of screens all work.</span>
+  </label>
+
+  <section class="workspace" id="work" hidden aria-label="Picture and its text">
+    <div class="stage-col">
+      <div class="stage" id="stage">
+        <canvas id="view" aria-label="Image with the text lines found, numbered in reading order. Tap a line to select it, tap unmarked text to look for a line there, or drag a box to read it as one line. The same lines are listed beside it."></canvas>
+        <div class="stage-busy" id="stage-busy" role="status" hidden>
+          <p class="busy-pill">
+            <span class="spinner" aria-hidden="true"></span>
+            <span data-busy="models">Loading the reader models…</span>
+            <span data-busy="accurate" hidden>Loading the accurate models…</span>
+            <span data-busy="page" hidden>Reading the page…</span>
+          </p>
+        </div>
+        <button type="button" class="stage-btn" id="btn-zoom">Zoom to line</button>
+      </div>
+    </div>
+    <div class="text-col">
+      <p class="hint" id="hint" aria-live="polite">Tap a numbered line to see it.</p>
+      <div class="text-head">
+        <h2 id="text-title">Text</h2>
+        <button type="button" class="btn small copy" id="btn-copy-all" hidden>
+          <span class="copy-idle"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Copy all lines</span>
+          <span class="copy-done"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Copied</span>
+        </button>
+      </div>
+      <p class="summary" id="page-summary" aria-live="polite"></p>
+      <div class="transcript" id="transcript" lang="ja" data-no-i18n hidden></div>
+      <h3 class="lines-title" id="lines-title">Lines in reading order</h3>
+      <ol class="lines" id="lines" aria-labelledby="lines-title"></ol>
+      <label class="check low-toggle" id="low-toggle" hidden><input type="checkbox" id="opt-low"> <span>Show lines that may not be Hunter script</span> <span class="count" id="low-count"></span></label>
+
+      <div class="result" id="result" aria-live="polite" hidden>
+        <div class="result-head">
+          <div class="result-text">
+            <div class="kana" id="out-kana" lang="ja"></div>
+            <div class="romaji" id="out-romaji"></div>
+          </div>
+          <button type="button" class="btn small copy" id="btn-copy-line">
+            <span class="copy-idle"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Copy line</span>
+            <span class="copy-done"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Copied</span>
+          </button>
+        </div>
+        <div class="expected" id="out-expected" hidden></div>
+        <figure class="strip">
+          <div class="strip-box" id="strip-box">
+            <canvas id="strip" width="256" height="32"></canvas>
+            <div class="pad-mark" id="pad-mark" hidden><span>padding</span></div>
+          </div>
+          <figcaption id="strip-caption">What the reader saw.</figcaption>
+        </figure>
+        <ul class="notices" id="out-notices"></ul>
+        <p class="timing" id="out-timing"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="workspace live" id="live" hidden aria-label="Live camera">
+    <div class="stage-col">
+      <div class="live-stage" id="live-stage">
+        <video id="live-video" playsinline muted></video>
+        <canvas id="live-overlay" aria-label="Camera view with the text lines found and their readings. Tap a line to freeze the picture on it."></canvas>
+      </div>
+    </div>
+    <div class="text-col">
+      <p class="hint" id="live-note" aria-live="polite"></p>
+      <div class="live-tools">
+        <span class="live-stats" id="live-stats" aria-live="off"></span>
+        <button type="button" class="btn" id="btn-live-stop">Stop</button>
+        <button type="button" class="btn primary" id="btn-live-freeze">Freeze</button>
+      </div>
+      <h2 class="lines-title" id="live-lines-title">Reading now</h2>
+      <ol class="lines" id="live-lines" aria-labelledby="live-lines-title"></ol>
+    </div>
+  </section>
+
+  <details class="about">
+    <summary>How it works</summary>
+    <p>The Hunter alphabet is a one-to-one cipher for Japanese kana. Voiced kana add a small dot at the lower right of the base glyph, p-kana a small ring.</p>
+    <p>Three small models, all trained only on generated images (no real manga yet), run one after another. A <strong>line detector</strong> (a DBNet-style segmenter on a MobileNetV4 backbone) looks at the picture shrunk to 640&nbsp;px (960&nbsp;px with Accurate) and marks every text line, its slant and whether it runs across or down; the boxes are numbered in reading order (columns right to left). Each line is then cut out straight, turned gray, scaled to <span id="about-h">48</span>&nbsp;px tall and padded to <span id="about-w">768</span>&nbsp;px, and a <strong>line reader</strong> turns it into kana: one reader for horizontal lines and one for vertical columns, which it sees turned on their side. The readers output 73 hiragana, space, digits and <span lang="zxx">! ? : / . -</span>; katakana and small kana come out as full-size hiragana.</p>
+    <p><strong>Fast or Accurate.</strong> There are two sets of models. Fast (about 1&nbsp;MB) is quick and also looks at zoomed-in tiles of a big photo; the live camera always uses it. Accurate (about 3.6&nbsp;MB, loaded after Fast) has a wider detector and wider readers: it reads photos of screens, cards and signs much better and takes about half a second for a big photo on a laptop. Switch between them under Models, above the picture; the page is read again.</p>
+    <p>Everything runs in a lean int8 engine written in Rust and compiled to WebAssembly, so nothing is uploaded.</p>
+    <p><strong>Live camera.</strong> The camera view is read a few times a second: the detector and the readers run on every processed frame, and each line shows the reading it got most often over the last few frames so the labels don't flicker. Freeze (or tap a line) to keep the picture and see every line's details. Where the browser can't open a camera here, live mode runs on a moving example page instead.</p>
+    <p><strong>Tips.</strong> On a big photo, small text can be missed by the page pass: tap it, and the detector looks again around your tap at a higher resolution. If a line still isn't found, drag a box around it. About sixteen glyphs fit in one reading; longer lines get squeezed. The small dakuten and handakuten marks are the hardest part: get close enough that they are visible. Uncertain characters are underlined; tap one to see the runner-up.</p>
+  </details>
+</main>
+
+<footer class="foot">
+  <p id="status">Loading the models…</p>
+  <p id="model-info" class="muted"></p>
+</footer>
+
+<div class="drop-overlay" id="drop-overlay" hidden>
+  <div class="drop-panel">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5M4 15.5V19a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <p>Drop the image to read it</p>
+  </div>
+</div>
+<p class="toast" id="toast" role="status" aria-live="polite"></p>
+<p class="visually-hidden" id="sr-status" role="status" aria-live="polite"></p>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

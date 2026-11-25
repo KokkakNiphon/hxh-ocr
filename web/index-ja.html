@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<script src="theme.js"></script>
+<script src="i18n-reader-ja.js"></script>
+<script src="i18n.js" defer></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>HxH OCR: 『HUNTER×HUNTER』のハンター文字をどんな画像からでも読む</title>
+<meta name="description" content="『HUNTER×HUNTER』のハンター文字を読む初めての OCR。写真を撮るか、貼り付けるか、ドロップするだけで、ページ全体のハンター文字を横書きも縦書きも、かなとローマ字で読み取ります。無料で、画像はどこにも送られません。ブラウザの中で動きます。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<!-- site:begin (scripts/site_meta.py) -->
+<link rel="canonical" href="https://hxh-ocr.kokkakniphon.workers.dev/index-ja">
+<link rel="alternate" hreflang="en" href="https://hxh-ocr.kokkakniphon.workers.dev/">
+<link rel="alternate" hreflang="th" href="https://hxh-ocr.kokkakniphon.workers.dev/index-th">
+<link rel="alternate" hreflang="ja" href="https://hxh-ocr.kokkakniphon.workers.dev/index-ja">
+<link rel="alternate" hreflang="x-default" href="https://hxh-ocr.kokkakniphon.workers.dev/">
+<meta name="author" content="KokkakNiphon">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#2340d8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HxH OCR">
+<meta property="og:title" content="HxH OCR: 『HUNTER×HUNTER』のハンター文字をどんな画像からでも読む">
+<meta property="og:description" content="『HUNTER×HUNTER』のハンター文字を読む初めての OCR。写真を撮るか、貼り付けるか、ドロップするだけで、ページ全体のハンター文字を横書きも縦書きも、かなとローマ字で読み取ります。無料で、画像はどこにも送られません。ブラウザの中で動きます。">
+<meta property="og:url" content="https://hxh-ocr.kokkakniphon.workers.dev/index-ja">
+<meta property="og:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HxH OCR: the first OCR for the Hunter × Hunter alphabet, reading a manga page.">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="th_TH">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HxH OCR: 『HUNTER×HUNTER』のハンター文字をどんな画像からでも読む">
+<meta name="twitter:description" content="『HUNTER×HUNTER』のハンター文字を読む初めての OCR。写真を撮るか、貼り付けるか、ドロップするだけで、ページ全体のハンター文字を横書きも縦書きも、かなとローマ字で読み取ります。無料で、画像はどこにも送られません。ブラウザの中で動きます。">
+<meta name="twitter:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="site.css">
+<script src="lang.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "url": "https://hxh-ocr.kokkakniphon.workers.dev/index-ja", "inLanguage": "ja", "description": "『HUNTER×HUNTER』のハンター文字を読む初めての OCR。写真を撮るか、貼り付けるか、ドロップするだけで、ページ全体のハンター文字を横書きも縦書きも、かなとローマ字で読み取ります。無料で、画像はどこにも送られません。ブラウザの中で動きます。", "image": "https://hxh-ocr.kokkakniphon.workers.dev/og.png", "author": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "name": "HxH OCR", "alternateName": "Hunter × Hunter alphabet reader", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any (runs in a web browser)", "browserRequirements": "Requires JavaScript and WebAssembly", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "about": [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}]}</script>
+<!-- site:end -->
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="index-ja.html"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M5.6 6.52H14.4M5.6 13.48H14.4M10 6.52V13.48M19.28 14.39L26.14 5.61M9.92 18.45V25.55M5.73 25.55H14.27M16.8 18.52L19.36 22.04L16.8 25.48M19.36 22.04H24.56M27.2 18.52L24.56 22.04L27.2 25.48"/><circle cx="19.7" cy="7.95" r="1.84"/></svg>HxH OCR</a>
+    <nav aria-label="サイト">
+      <a href="index-ja.html" aria-current="page">リーダー</a>
+      <a href="blog/index-ja.html">しくみ</a>
+      <a href="blog/deep-dive-ja.html">詳細解説</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="テーマ" data-auto="自動" data-light="ライト" data-dark="ダーク" aria-label="テーマ: 自動">
+      <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      <svg class="ic-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ic-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="nav-cta" href="blog/index-ja.html">しくみを読む</a>
+  </div>
+</header>
+<header class="top">
+  <h1>『HUNTER×HUNTER』のハンター文字を読む</h1>
+  <p class="lede">ハンター文字に向けるだけで、かなを読み取ります。ページ上の行を、横書きも縦書きもすべて見つけて、1 行ずつ読みます。小さな int8 モデル（<span id="model-size">4.7&nbsp;MB</span>）がこのブラウザの中で動くので、画像が端末の外に出ることはありません。私たちの知る限り、この文字を読める OCR はこれが初めてです。</p>
+  <p class="byline">制作: <a href="https://github.com/KokkakNiphon" rel="author">KokkakNiphon</a></p>
+</header>
+
+<main class="reader">
+  <section class="source" id="pick" aria-label="画像を選ぶ">
+    <div class="source-row">
+      <div class="source-actions">
+        <label class="btn primary file">
+          <input type="file" id="file" accept="image/*">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M4 7h3l2-3h6l2 3h3v12H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          写真を撮る・画像を選ぶ
+        </label>
+        <button type="button" class="btn" id="btn-paste" hidden>
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M9 3.5h6v3H9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 5H6.5A1.5 1.5 0 0 0 5 6.5v13A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 17.5 5H15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span>貼⁠り⁠付⁠け</span>
+          <kbd class="key" id="paste-key" aria-hidden="true">Ctrl+V</kbd>
+        </button>
+        <button type="button" class="btn" id="btn-live" disabled>
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10l5-3v10l-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          ライブカメラ
+        </button>
+      </div>
+      <div class="source-settings">
+        <span class="setting-label" id="quality-label">モデル</span>
+        <div class="seg" id="quality" role="radiogroup" aria-labelledby="quality-label">
+          <label title="小さなモデル（1 MB）: 速い。ライブカメラは常にこちらを使います。"><input type="radio" name="quality" value="fast"> 高速</label>
+          <label class="on" title="大きなモデル（3.6 MB）: 写真に強いが、時間がかかる。"><input type="radio" name="quality" value="accurate" checked> 高精度</label>
+        </div>
+        <details class="options" id="options">
+          <summary class="btn">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            <span>オプション</span>
+          </summary>
+          <div class="options-panel">
+            <label class="check"><input type="checkbox" id="opt-invert"> 暗い背景に明るい文字</label>
+            <label class="check"><input type="checkbox" id="opt-fit" checked> 枠を文字に自動で合わせる</label>
+            <button type="button" class="btn small" id="btn-page">ページを読む</button>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div class="loading" id="loading" role="status">
+      <span class="bar" aria-hidden="true"></span>
+      <span data-step="download">読み取りモデルを読み込んでいます…</span>
+      <span data-step="start" hidden>リーダーを起動しています…</span>
+      <span data-step="failed" hidden>リーダーを読み込めませんでした。ページを再読み込みして、もう一度お試しください。</span>
+    </div>
+    <div class="examples-row">
+      <span class="setting-label" id="examples-title">サンプル</span>
+      <div class="examples" id="examples" role="group" aria-labelledby="examples-title"></div>
+    </div>
+  </section>
+
+  <label class="empty" id="empty" for="file">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15.5V4.5M7.5 9L12 4.5 16.5 9M4 15.5V19a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="empty-title">ここに画像をドロップ</span>
+    <span class="empty-text">貼り付けたり、写真を撮ったり、サンプルを試したりもできます。マンガのページ、スクリーンショット、画面を撮った写真のどれでも読めます。</span>
+  </label>
+
+  <section class="workspace" id="work" hidden aria-label="画像と文字">
+    <div class="stage-col">
+      <div class="stage" id="stage">
+        <canvas id="view" aria-label="見つかった文字の行に、読み順で番号を付けた画像。行をタップすると選択し、枠のない文字をタップするとその周りで行を探し、枠をドラッグするとその中を 1 行として読みます。同じ行は横にも一覧で表示されます。"></canvas>
+        <div class="stage-busy" id="stage-busy" role="status" hidden>
+          <p class="busy-pill">
+            <span class="spinner" aria-hidden="true"></span>
+            <span data-busy="models">読み取りモデルを読み込んでいます…</span>
+            <span data-busy="accurate" hidden>高精度モデルを読み込んでいます…</span>
+            <span data-busy="page" hidden>ページを読んでいます…</span>
+          </p>
+        </div>
+        <button type="button" class="stage-btn" id="btn-zoom">行を拡大</button>
+      </div>
+    </div>
+    <div class="text-col">
+      <p class="hint" id="hint" aria-live="polite">番号の付いた行をタップすると表示されます。</p>
+      <div class="text-head">
+        <h2 id="text-title">テキスト</h2>
+        <button type="button" class="btn small copy" id="btn-copy-all" hidden>
+          <span class="copy-idle"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>すべての行をコピー</span>
+          <span class="copy-done"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>コピーしました</span>
+        </button>
+      </div>
+      <p class="summary" id="page-summary" aria-live="polite"></p>
+      <div class="transcript" id="transcript" lang="ja" data-no-i18n hidden></div>
+      <h3 class="lines-title" id="lines-title">読み順の行</h3>
+      <ol class="lines" id="lines" aria-labelledby="lines-title"></ol>
+      <label class="check low-toggle" id="low-toggle" hidden><input type="checkbox" id="opt-low"> <span>ハンター文字ではないかもしれない行も表示</span> <span class="count" id="low-count"></span></label>
+
+      <div class="result" id="result" aria-live="polite" hidden>
+        <div class="result-head">
+          <div class="result-text">
+            <div class="kana" id="out-kana" lang="ja"></div>
+            <div class="romaji" id="out-romaji"></div>
+          </div>
+          <button type="button" class="btn small copy" id="btn-copy-line">
+            <span class="copy-idle"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>この行をコピー</span>
+            <span class="copy-done"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>コピーしました</span>
+          </button>
+        </div>
+        <div class="expected" id="out-expected" hidden></div>
+        <figure class="strip">
+          <div class="strip-box" id="strip-box">
+            <canvas id="strip" width="256" height="32"></canvas>
+            <div class="pad-mark" id="pad-mark" hidden><span>余白</span></div>
+          </div>
+          <figcaption id="strip-caption">読み取りAIが見たもの。</figcaption>
+        </figure>
+        <ul class="notices" id="out-notices"></ul>
+        <p class="timing" id="out-timing"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="workspace live" id="live" hidden aria-label="ライブカメラ">
+    <div class="stage-col">
+      <div class="live-stage" id="live-stage">
+        <video id="live-video" playsinline muted></video>
+        <canvas id="live-overlay" aria-label="カメラの映像。見つかった文字の行と、その読み取り結果を表示しています。行をタップすると、その場面で画面を止めます。"></canvas>
+      </div>
+    </div>
+    <div class="text-col">
+      <p class="hint" id="live-note" aria-live="polite"></p>
+      <div class="live-tools">
+        <span class="live-stats" id="live-stats" aria-live="off"></span>
+        <button type="button" class="btn" id="btn-live-stop">終了</button>
+        <button type="button" class="btn primary" id="btn-live-freeze">静止画にする</button>
+      </div>
+      <h2 class="lines-title" id="live-lines-title">読み取り中の行</h2>
+      <ol class="lines" id="live-lines" aria-labelledby="live-lines-title"></ol>
+    </div>
+  </section>
+
+  <details class="about">
+    <summary>しくみ</summary>
+    <p>ハンター文字は、日本語のかなと一対一に対応する暗号です。濁音は元の文字の右下に小さな点を、半濁音は小さな丸を付けて表します。</p>
+    <p>生成した画像だけで学習した（本物のマンガはまだ使っていません）3 つの小さなモデルが、順番に動きます。まず<strong>行さがしAI</strong>（MobileNetV4 をバックボーンにした DBNet 型のセグメンテーションモデル）が、640&nbsp;px（高精度では 960&nbsp;px）に縮小した画像を見て文字の行をすべて見つけ、その傾きと、横書きか縦書きかを調べます。枠には読み順に番号が付きます（縦書きの列は右から左）。次に各行をまっすぐに切り出し、グレーにして、高さ <span id="about-h">48</span>&nbsp;px に拡大縮小し、幅 <span id="about-w">768</span>&nbsp;px まで余白を足してから、<strong>読み取りAI</strong>がかなに変えます。読み取りAIは横書き用と縦書き用の 2 つがあり、縦書きの列は横に倒して見ます。出力はひらがな 73 文字、空白、数字と <span lang="zxx">! ? : / . -</span> で、カタカナや小さいかなは通常の大きさのひらがなとして出てきます。</p>
+    <p><strong>高速と高精度</strong> モデルは 2 組あります。高速（約 1&nbsp;MB）は速く、大きな写真は小さく区切って拡大し、もう一度見ます。ライブカメラは常にこちらを使います。高精度（約 3.6&nbsp;MB、高速のあとに読み込み）は行さがしAIも読み取りAIも大きく、画面やカード、看板を撮った写真をずっとよく読めます。大きな写真 1 枚にノートパソコンで約 0.5 秒かかります。画像の上の「モデル」で切り替えると、ページを読み直します。</p>
+    <p>すべては Rust で書かれ、WebAssembly にコンパイルされた軽量な int8 エンジンで動くので、何もアップロードされません。</p>
+    <p><strong>ライブカメラ。</strong>カメラの映像を 1 秒間に数回読み取ります。処理するフレームごとに行さがしAIと読み取りAIが動き、表示がちらつかないように、各行には直近の数フレームでいちばん多かった読みを表示します。「静止画にする」を押す（または行をタップする）と、その画面が残り、すべての行の詳細を見られます。このページでブラウザがカメラを開けない場合は、代わりに動くサンプルページでライブモードを動かします。</p>
+    <p><strong>ヒント。</strong>大きな写真では、小さな文字がページ全体の読み取りで見落とされることがあります。その文字をタップすると、行さがしAIがタップした場所の周りを、より高い解像度でもう一度見ます。それでも行が見つからないときは、その行を枠で囲んでください。1 回で読めるのは 16 文字ほどで、それより長い行は縮めて読みます。いちばん難しいのは小さな濁点と半濁点なので、それがはっきり見えるくらいまで近づいてください。自信のない文字には下線が付きます。タップすると、次の候補が表示されます。</p>
+  </details>
+</main>
+
+<footer class="foot">
+  <p id="status">モデルを読み込んでいます…</p>
+  <p id="model-info" class="muted"></p>
+</footer>
+
+<div class="drop-overlay" id="drop-overlay" hidden>
+  <div class="drop-panel">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5M4 15.5V19a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <p>画像をドロップすると読み取ります</p>
+  </div>
+</div>
+<p class="toast" id="toast" role="status" aria-live="polite"></p>
+<p class="visually-hidden" id="sr-status" role="status" aria-live="polite"></p>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+{
+  "args": {
+    "onnx": "models/toy_trained_avg_op18.onnx",
+    "tag": "trained_avg_op18_w16a16",
+    "target": "esp32s3",
+    "quant_type": "w16a16",
+    "calib_n": 64,
+    "calib_bs": 8,
+    "calib_algo": null,
+    "eval_n": 256,
+    "tqt": false,
+    "tqt_steps": 500,
+    "tqt_lr": 1e-05,
+    "tqt_block": 4,
+    "tqt_int_lambda": 0.25,
+    "test_values": false,
+    "no_qdq": false,
+    "mixed": []
+  },
+  "quantize_seconds": 6.138984680175781,
+  "calib": {
+    "n": 64,
+    "cos_mean": 0.9905443630577188,
+    "cos_min": 0.9598411639671831,
+    "snr_db_mean": 18.880828068395,
+    "snr_db_min": 8.968001516060456,
+    "argmax_agree_mean": 0.96533203125,
+    "argmax_agree_min": 0.84375,
+    "timesteps_disagree": 142,
+    "timesteps_total": 4096,
+    "greedy_seq_identical": 0.40625,
+    "fp32_top1_margin_median": 10.609904885292053,
+    "max_abs_err": 22.62104034423828
+  },
+  "simplified_vs_original_maxabs": 0.0,
+  "holdout": {
+    "n": 256,
+    "cos_mean": 0.988483895412696,
+    "cos_min": 0.9313580704910053,
+    "snr_db_mean": 17.6896373907041,
+    "snr_db_min": 7.056140170279612,
+    "argmax_agree_mean": 0.968994140625,
+    "argmax_agree_min": 0.8125,
+    "timesteps_disagree": 508,
+    "timesteps_total": 16384,
+    "greedy_seq_identical": 0.47265625,
+    "fp32_top1_margin_median": 10.698599576950073,
+    "max_abs_err": 39.55428695678711
+  },
+  "holdout_cer": {
+    "fp32": 0.20418006430868169,
+    "ppq_int8": 0.2808145766345123
+  },
+  "qdq_error": "InvalidGraph: [ONNXRuntimeError] : 10 : INVALID_GRAPH : Load model from experiments\\esp_ppq_spike\\out\\trained_avg_op18_w16a16\\model_qdq.onnx failed:This is an invalid model. Type Error: Type 'tensor(int32)' of input parameter (PPQ_Variable_2) of operator (QuantizeLinear) in node (PPQ_Operation_0) is invalid.",
+  "sizes": {
+    "fp32_onnx": 80348,
+    "espdl": 57680
+  }
+}

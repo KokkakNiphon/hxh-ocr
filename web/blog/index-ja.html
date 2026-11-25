@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ja" data-fig="図" data-table="表">
+<head>
+<meta charset="utf-8">
+<script src="../theme.js"></script>
+<script src="i18n-ja.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>ハンター文字を読む初めての OCR のしくみ · HxH OCR</title>
+<meta name="description" content="『HUNTER×HUNTER』のハンター文字を読む初めての OCR のしくみを、図で紹介します。ピクセルやフィルターからニューラルネットワーク、作り物の画像での学習、1 行を 1 ステップずつ読むところまで、初心者向けのコンピュータービジョン入門です。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="blog.css">
+<link rel="stylesheet" href="explain.css">
+<!-- site:begin (scripts/site_meta.py) -->
+<link rel="canonical" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/index-ja">
+<link rel="alternate" hreflang="en" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/">
+<link rel="alternate" hreflang="th" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/index-th">
+<link rel="alternate" hreflang="ja" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/index-ja">
+<link rel="alternate" hreflang="x-default" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/">
+<meta name="author" content="KokkakNiphon">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#2340d8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HxH OCR">
+<meta property="og:title" content="ハンター文字を読む初めての OCR のしくみ · HxH OCR">
+<meta property="og:description" content="『HUNTER×HUNTER』のハンター文字を読む初めての OCR のしくみを、図で紹介します。ピクセルやフィルターからニューラルネットワーク、作り物の画像での学習、1 行を 1 ステップずつ読むところまで、初心者向けのコンピュータービジョン入門です。">
+<meta property="og:url" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/index-ja">
+<meta property="og:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HxH OCR: the first OCR for the Hunter × Hunter alphabet, reading a manga page.">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="th_TH">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ハンター文字を読む初めての OCR のしくみ · HxH OCR">
+<meta name="twitter:description" content="『HUNTER×HUNTER』のハンター文字を読む初めての OCR のしくみを、図で紹介します。ピクセルやフィルターからニューラルネットワーク、作り物の画像での学習、1 行を 1 ステップずつ読むところまで、初心者向けのコンピュータービジョン入門です。">
+<meta name="twitter:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../site.css">
+<script src="../lang.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "url": "https://hxh-ocr.kokkakniphon.workers.dev/blog/index-ja", "inLanguage": "ja", "description": "『HUNTER×HUNTER』のハンター文字を読む初めての OCR のしくみを、図で紹介します。ピクセルやフィルターからニューラルネットワーク、作り物の画像での学習、1 行を 1 ステップずつ読むところまで、初心者向けのコンピュータービジョン入門です。", "image": "https://hxh-ocr.kokkakniphon.workers.dev/og.png", "author": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "headline": "ハンター文字を読む初めての OCR のしくみ · HxH OCR", "datePublished": "2026-11-25", "dateModified": "2026-11-25", "publisher": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "mainEntityOfPage": "https://hxh-ocr.kokkakniphon.workers.dev/blog/index-ja", "about": [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}], "isPartOf": {"@type": "WebSite", "name": "HxH OCR", "url": "https://hxh-ocr.kokkakniphon.workers.dev/"}}</script>
+<!-- site:end -->
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index-ja.html"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M5.6 6.52H14.4M5.6 13.48H14.4M10 6.52V13.48M19.28 14.39L26.14 5.61M9.92 18.45V25.55M5.73 25.55H14.27M16.8 18.52L19.36 22.04L16.8 25.48M19.36 22.04H24.56M27.2 18.52L24.56 22.04L27.2 25.48"/><circle cx="19.7" cy="7.95" r="1.84"/></svg>HxH OCR</a>
+    <nav aria-label="サイト">
+      <a href="../index-ja.html">リーダー</a>
+      <a href="index-ja.html" aria-current="page">しくみ</a>
+      <a href="deep-dive-ja.html">詳細解説</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="テーマ" data-auto="自動" data-light="ライト" data-dark="ダーク" aria-label="テーマ: 自動">
+      <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      <svg class="ic-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ic-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="nav-cta" href="../index-ja.html">リーダーを試す</a>
+  </div>
+</header>
+
+<main class="post">
+  <div class="post-head">
+    <p class="kicker">解説 <span>·</span> はじめてのコンピュータービジョン</p>
+    <p class="meta">文: <a class="byline" href="https://github.com/KokkakNiphon" rel="author">KokkakNiphon</a> <span>·</span> 2026年11月25日 <span>·</span> 読了目安 15 分 <span>·</span> <a href="deep-dive-ja.html">技術的な詳細解説 →</a></p>
+    <h1>小さなAIが『HUNTER×HUNTER』のハンター文字を読めるようになるまで</h1>
+    <p class="dek">見たこともない暗号の文字を、コンピューターにどうやって読ませるのでしょう？ コンピューターに写真がどう見えているのかから、まちがいからどう学ぶのかまで、その道のりを一歩ずつ、図を使って紹介します。数学やプログラミングの知識はいりません。</p>
+    <p class="post-update"><b>更新（2026年11月25日）</b> <a href="../index-ja.html">読み取りページ</a>で、新しいモデルを 2 組使えるようになりました。「高速」はこの記事の小さな読み取りAIを、写真に近い画像でさらに学習させたもので、数字と一部の記号も読めます。「高精度」はもっと大きなモデルで、本物の写真をずっとよく読めます。以下で説明する仕組みは変わりません。</p>
+    <p class="post-update"><b>更新（2026年11月26日）</b> 文字デザインの一部として描かれた数字（型番の「07」や、タイトルの後の「!!」など）も読める読み取りAIを学習させました。読み取りページにはまだ入れていません。詳しくは<a href="deep-dive-ja.html#app-v6">技術レポート</a>にあります。</p>
+  </div>
+
+  <div class="post-grid">
+    <aside class="toc-rail">
+      <nav class="toc" aria-label="目次">
+        <p class="label">目次</p>
+        <ol id="toc"></ol>
+      </nav>
+      <a class="rail-card" href="deep-dive-ja.html">
+        <span class="label">もっと知りたい人へ</span>
+        <span class="rail-title">詳細解説を読む</span>
+        <span class="rail-text">モデルの構成、学習、int8 量子化、すべての実験とその数値。</span>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+    </aside>
+
+    <article id="article">
+      <figure class="fig decoder-fig">
+        <div class="decoder" id="decoder" role="img" aria-label="アニメーション: ハンター文字がかなに変わり、さらにローマ字に変わります。"></div>
+        <figcaption>図 # — 全体のアイデアを一行で。ハンター文字の記号は、1つが日本語の1音に対応しています。コンピューターは記号をかなに、かなをローマ字に変換します。</figcaption>
+      </figure>
+
+      <p class="lede">スマホは、あなたの顔を見てロックを解除したり、犬の写真を全部見つけ出したり、カメラ越しに看板の文字を読んだりできます。これはすべて<strong>コンピュータービジョン</strong>、つまりコンピューターに画像を理解させる技術です。このページでは、小さなコンピュータービジョンのプロジェクトがどう動くのかを、最初から最後まで紹介します。アニメ『HUNTER×HUNTER』に出てくる架空の文字を読むリーダーで、スマホに収まるほど小さなものです。私たちの知る限り、この文字を画像から読めるプログラムは、世界でこれが<strong>初めて</strong>です。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="big-picture">全体の流れ</h2>
+      <p>細かい話に入る前に、写真がたどる道のりを全部見ておきましょう。それぞれの停留所が、このあと出てくる小さなアイデアです。停留所をタップすると、その説明に飛べます。</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="journey" id="journey"></div></div>
+        <figcaption>図 # — 写真から文字へ。難しい部分は2つの小さなAIモデル（行さがしAIと読み取りAI）が担当し、それ以外はすべて単純なステップです。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="code">正体は日本語の暗号</h2>
+      <p>『HUNTER×HUNTER』の看板やサブタイトルに出てくる文字は、まったく新しいアルファベットのように見えますが、実は<strong>暗号</strong>です。ハンター文字の記号は、ひとつひとつが あ・か・ん のような日本語の<em>かな</em>に対応しています。記号は全部で47個。右下に小さな点を付けると濁音になり、か が が に変わります。小さな丸を付ければ、は が ぱ になります。</p>
+
+      <figure class="fig">
+        <div class="fig-box">
+          <div class="fig-title">47個の記号</div>
+          <div class="fig-sub">記号をタップするか、マウスを重ねると大きく表示されます</div>
+          <div class="glyph-chart" id="glyph-chart" role="list"></div>
+          <div class="glyph-detail" id="glyph-detail" aria-live="polite"></div>
+        </div>
+        <figcaption>図 # — ハンター文字の一覧。五十音順（あ、い、う、え、お、か、き、く…）に並べています。</figcaption>
+      </figure>
+
+      <figure class="fig">
+        <div class="fig-box">
+          <div class="fig-title">自分で書いてみよう</div>
+          <div class="fig-sub">かなを入力するか、名前をタップしてください</div>
+          <div class="encoder">
+            <input id="enc-input" type="text" lang="ja" value="ごん" aria-label="ハンター文字で書くかな" autocomplete="off" spellcheck="false">
+            <div class="enc-presets" id="enc-presets"></div>
+            <div class="enc-out" id="enc-out" aria-live="polite"></div>
+            <div class="enc-romaji" id="enc-romaji"></div>
+          </div>
+        </div>
+        <figcaption>図 # — 暗号で書くのは簡単です。音ごとに表で記号を探すだけ。むずかしいのは読むほうです。コンピューターに渡されるのは画像だけだからです。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="see">コンピューターには何が見えている？</h2>
+      <p>写真を見ると、私たちには形や色や意味が見えます。でもコンピューターに見えているのは<strong>数字</strong>です。画像はすべて<strong>ピクセル</strong>（画素）と呼ばれる小さなマス目の集まりで、ピクセル1つ1つが1つの数字になっています。白黒の画像なら、0 が黒、255 が白で、その間の数字は濃さのちがう灰色です。</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="pixels" id="pixels"></div></div>
+        <figcaption>図 # — 読み取りAIが実際に読んだ行から、記号を1つ拡大したところ。マス1つが1ピクセルです。数字を表示すると、コンピューターが実際に受け取っているものが見えます。</figcaption>
+      </figure>
+      <p>この図の帯は高さ48ピクセル、幅768ピクセル。つまり 36,864 個の数字です。コンピューターの仕事は、この数字を正しい文字に変えること、ただそれだけです。でも、そのためのルールを人が手で書くことはできません（「1,203 番のピクセルが暗くて、1,204 番が明るかったら…」）。そこで、コンピューターにお手本からルールを<em>学ばせる</em>のです。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="filters">小さな型紙で輪郭を見つける</h2>
+      <p>コンピュータービジョンの最初の技は<strong>フィルター</strong>です。3×3 に数字が並んだ小さな型紙のようなもので、コンピューターはこれを画像の上で少しずつずらしていきます。それぞれの場所で、型紙の下にある9個のピクセルに、型紙の9個の数字をそれぞれ掛けて、全部足し合わせます。画像の模様が型紙と合っていれば答えは大きくなり、合っていなければ 0 に近くなります。ある型紙は縦にのびる輪郭を、別の型紙は横にのびる輪郭を見つけ、また別の型紙は画像をぼかします。</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="conv" id="conv"></div></div>
+        <figcaption>図 # — 記号の上をすべっていくフィルター。型紙を選ぶと、その模様がある場所で右の画像が明るく光ります。本物のピクセルで本物の計算をしています。</figcaption>
+      </figure>
+
+      <h3>層: 輪郭から記号へ</h3>
+      <p>フィルター1つで見つけられるのは、輪郭のような単純なものだけです。<strong>ニューラルネットワーク</strong>は、フィルターの層をたくさん積み重ねたものです。最初の層は輪郭を見つけ、次の層は輪郭を組み合わせて線やカーブにし、その後ろの層は記号の部品を見つけ、最後の層がどの記号なのかを決めます。この読み取りAIには数十の層があり、フィルターの中にはおよそ 320,000 個の数字が入っています。その数字を人が手で決めたわけではありません。コンピューターが練習して見つけたのです。</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="layers" id="layers"></div></div>
+        <figcaption>図 # — 層がしていることを簡単に描いた図。最初の2つのパネルは本物の記号から計算したもので、真ん中のパネルは、もっと深い層が反応するものを絵で表したものです。</figcaption>
+      </figure>
+
+      <h3>さわって試せるニューラルネットワーク</h3>
+      <p>これは本物のニューラルネットワークです。全体が見えるほど小さく、知っている記号は6つだけ。左側が入力で、16&nbsp;×&nbsp;16 のマス目のピクセル、つまり 256 個の数字です。丸の1つ1つが<strong>ニューロン</strong>という小さな計算機です。ニューロンは、入ってきた数字それぞれに自分の<strong>重み</strong>を掛けて全部足し合わせ、合計が 0 より大きければ次へ渡します。線が重みを表しています。太い線は大きな重みで、青い線は次のニューロンの値を押し上げ、紫の線は押し下げます。右側の6つのニューロンがそれぞれの記号に点数を付け、いちばん点数の高い記号が答えになります。</p>
+      <figure class="fig">
+        <div class="fig-box"><div id="tinynet"></div></div>
+        <figcaption>図 # — 256&nbsp;→&nbsp;12&nbsp;→&nbsp;8&nbsp;→&nbsp;6 の本物のネットワークが、あなたのブラウザの中で動いています。この6つの記号をゆらして描いた 24,000 枚の絵で（このあと説明するやり方で）練習していて、初めて見る絵なら 100 枚中およそ 95 枚を正しく答えます。ぐ の点を消すと、答えが く に変わります。本物の読み取りAIもしくみは同じで、ずっと大きいだけです。</figcaption>
+      </figure>
+      <p>最初の列のニューロンが何を探しているかを見てみましょう。重みがマス目の上に模様を作っています。青はインクがほしい場所、紫はインクがほしくない場所です。この模様は誰かが描いたものではありません。記号を見分けるのに役立つので、ネットワークが練習のあいだに自分で見つけたのです。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="jobs">「読む」は2つの仕事</h2>
+      <p>マンガのページを読むとき、私たちは気づかないうちに2つのことをしています。まず文字の部分を<strong>見つける</strong>（この吹き出し、あの看板）。次に、それぞれを<strong>読む</strong>。このアプリも同じで、仕事ごとに小さなニューラルネットワークを1つずつ使います。</p>
+
+      <div class="steps3" id="steps3">
+        <figure class="step">
+          <div class="step-media"><img src="img/pipeline/05_boxes.webp" alt="文字の行がすべて枠で囲まれ、番号が振られたマンガのページ。" loading="lazy"></div>
+          <figcaption><span class="step-n">1</span><strong>見つける</strong>：文字の行をすべて探し、読む順番も決めます。</figcaption>
+        </figure>
+        <figure class="step">
+          <div class="step-media strips" id="step-strips"></div>
+          <figcaption><span class="step-n">2</span><strong>切り出す</strong>：行を1本ずつ切り取り、まっすぐな帯にします。</figcaption>
+        </figure>
+        <figure class="step">
+          <div class="step-media reads" id="step-reads"></div>
+          <figcaption><span class="step-n">3</span><strong>読む</strong>：帯をかなに、さらにローマ字に変えます。</figcaption>
+        </figure>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2 id="examples">お手本はどこから来るの？</h2>
+      <p>ニューラルネットワークは<strong>お手本</strong>から学びます。たくさんの画像と、それぞれに付けた正しい答えです。このお手本の集まりを<strong>データセット</strong>と呼びます。読み方を覚えるには、読み取りAIには何十万ものお手本が必要です。でも、ハンター文字の画像をそんなにたくさん集めて答えを付けた人はいません。本物の画像は数十枚ほどしかないのです。そこで、ここで使う学習用の画像はすべて<strong>作り物</strong>です。プログラムが記号を描いてから、わざと汚したり崩したりして、現実のごちゃごちゃした画像にも対応できるようにしています。プログラム自身が描いたので、正しい答えはいつも分かっています。</p>
+
+      <figure class="fig">
+        <div class="fig-box">
+          <div class="fig-title">学習用の画像を作ってみる</div>
+          <div class="fig-sub">作り物のお手本が1枚できるまでを、順番に見てみましょう。正しい答えの ごん（ゴン）は最初から分かっています。</div>
+          <div class="maker" id="maker"></div>
+        </div>
+        <figcaption>図 # — ステップごとに画像は読みにくくなり、ネットワークは本物の画像がどう見えるかを学びます。実際のプログラムは、すべての設定をランダムに選びます。</figcaption>
+      </figure>
+
+      <p>これをランダムな設定で50万回くり返せば、学習用の教科書のできあがりです。このプログラムはこれまでに4回作り直しました。ネットワークが現実の何か（たとえば ま の別の書き方や、文字のすぐ横に立つキャラクターの絵）でつまずくたびに、プログラムもそれを描けるようにしてきたのです。</p>
+
+      <figure class="fig">
+        <div class="fig-media fig-strips"><img src="img/synth/lines_v4.webp" alt="さまざまなスタイルと背景で描かれた、作り物のハンター文字の学習用の行の一覧。" loading="lazy"></div>
+        <figcaption>図 # — 50万本ある作り物の学習用の行の一部。どれも作品から取ったものではありません。</figcaption>
+      </figure>
+
+      <p>ページの中から行を見つける練習用には、2つ目のプログラムがマンガのページを丸ごと作ります。コマ、吹き出し、看板。さらに英語や日本語、アイコンなど、ハンター文字<em>ではない</em>ものもたくさん描き込んで、行さがしAIがそれらを無視できるようにしています。</p>
+      <figure class="fig">
+        <div class="fig-media"><img src="img/synth/pages_v2.webp" alt="ハンター文字の行が枠で囲まれた、作り物のマンガのページ6枚。" loading="lazy"></div>
+        <figcaption>図 # — 作り物の学習用ページ。ハンター文字の行はすべて枠で囲んであり、これが行さがしAIが学ぶ正しい答えです。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="practice">学び方: 予想して、確かめて、直す</h2>
+      <p>最初、ネットワークの中の数字はでたらめなので、予想もめちゃくちゃです。そこから、何回も何回も練習します。</p>
+      <ol class="learn-steps">
+        <li>お手本をひとまとまり<strong>見せる</strong>（ここでは一度に作り物の行を 128 本）。</li>
+        <li>それぞれに何と書いてあるかを<strong>予想</strong>させる。</li>
+        <li>予想を正しい答えと比べて<strong>確かめ</strong>、どれくらいまちがえたかを測る。</li>
+        <li>予想のまちがいが少なくなる方向へ、中の数字を1つ残らず、ほんの少しずつ<strong>直す</strong>。</li>
+      </ol>
+      <p>1回の調整はほんのわずかですが、何千回もくり返すと、ネットワークはとても上手になります。バスケットボールのフリースローの練習に少し似ています。外れるたびに、ねらいをどう変えればいいかが分かるのです。</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="learn" id="learn"></div></div>
+        <figcaption>図 # — 左: 練習のくり返し。右: 学習中に読み取りAIが実際にしたまちがいの数。練習には使っていない行で測っています。1,000 回練習したあとは 100 文字中 3〜4 文字ほどまちがえていましたが、30,000 回のあとは 1 文字未満になりました。</figcaption>
+      </figure>
+      <p>大事なルールが1つあります。テスト用の行は、練習用の行とは<strong>別に</strong>しておくことです。そうしないと、ネットワークは答えを丸暗記できてしまいます。テストの問題を前もって見ていた生徒のようなもので、本当の実力よりかしこいと勘ちがいしてしまうのです。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="read">1行の読み方</h2>
+      <p>読み取りAIは、指で文字をなぞるようにして帯を読みます。4ピクセルごとに1歩、全部で192歩進みながら、一歩ごとに「どの記号が見えるか」、または「ここには何もない」と答えます。</p>
+      <p>まず帯は、ネットワークの層を通ります。上の6記号のネットワークと同じしくみですが、ニューロンの数はずっと多くなります。各層は入力を、<strong>特徴マップ</strong>と呼ばれる新しい画像の束に変えます。特徴マップはそれぞれ、自分の担当の模様を見つけた場所で光ります。層を進むごとに画像は<strong>低く</strong>なり（高さ48ピクセル、次に24、12、6、3、2）、そのかわり枚数は<strong>増えて</strong>いきます（最大64枚）。最後には、帯の上の1歩1歩が 64 個の数字のリストで表され、最後の層がそのリストを、75 通りの答えそれぞれの点数に変えます。</p>
+
+      <figure class="fig">
+        <div class="fig-box"><div id="inside"></div></div>
+        <figcaption>図 # — 本物の読み取りAIが ぐりーどあいらんど を読んでいるときの中身。各行は、ある段階の層を通ったあとの特徴マップのうち、いくつかを表示しています。明るいほど信号が強いという意味です。図の上でカーソルを動かすとステップを選べます。帯の上の枠は、そのステップがいちばん注目している部分で、下の行はそのステップの点数です。</figcaption>
+      </figure>
+
+      <p>ほとんどの歩は「何もない」と答えます。記号と記号のすき間に当たるからです。そこで読み取りAIは、2段階で整理します。まず、同じ記号を見た歩が続いていたら、くっつけて1つに数えます。次に、「何もない」の歩を捨てます。残ったものが答えの文字です。</p>
+
+      <figure class="fig">
+        <div class="fig-box"><div class="ctc" id="ctc"></div></div>
+        <figcaption>図 # — 本物の読み取りAIが本物の行を1ステップずつ読むところ。1段目: 各ステップの答え。記号ごとに色が付き、「何もない」は灰色です。2段目: 続く同じ答えをくっつけたもの。3段目: 「何もない」の歩（ブランクと呼びます）を捨てたもの。最後には記号が詰まって読みになります。下: カーソル周りの9ステップの拡大図と、そこでの読み取りAIの予想ベスト3。</figcaption>
+      </figure>
+      <p>そもそも、なぜ「何もない」という答えが必要なのでしょう？ それは、同じ記号が2つ続く言葉があるからです。たとえば「ここ」。間に「何もない」の歩がなければ、2つの こ はくっつけられて、1つの こ になってしまいます。</p>
+      <p>予想に注目してください。読み取りAIが ぐ を見ているとき、2番目の候補は く です。点がないだけの同じ形ですね。ど のときの次点は と です。ネットワークはただ答えを1つ選ぶのではなく、ありうるすべての答えに<strong>信頼度</strong>（どれくらい自信があるか）を付けます。アプリはこの信頼度を使って、どの読みを信用するかを決めています。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="find">行の見つけ方</h2>
+      <p>行さがしAIは、いきなり枠を描くわけではありません。まず、文字の行の<strong>真ん中</strong>だけを塗ります。行の中心だけをなぞる蛍光ペンのようなものです。そのあと簡単な図形の計算で、塗った筋を外側へ広げて枠に戻します。真ん中だけを塗るのは、すぐ近くに並んだ行どうしがくっついて1つの塊になるのを防ぐためです。もう1種類の塗り分けで、それぞれの行が横書きか縦書きかも示します。</p>
+
+      <figure class="fig">
+        <div class="swipe" id="swipe">
+          <img src="img/pipeline/02_letterbox.webp" alt="行さがしAIが見ているページ。" class="swipe-base">
+          <div class="swipe-top"><img src="img/pipeline/03_kernel.webp" alt="行さがしAIが塗った部分を重ねた同じページ。"></div>
+          <div class="swipe-handle" aria-hidden="true"><span>‹ ›</span></div>
+          <input type="range" min="0" max="100" value="50" aria-label="ドラッグして、元のページと行さがしAIが塗った部分を見比べる">
+          <span class="swipe-label left label">人が見るページ</span>
+          <span class="swipe-label right label">AIが塗った部分</span>
+        </div>
+        <figcaption>図 # — つまみをドラッグしてみてください。青い筋は行さがしAIそのものの出力で、見つけた行それぞれの真ん中です。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="tiny">小さく、速く、プライバシーも安心</h2>
+      <p>たいていのAIモデルは、スマホのWebブラウザで動かすには大きすぎます。この3つのモデルはとても小さく、<strong>3つ合わせて約1&nbsp;MB</strong>。スマホのカメラで撮った写真1枚よりも小さいのです。それを可能にしているのが2つの工夫です。</p>
+      <p>1つ目は、ネットワークがもともと小さいこと。スマホ向けに作られた <strong>MobileNet</strong> という設計をもとにしています。2つ目は、中の数字を1つ1つ<strong>4バイトではなく1バイト</strong>で記録していること。値段の細かい端数を丸めて、きりのいい金額にしておくようなものです。丁寧に丸めれば、精度はほとんど落ちません。</p>
+
+      <figure class="fig">
+        <div class="fig-box">
+          <div class="fig-title">同じ数を、2通りの方法で</div>
+          <div class="fig-sub">モデルにはこうした数がおよそ100万個入っています</div>
+          <div class="bytes" id="bytes"></div>
+        </div>
+        <figcaption>図 # — 数1つを4バイト（float32）ではなく1バイト（int8）で記録すると、モデルは4分の1の大きさになり、スマホは高速な整数の計算を使えるようになります。</figcaption>
+      </figure>
+
+      <figure class="fig">
+        <div class="fig-box"><div id="chart-sizes"></div></div>
+        <figcaption>図 # — ふつうのパソコンのプロセッサ（1コア）で、各ステップにかかる時間（ミリ秒）。まばたき1回はおよそ100〜400ミリ秒です。</figcaption>
+      </figure>
+
+      <p>これはすべて<strong>あなたの端末の中</strong>で動きます。モデルはページと一緒に一度だけダウンロードされ、あなたの画像がスマホの外に出ることはありません。モデルを動かすプログラムは Rust というプログラミング言語で書かれ、WebAssembly という形式に変換されています。WebAssembly は、最近のブラウザならどれでも動かせる形式です。</p>
+
+      <figure class="fig">
+        <div class="fig-box privacy" id="privacy"></div>
+        <figcaption>図 # — すべてはスマホのブラウザの中で完結します。何もアップロードされません。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="vertical">縦書きは横に倒して読む</h2>
+      <p>日本語は縦書きも多く、マンガの吹き出しはたいてい縦書きです。アプリはこうした縦の列を横に倒して、ふつうの左から右への帯にします。そして、倒した列だけで訓練した2つ目の読み取りAIが、それを読みます。</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="turn" id="turn"></div></div>
+        <figcaption>図 # — 縦の列を90度回転させると、最初の記号が左端に来ます。それを縦書き用の読み取りAIが読みます。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="live">ライブカメラ</h2>
+      <p>スマホのカメラをハンター文字に向けると、リーダーは1秒間に数回、画像を読み取ります。1回だけだと記号を1つ読みまちがえることがあり、表示がちらついてしまいます。そこで各行は直近5回の読み取り結果を覚えておき、いちばん多かったものを表示します。</p>
+      <figure class="fig">
+        <div class="fig-box"><div class="vote" id="vote"></div></div>
+        <figcaption>図 # — 同じ看板を5回すばやく見たところ。1回は記号を読みまちがえていますが、多数決で勝つのは正しい読みなので、表示は安定したままです。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="limits">まだできないこと</h2>
+      <ul class="limits">
+        <li><strong>練習したのは作り物の画像だけです。</strong>本物のスキャン画像や写真はもっと難しいかもしれませんが、テストに使える本物の例は、まだたくさんはありません。</li>
+        <li><strong>とても小さな文字は見落とします。</strong>リーダーでその部分をタップすると、行さがしAIがもっと近くから見直します。</li>
+        <li><strong>ほかの文字がまぎれこむこともあります。</strong>最初のバージョンは、英語や日本語、アイコンまで枠で囲んでいました。そこで行さがしAIを、そうした文字だらけのページで学び直させたところ、それらを無視できるようになりました。ハンター文字がほとんどないテスト用のページでは、ふつうの文字をまちがって囲む枠が、1ページあたり25個から1個未満に減りました。さらにアプリは、自信のない行を隠すようにしています。</li>
+        <li><strong>句読点には対応していません。</strong>また、小さいかな（ゃ、っ）は、ふつうの大きさのかなとして出てきます。</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <h2 id="words">覚えておきたい言葉</h2>
+      <dl class="glossary">
+        <div><dt>コンピュータービジョン</dt><dd>コンピューターに画像や動画を理解させる技術。</dd></div>
+        <div><dt>ピクセル（画素）</dt><dd>画像を作っている小さなマス1つ。数字1つ（カラーなら数字3つ）で記録される。</dd></div>
+        <div><dt>フィルター</dt><dd>画像の上をすべらせて、輪郭などの模様を見つける、数字の小さな型紙。</dd></div>
+        <div><dt>ニューラルネットワーク</dt><dd>フィルターの層をたくさん積み重ねたもの。中の数字は人が手で書くのではなく、学習で決まる。</dd></div>
+        <div><dt>データセット</dt><dd>ネットワークが学ぶためのお手本の集まり。どのお手本にも正しい答えが付いている。</dd></div>
+        <div><dt>学習（トレーニング）</dt><dd>予想して、確かめて、直す。このくり返しでネットワークの数字を調整すること。</dd></div>
+        <div><dt>テストセット</dt><dd>ネットワークを公平に確かめるために取っておくお手本。練習には一度も使わない。</dd></div>
+        <div><dt>信頼度</dt><dd>ありうる答えのそれぞれについて、ネットワークがどれくらい自信があるか。0% から 100% で表す。</dd></div>
+        <div><dt>モデル</dt><dd>学習を終えて、すぐに使えるネットワーク。このアプリには3つあり、合わせて約1&nbsp;MB。</dd></div>
+      </dl>
+
+      <!-- ============================================================ -->
+      <h2 id="your-turn">次はあなたの番</h2>
+      <p>このページの内容は、すべて家庭のパソコン1台と、無料のツールと、たくさんの好奇心で作られました。あなたも今日から、コンピュータービジョンを探検できます。</p>
+      <ul class="your-turn">
+        <li><strong>リーダーを試してみよう。</strong>まずはサンプルページで、次に自分のスクリーンショットで。どこでまちがえるかを見つけて、その理由を考えてみてください。</li>
+        <li><strong>自分だけの暗号の文字を、紙の上で作ってみよう。</strong>そして考えてみてください。その文字の練習用の画像を何千枚も作るには、どうすればいいでしょう？</li>
+        <li><strong>ブラウザで自分の画像モデルを学習させてみよう。</strong>Google の Teachable Machine のような無料ツールを使えば、Webカメラを使って数分で、ものを見分けるモデルを作れます。プログラムを書く必要もありません。</li>
+        <li><strong>プログラミングを少し学んでみよう。</strong>AIでいちばんよく使われている言語は Python で、初心者向けの無料の講座がたくさんあります。このページに出てきた考え方（ピクセル、フィルター、学習）は、どのコンピュータービジョンの講座でも最初に習う内容です。</li>
+      </ul>
+
+      <h2 id="try">試してみよう</h2>
+      <p>リーダーを開いて、写真やスクリーンショットを選ぶか、サンプルページを試すか、カメラをハンター文字に向けてみてください。</p>
+      <p class="cta-row"><a class="button" href="../index-ja.html">リーダーを開く →</a> <a class="button ghost" href="deep-dive-ja.html">詳細解説を読む</a></p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <p>HxH OCR はファンによるプロジェクトです。『HUNTER×HUNTER』の権利は冨樫義博氏、集英社および制作スタジオに帰属し、本プロジェクトはこれらと一切関係ありません。文字の形はファンによる資料からトレースしたもので、学習用の画像はすべて生成したものです。</p>
+  </div>
+</footer>
+
+<script type="module" src="blog.js"></script>
+<script type="module" src="explain.js"></script>
+</body>
+</html>

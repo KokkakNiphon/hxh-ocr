@@ -1,0 +1,61 @@
+{
+  "args": {
+    "onnx": "exports/q_qat_fam_base_h48_vert.onnx",
+    "tag": "qat_fam_base_h48_vert_ptq",
+    "target": "esp32s3",
+    "quant_type": "w8a8",
+    "calib_n": 64,
+    "calib_bs": 8,
+    "calib_algo": null,
+    "eval_n": 512,
+    "tqt": false,
+    "tqt_steps": 500,
+    "tqt_lr": 1e-05,
+    "tqt_block": 4,
+    "tqt_int_lambda": 0.25,
+    "test_values": false,
+    "no_qdq": false,
+    "save_outputs": true,
+    "debug": false,
+    "mixed": []
+  },
+  "quantize_seconds": 59.17455530166626,
+  "calib": {
+    "n": 64,
+    "cos_mean": 0.9891607821857107,
+    "cos_min": 0.9704857106763347,
+    "snr_db_mean": 16.780310989612204,
+    "snr_db_min": 12.066743190505205,
+    "argmax_agree_mean": 0.9959309895833333,
+    "argmax_agree_min": 0.9791666666666666,
+    "timesteps_disagree": 50,
+    "timesteps_total": 12288,
+    "greedy_seq_identical": 0.953125,
+    "fp32_top1_margin_median": 12.111745834350586,
+    "max_abs_err": 48.287757873535156
+  },
+  "simplified_vs_original_maxabs": 0.0,
+  "holdout": {
+    "n": 512,
+    "cos_mean": 0.9879554668082022,
+    "cos_min": 0.9447092006916463,
+    "snr_db_mean": 16.488449020324143,
+    "snr_db_min": 8.491000645519309,
+    "argmax_agree_mean": 0.9948527018229167,
+    "argmax_agree_min": 0.9635416666666666,
+    "timesteps_disagree": 506,
+    "timesteps_total": 98304,
+    "greedy_seq_identical": 0.953125,
+    "fp32_top1_margin_median": 11.500353336334229,
+    "max_abs_err": 59.111642360687256
+  },
+  "holdout_cer": {
+    "fp32": 0.011286681715575621,
+    "ppq_int8": 0.008182844243792325
+  },
+  "qdq_error": "InvalidGraph: [ONNXRuntimeError] : 10 : INVALID_GRAPH : Load model from experiments\\esp_ppq_spike\\out\\qat_fam_base_h48_vert_ptq\\model_qdq.onnx failed:This is an invalid model. In Node, (\"/head/ReduceMean\", ReduceMean, \"\", -1) : (\"/blocks/blocks.3/blocks.3.5/Add_output_0\": tensor(float),\"_v_196\": tensor(int64),) -> (\"PPQ_Variable_612\": tensor(float),) , Error Node(/head/ReduceMean) with schema(::ReduceMean:13) has input size 2 not in range [min=1, max=1].",
+  "sizes": {
+    "fp32_onnx": 4715575,
+    "espdl": 1272688
+  }
+}

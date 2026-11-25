@@ -1,0 +1,61 @@
+{
+  "args": {
+    "onnx": "models/toy_trained_avg_op18.onnx",
+    "tag": "trained_avg_op18_head16",
+    "target": "esp32s3",
+    "quant_type": "w8a8",
+    "calib_n": 64,
+    "calib_bs": 8,
+    "calib_algo": null,
+    "eval_n": 256,
+    "tqt": false,
+    "tqt_steps": 500,
+    "tqt_lr": 1e-05,
+    "tqt_block": 4,
+    "tqt_int_lambda": 0.25,
+    "test_values": false,
+    "no_qdq": false,
+    "mixed": [
+      "/head/Conv=w8a16"
+    ]
+  },
+  "quantize_seconds": 3.042603015899658,
+  "calib": {
+    "n": 64,
+    "cos_mean": 0.9976003942909079,
+    "cos_min": 0.9812877744088143,
+    "snr_db_mean": 23.08884036420386,
+    "snr_db_min": 13.93937036057114,
+    "argmax_agree_mean": 0.982177734375,
+    "argmax_agree_min": 0.921875,
+    "timesteps_disagree": 73,
+    "timesteps_total": 4096,
+    "greedy_seq_identical": 0.5625,
+    "fp32_top1_margin_median": 10.609904885292053,
+    "max_abs_err": 13.832954406738281
+  },
+  "simplified_vs_original_maxabs": 0.0,
+  "holdout": {
+    "n": 256,
+    "cos_mean": 0.9971869160694604,
+    "cos_min": 0.9795888427877695,
+    "snr_db_mean": 22.646432051742476,
+    "snr_db_min": 12.445867991020666,
+    "argmax_agree_mean": 0.98504638671875,
+    "argmax_agree_min": 0.921875,
+    "timesteps_disagree": 245,
+    "timesteps_total": 16384,
+    "greedy_seq_identical": 0.66015625,
+    "fp32_top1_margin_median": 10.698599576950073,
+    "max_abs_err": 27.56600570678711
+  },
+  "holdout_cer": {
+    "fp32": 0.20418006430868169,
+    "ppq_int8": 0.2277599142550911
+  },
+  "qdq_error": "InvalidGraph: [ONNXRuntimeError] : 10 : INVALID_GRAPH : Load model from experiments\\esp_ppq_spike\\out\\trained_avg_op18_head16\\model_qdq.onnx failed:This is an invalid model. Type Error: Type 'tensor(int64)' of input parameter (head.bias) of operator (DequantizeLinear) in node (PPQ_Operation_57) is invalid.",
+  "sizes": {
+    "fp32_onnx": 80348,
+    "espdl": 38880
+  }
+}

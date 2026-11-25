@@ -1,0 +1,27 @@
+{
+  "name": "det_tiny_v3_qat",
+  "description": "Model family 'tiny' text-line detector: DBNet-lite on MobileNetV4-small 0.5 (det_v2's architecture, 350k params, 1.57 G MACs), det_v2 fine-tuned on pages_v2 / pages_v3o / pages_v5 (photo-style v5 pages: name cards, lyric videos, anime screens, pages photographed off a screen, avatars and captions as negatives) 25/25/50%, then detector QAT; int8 via ESP-PPQ PTQ, .hxhm v2 (raw output), bit-exact with ESP-PPQ (host, wasm SIMD, wasm scalar). Input 640x640 letterbox (long side to 640, top-left, pad 255); output [2,320,320] int8.",
+  "file": "det.hxhm",
+  "input": {
+    "size": 640,
+    "letterbox": "long side to 640, top-left, pad 255"
+  },
+  "params": {
+    "bin_thresh": 0.3,
+    "min_score": 0.5,
+    "min_side": 3,
+    "unclip_ratio": 1.5,
+    "shrink_ratio": 0,
+    "block_gap": 1.0
+  },
+  "pad": {
+    "along": 0.3,
+    "across": 0.2
+  },
+  "tuning": "browser pipeline, int8, reading confidence 0.8: see docs/research/JOURNAL.md (2026-11-25, model family) and experiments/family/eval",
+  "min_conf": 0.8,
+  "min_conf_note": "page lines whose mean character confidence is below this are hidden as probably not Hunter script (web/test/page_e2e.mjs --conf-sweep)",
+  "min_show_score": 0.55,
+  "min_show_score_note": "page lines whose detector score (mean text-kernel probability) is below this are hidden too (web/test/page_e2e.mjs --score-sweep)",
+  "macs": 1568825600
+}

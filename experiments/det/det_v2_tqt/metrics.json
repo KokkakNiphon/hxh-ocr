@@ -1,0 +1,148 @@
+{
+ "args": {
+  "onnx": "exports/det_v2.onnx",
+  "tag": "det_v2_tqt",
+  "data": "data/pages_v3",
+  "target": "esp32s3",
+  "calib_n": 64,
+  "calib_bs": 8,
+  "calib_algo": null,
+  "hold_offset": 900,
+  "eval_n": 100,
+  "save_n": 64,
+  "tqt": true,
+  "tqt_steps": 500,
+  "tqt_lr": 1e-05,
+  "tqt_block": 4,
+  "tqt_int_lambda": 0.25,
+  "fp32_from": null
+ },
+ "quantize_seconds": 1726.0743894577026,
+ "input_exponent": -7,
+ "output_exponent": -3,
+ "compare_holdout": {
+  "prob_snr_db": 26.486946784269637,
+  "prob_max_abs_err": 5.788556098937988,
+  "vert_snr_db": 14.492994927117435,
+  "vert_max_abs_err": 6.481249123811722,
+  "prob_binary_agree": 0.99860712890625,
+  "prob_binary_iou": 0.8993940932912937,
+  "vert_sign_agree_in_text": 0.9980884666116484
+ },
+ "sizes": {
+  "fp32_onnx": 1406001,
+  "espdl": 447040
+ },
+ "eval_fp32": {
+  "pages": 100,
+  "offset": 900,
+  "post": {
+   "logit_thresh": -0.8472978603872036,
+   "box_thresh": 0.5,
+   "min_area": 3,
+   "unclip": "exact",
+   "unclip_ratio": 1.5,
+   "unclip_scale": 0.7,
+   "min_side": 3.0
+  },
+  "detection": {
+   "precision": 0.8649669499527857,
+   "recall": 0.8297101449275363,
+   "f1": 0.8469717984281092,
+   "orient_acc": 0.9890829694323144,
+   "mean_iou": 0.8378705678518236,
+   "tp": 916,
+   "fp": 143,
+   "fn": 188,
+   "recall_h": 0.8409321175278622,
+   "recall_v": 0.7350427350427351,
+   "gt_h": 987,
+   "gt_v": 117
+  },
+  "detector_seconds": 0.007459402084350586,
+  "recognizers": {
+   "h": "runs/v4_mnv4s_h48/best.pt",
+   "v": "runs/v4_mnv4s_h48_vert/best.pt"
+  },
+  "e2e": {
+   "h": {
+    "chars": 3414,
+    "lines": 987,
+    "cer": 0.1555360281195079,
+    "cer_matched_only": 0.043146365748423496,
+    "deleted_chars_missed_lines": 401,
+    "exact_lines": 0.7548125633232016,
+    "oracle_cer": null,
+    "oracle_exact_lines": null,
+    "unread_lines": 0
+   },
+   "v": {
+    "chars": 438,
+    "lines": 117,
+    "cer": 0.21689497716894976,
+    "cer_matched_only": 0.04986149584487535,
+    "deleted_chars_missed_lines": 77,
+    "exact_lines": 0.6153846153846154,
+    "oracle_cer": null,
+    "oracle_exact_lines": null,
+    "unread_lines": 0
+   }
+  }
+ },
+ "eval_int8": {
+  "pages": 100,
+  "offset": 900,
+  "post": {
+   "logit_thresh": -0.8472978603872036,
+   "box_thresh": 0.5,
+   "min_area": 3,
+   "unclip": "exact",
+   "unclip_ratio": 1.5,
+   "unclip_scale": 0.7,
+   "min_side": 3.0
+  },
+  "detection": {
+   "precision": 0.8487394957983193,
+   "recall": 0.8233695652173914,
+   "f1": 0.8358620689655173,
+   "orient_acc": 0.988998899889989,
+   "mean_iou": 0.8308138023576729,
+   "tp": 909,
+   "fp": 162,
+   "fn": 195,
+   "recall_h": 0.8348530901722391,
+   "recall_v": 0.7264957264957265,
+   "gt_h": 987,
+   "gt_v": 117
+  },
+  "detector_seconds": 0.0071563720703125,
+  "recognizers": {
+   "h": "runs/v4_mnv4s_h48/best.pt",
+   "v": "runs/v4_mnv4s_h48_vert/best.pt"
+  },
+  "e2e": {
+   "h": {
+    "chars": 3414,
+    "lines": 987,
+    "cer": 0.1634446397188049,
+    "cer_matched_only": 0.041289023162134945,
+    "deleted_chars_missed_lines": 435,
+    "exact_lines": 0.7537993920972644,
+    "oracle_cer": null,
+    "oracle_exact_lines": null,
+    "unread_lines": 0
+   },
+   "v": {
+    "chars": 438,
+    "lines": 117,
+    "cer": 0.2374429223744292,
+    "cer_matched_only": 0.04843304843304843,
+    "deleted_chars_missed_lines": 87,
+    "exact_lines": 0.6153846153846154,
+    "oracle_cer": null,
+    "oracle_exact_lines": null,
+    "unread_lines": 0
+   }
+  }
+ }
+}

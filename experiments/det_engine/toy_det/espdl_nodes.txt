@@ -1,0 +1,96 @@
+Conv               /stem/stem.0/Conv                    {'activation': 'Relu', 'group': 1, 'strides': [2, 2]}
+    in:  input[1, 128, 128, 1] e[-7]
+    out: /stem/stem.2/Relu_output_0[1, 64, 64, 8] e[-4]
+Conv               /b1/b1.0/b1.0.0/Conv                 {'activation': 'Relu', 'group': 8, 'strides': [2, 2]}
+    in:  /stem/stem.2/Relu_output_0[1, 64, 64, 8] e[-4]
+    out: /b1/b1.0/b1.0.2/Relu_output_0[1, 32, 32, 8] e[-6]
+Conv               /l1/l1.0/Conv                        {'activation': 'Linear', 'group': 1, 'strides': [1, 1]}
+    in:  /stem/stem.2/Relu_output_0[1, 64, 64, 8] e[-4]
+    out: /l1/l1.0/Conv_output_0[1, 64, 64, 16] e[-3]
+Conv               /b1/b1.1/b1.1.0/Conv                 {'activation': 'Relu', 'group': 1, 'strides': [1, 1]}
+    in:  /b1/b1.0/b1.0.2/Relu_output_0[1, 32, 32, 8] e[-6]
+    out: /b1/b1.1/b1.1.2/Relu_output_0[1, 32, 32, 16] e[-3]
+Conv               /b2/b2.0/b2.0.0/Conv                 {'activation': 'Relu', 'group': 16, 'strides': [2, 2]}
+    in:  /b1/b1.1/b1.1.2/Relu_output_0[1, 32, 32, 16] e[-3]
+    out: /b2/b2.0/b2.0.2/Relu_output_0[1, 16, 16, 16] e[-4]
+Conv               /l2/l2.0/Conv                        {'activation': 'Linear', 'group': 1, 'strides': [1, 1]}
+    in:  /b1/b1.1/b1.1.2/Relu_output_0[1, 32, 32, 16] e[-3]
+    out: /l2/l2.0/Conv_output_0[1, 32, 32, 16] e[-2]
+Conv               /b2/b2.1/b2.1.0/Conv                 {'activation': 'Relu', 'group': 1, 'strides': [1, 1]}
+    in:  /b2/b2.0/b2.0.2/Relu_output_0[1, 16, 16, 16] e[-4]
+    out: /b2/b2.1/b2.1.2/Relu_output_0[1, 16, 16, 24] e[-4]
+Conv               /b3/b3.0/b3.0.0/Conv                 {'activation': 'Relu', 'group': 24, 'strides': [2, 2]}
+    in:  /b2/b2.1/b2.1.2/Relu_output_0[1, 16, 16, 24] e[-4]
+    out: /b3/b3.0/b3.0.2/Relu_output_0[1, 8, 8, 24] e[-4]
+Conv               /l3/l3.0/Conv                        {'activation': 'Linear', 'group': 1, 'strides': [1, 1]}
+    in:  /b2/b2.1/b2.1.2/Relu_output_0[1, 16, 16, 24] e[-4]
+    out: /l3/l3.0/Conv_output_0[1, 16, 16, 16] e[-3]
+Conv               /b3/b3.1/b3.1.0/Conv                 {'activation': 'Relu', 'group': 1, 'strides': [1, 1]}
+    in:  /b3/b3.0/b3.0.2/Relu_output_0[1, 8, 8, 24] e[-4]
+    out: /b3/b3.1/b3.1.2/Relu_output_0[1, 8, 8, 32] e[-4]
+Conv               /l4/l4.0/Conv                        {'activation': 'Linear', 'group': 1, 'strides': [1, 1]}
+    in:  /b3/b3.1/b3.1.2/Relu_output_0[1, 8, 8, 32] e[-4]
+    out: /l4/l4.0/Conv_output_0[1, 8, 8, 16] e[-4]
+RequantizeLinear   PPQ_Operation_0                      {}
+    in:  /l4/l4.0/Conv_output_0[1, 8, 8, 16] e[-4]
+    out: PPQ_Variable_4[1, 8, 8, 16] e[-3]
+Conv               /o4/o4.0/Conv                        {'activation': 'Relu', 'group': 1, 'strides': [1, 1]}
+    in:  /l4/l4.0/Conv_output_0[1, 8, 8, 16] e[-4]
+    out: /o4/o4.2/Relu_output_0[1, 8, 8, 24] e[-4]
+Resize             /Resize                              {'coordinate_transformation_mode': 'asymmetric', 'mode': 'nearest', 'nearest_mode': 'floor'}
+    in:  PPQ_Variable_4[1, 8, 8, 16] e[-3]
+    out: /Resize_output_0[1, 16, 16, 16] e[-3]
+Resize             /Resize_5                            {'coordinate_transformation_mode': 'asymmetric', 'mode': 'nearest', 'nearest_mode': 'floor'}
+    in:  /o4/o4.2/Relu_output_0[1, 8, 8, 24] e[-4]
+    out: /Resize_5_output_0[1, 64, 64, 24] e[-4]
+Add                /Add                                 {}
+    in:  /l3/l3.0/Conv_output_0[1, 16, 16, 16] e[-3], /Resize_output_0[1, 16, 16, 16] e[-3]
+    out: /Add_output_0[1, 16, 16, 16] e[-3]
+RequantizeLinear   PPQ_Operation_1                      {}
+    in:  /Add_output_0[1, 16, 16, 16] e[-3]
+    out: PPQ_Variable_7[1, 16, 16, 16] e[-2]
+Conv               /o3/o3.0/Conv                        {'activation': 'Relu', 'group': 1, 'strides': [1, 1]}
+    in:  /Add_output_0[1, 16, 16, 16] e[-3]
+    out: /o3/o3.2/Relu_output_0[1, 16, 16, 8] e[-4]
+Resize             /Resize_1                            {'coordinate_transformation_mode': 'asymmetric', 'mode': 'nearest', 'nearest_mode': 'floor'}
+    in:  PPQ_Variable_7[1, 16, 16, 16] e[-2]
+    out: /Resize_1_output_0[1, 32, 32, 16] e[-2]
+Resize             /Resize_4                            {'coordinate_transformation_mode': 'asymmetric', 'mode': 'nearest', 'nearest_mode': 'floor'}
+    in:  /o3/o3.2/Relu_output_0[1, 16, 16, 8] e[-4]
+    out: /Resize_4_output_0[1, 64, 64, 8] e[-4]
+Add                /Add_1                               {}
+    in:  /l2/l2.0/Conv_output_0[1, 32, 32, 16] e[-2], /Resize_1_output_0[1, 32, 32, 16] e[-2]
+    out: /Add_1_output_0[1, 32, 32, 16] e[-2]
+RequantizeLinear   PPQ_Operation_2                      {}
+    in:  /Add_1_output_0[1, 32, 32, 16] e[-2]
+    out: PPQ_Variable_10[1, 32, 32, 16] e[-3]
+Conv               /o2/o2.0/Conv                        {'activation': 'Relu', 'group': 1, 'strides': [1, 1]}
+    in:  /Add_1_output_0[1, 32, 32, 16] e[-2]
+    out: /o2/o2.2/Relu_output_0[1, 32, 32, 16] e[-4]
+Resize             /Resize_2                            {'coordinate_transformation_mode': 'asymmetric', 'mode': 'nearest', 'nearest_mode': 'floor'}
+    in:  PPQ_Variable_10[1, 32, 32, 16] e[-3]
+    out: /Resize_2_output_0[1, 64, 64, 16] e[-3]
+Resize             /Resize_3                            {'coordinate_transformation_mode': 'asymmetric', 'mode': 'nearest', 'nearest_mode': 'floor'}
+    in:  /o2/o2.2/Relu_output_0[1, 32, 32, 16] e[-4]
+    out: /Resize_3_output_0[1, 64, 64, 16] e[-4]
+Add                /Add_2                               {}
+    in:  /l1/l1.0/Conv_output_0[1, 64, 64, 16] e[-3], /Resize_2_output_0[1, 64, 64, 16] e[-3]
+    out: /Add_2_output_0[1, 64, 64, 16] e[-3]
+Relu               /Relu                                {}
+    in:  /Add_2_output_0[1, 64, 64, 16] e[-3]
+    out: /Relu_output_0[1, 64, 64, 16] e[-3]
+Conv               /o1/o1.0/Conv                        {'activation': 'Relu', 'group': 1, 'strides': [1, 1]}
+    in:  /Relu_output_0[1, 64, 64, 16] e[-3]
+    out: /o1/o1.2/Relu_output_0[1, 64, 64, 8] e[-4]
+RequantizeLinear   PPQ_Operation_3                      {}
+    in:  /Relu_output_0[1, 64, 64, 16] e[-3]
+    out: PPQ_Variable_13[1, 64, 64, 16] e[-4]
+Concat             /Concat                              {'axis': 3}
+    in:  /o1/o1.2/Relu_output_0[1, 64, 64, 8] e[-4], /Resize_3_output_0[1, 64, 64, 16] e[-4], /Resize_4_output_0[1, 64, 64, 8] e[-4], /Resize_5_output_0[1, 64, 64, 24] e[-4], PPQ_Variable_13[1, 64, 64, 16] e[-4], /stem/stem.2/Relu_output_0[1, 64, 64, 8] e[-4]
+    out: /Concat_output_0[1, 64, 64, 80] e[-4]
+Conv               /head/head.0/head.0.0/Conv           {'activation': 'Relu', 'group': 1, 'strides': [1, 1]}
+    in:  /Concat_output_0[1, 64, 64, 80] e[-4]
+    out: /head/head.0/head.0.2/Relu_output_0[1, 64, 64, 16] e[-3]
+Conv               /head/head.1/Conv                    {'activation': 'Linear', 'group': 1, 'strides': [1, 1]}
+    in:  /head/head.0/head.0.2/Relu_output_0[1, 64, 64, 16] e[-3]
+    out: maps[1, 64, 64, 2] e[-3]

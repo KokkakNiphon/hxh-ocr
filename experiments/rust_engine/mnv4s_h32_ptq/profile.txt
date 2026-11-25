@@ -1,0 +1,69 @@
+model ../experiments/rust_engine/mnv4s_h32_ptq/model.hxhm: 338288 B, 64 ops, input 32x256x1 (exp -7), logits 64x75 (exp -1), arena 81920 B, 30.23 M MACs
+ids (9): [5, 5, 7, 2, 5, 6, 1, 11, 46]
+text: おおきいおかあさん
+time per inference over 100 runs: median 7.178 ms, min 5.387 ms -> 4.21 GMAC/s (single thread, scalar)
+per-op profile (100 runs, total 7.758 ms):
+  op0   Conv     k3x3 s2x2   32x256 x1    ->   16x128 x32     439.1 us   5.7%   0.59 M MACs   1.34 GMAC/s
+  op1   Conv     k3x3 s2x2   16x128 x32   ->    8x64  x16     466.0 us   6.0%   2.36 M MACs   5.06 GMAC/s
+  op2   Conv     k1x1 s1x1    8x64  x16   ->    8x64  x16      60.6 us   0.8%   0.13 M MACs   2.16 GMAC/s
+  op3   Conv     k3x3 s2x1    8x64  x16   ->    4x64  x48     348.5 us   4.5%   1.77 M MACs   5.08 GMAC/s
+  op4   Conv     k1x1 s1x1    4x64  x48   ->    4x64  x32      98.0 us   1.3%   0.39 M MACs   4.01 GMAC/s
+  op5   DwConv   k5x5 s1x1    4x64  x32   ->    4x64  x32      80.4 us   1.0%   0.20 M MACs   2.55 GMAC/s
+  op6   Conv     k1x1 s1x1    4x64  x32   ->    4x64  x96     212.2 us   2.7%   0.79 M MACs   3.71 GMAC/s
+  op7   DwConv   k5x5 s2x1    4x64  x96   ->    2x64  x96     116.1 us   1.5%   0.31 M MACs   2.65 GMAC/s
+  op8   Conv     k1x1 s1x1    2x64  x96   ->    2x64  x48     125.0 us   1.6%   0.59 M MACs   4.72 GMAC/s
+  op9   Conv     k1x1 s1x1    2x64  x48   ->    2x64  x96     143.1 us   1.8%   0.59 M MACs   4.12 GMAC/s
+  op10  DwConv   k3x3 s1x1    2x64  x96   ->    2x64  x96      67.4 us   0.9%   0.11 M MACs   1.64 GMAC/s
+  op11  Conv     k1x1 s1x1    2x64  x96   ->    2x64  x48     152.3 us   2.0%   0.59 M MACs   3.87 GMAC/s
+  op12  Add      k0x0 s0x0    2x64  x48   ->    2x64  x48       0.8 us   0.0%   0.00 M MACs 
+  op13  Conv     k1x1 s1x1    2x64  x48   ->    2x64  x96     136.0 us   1.8%   0.59 M MACs   4.34 GMAC/s
+  op14  DwConv   k3x3 s1x1    2x64  x96   ->    2x64  x96      61.7 us   0.8%   0.11 M MACs   1.79 GMAC/s
+  op15  Conv     k1x1 s1x1    2x64  x96   ->    2x64  x48     127.0 us   1.6%   0.59 M MACs   4.64 GMAC/s
+  op16  Add      k0x0 s0x0    2x64  x48   ->    2x64  x48       0.6 us   0.0%   0.00 M MACs 
+  op17  Conv     k1x1 s1x1    2x64  x48   ->    2x64  x96     152.7 us   2.0%   0.59 M MACs   3.86 GMAC/s
+  op18  Requant  k0x0 s0x0    2x64  x48   ->    2x64  x48      10.3 us   0.1%   0.00 M MACs 
+  op19  DwConv   k3x3 s1x1    2x64  x96   ->    2x64  x96      59.5 us   0.8%   0.11 M MACs   1.86 GMAC/s
+  op20  Conv     k1x1 s1x1    2x64  x96   ->    2x64  x48     151.2 us   1.9%   0.59 M MACs   3.90 GMAC/s
+  op21  Add      k0x0 s0x0    2x64  x48   ->    2x64  x48       0.7 us   0.0%   0.00 M MACs 
+  op22  Conv     k1x1 s1x1    2x64  x48   ->    2x64  x96     155.4 us   2.0%   0.59 M MACs   3.79 GMAC/s
+  op23  Requant  k0x0 s0x0    2x64  x48   ->    2x64  x48       5.8 us   0.1%   0.00 M MACs 
+  op24  DwConv   k3x3 s1x1    2x64  x96   ->    2x64  x96      57.6 us   0.7%   0.11 M MACs   1.92 GMAC/s
+  op25  Conv     k1x1 s1x1    2x64  x96   ->    2x64  x48     139.8 us   1.8%   0.59 M MACs   4.22 GMAC/s
+  op26  Add      k0x0 s0x0    2x64  x48   ->    2x64  x48       0.6 us   0.0%   0.00 M MACs 
+  op27  DwConv   k3x3 s1x1    2x64  x48   ->    2x64  x48      29.1 us   0.4%   0.06 M MACs   1.90 GMAC/s
+  op28  Requant  k0x0 s0x0    2x64  x48   ->    2x64  x48       6.7 us   0.1%   0.00 M MACs 
+  op29  Conv     k1x1 s1x1    2x64  x48   ->    2x64  x192    302.2 us   3.9%   1.18 M MACs   3.90 GMAC/s
+  op30  Conv     k1x1 s1x1    2x64  x192  ->    2x64  x48     244.3 us   3.1%   1.18 M MACs   4.83 GMAC/s
+  op31  Add      k0x0 s0x0    2x64  x48   ->    2x64  x48       0.9 us   0.0%   0.00 M MACs 
+  op32  DwConv   k3x3 s1x1    2x64  x48   ->    2x64  x48      34.2 us   0.4%   0.06 M MACs   1.62 GMAC/s
+  op33  Conv     k1x1 s1x1    2x64  x48   ->    2x64  x288    479.0 us   6.2%   1.77 M MACs   3.69 GMAC/s
+  op34  DwConv   k3x3 s2x1    2x64  x288  ->    1x64  x288    105.8 us   1.4%   0.17 M MACs   1.57 GMAC/s
+  op35  Conv     k1x1 s1x1    1x64  x288  ->    1x64  x64     240.7 us   3.1%   1.18 M MACs   4.90 GMAC/s
+  op36  DwConv   k5x5 s1x1    1x64  x64   ->    1x64  x64      18.6 us   0.2%   0.10 M MACs   5.50 GMAC/s
+  op37  Conv     k1x1 s1x1    1x64  x64   ->    1x64  x256    256.7 us   3.3%   1.05 M MACs   4.08 GMAC/s
+  op38  DwConv   k5x5 s1x1    1x64  x256  ->    1x64  x256     81.8 us   1.1%   0.41 M MACs   5.01 GMAC/s
+  op39  Conv     k1x1 s1x1    1x64  x256  ->    1x64  x64     239.6 us   3.1%   1.05 M MACs   4.38 GMAC/s
+  op40  Add      k0x0 s0x0    1x64  x64   ->    1x64  x64       0.8 us   0.0%   0.00 M MACs 
+  op41  Conv     k1x1 s1x1    1x64  x64   ->    1x64  x256    237.6 us   3.1%   1.05 M MACs   4.41 GMAC/s
+  op42  DwConv   k5x5 s1x1    1x64  x256  ->    1x64  x256     69.0 us   0.9%   0.41 M MACs   5.93 GMAC/s
+  op43  Conv     k1x1 s1x1    1x64  x256  ->    1x64  x64     220.8 us   2.8%   1.05 M MACs   4.75 GMAC/s
+  op44  Add      k0x0 s0x0    1x64  x64   ->    1x64  x64       3.5 us   0.0%   0.00 M MACs 
+  op45  Conv     k1x1 s1x1    1x64  x64   ->    1x64  x192    201.7 us   2.6%   0.79 M MACs   3.90 GMAC/s
+  op46  DwConv   k5x5 s1x1    1x64  x192  ->    1x64  x192     61.7 us   0.8%   0.31 M MACs   4.98 GMAC/s
+  op47  Conv     k1x1 s1x1    1x64  x192  ->    1x64  x64     206.4 us   2.7%   0.79 M MACs   3.81 GMAC/s
+  op48  Add      k0x0 s0x0    1x64  x64   ->    1x64  x64       0.7 us   0.0%   0.00 M MACs 
+  op49  Conv     k1x1 s1x1    1x64  x64   ->    1x64  x256    263.9 us   3.4%   1.05 M MACs   3.97 GMAC/s
+  op50  DwConv   k3x3 s1x1    1x64  x256  ->    1x64  x256     71.4 us   0.9%   0.15 M MACs   2.07 GMAC/s
+  op51  Conv     k1x1 s1x1    1x64  x256  ->    1x64  x64     196.0 us   2.5%   1.05 M MACs   5.35 GMAC/s
+  op52  Add      k0x0 s0x0    1x64  x64   ->    1x64  x64       1.5 us   0.0%   0.00 M MACs 
+  op53  Conv     k1x1 s1x1    1x64  x64   ->    1x64  x256    289.4 us   3.7%   1.05 M MACs   3.62 GMAC/s
+  op54  DwConv   k3x3 s1x1    1x64  x256  ->    1x64  x256     61.4 us   0.8%   0.15 M MACs   2.40 GMAC/s
+  op55  Conv     k1x1 s1x1    1x64  x256  ->    1x64  x64     213.5 us   2.8%   1.05 M MACs   4.91 GMAC/s
+  op56  Add      k0x0 s0x0    1x64  x64   ->    1x64  x64       0.6 us   0.0%   0.00 M MACs 
+  op57  DwConv   k1x5 s1x1    1x64  x64   ->    1x64  x64      19.1 us   0.2%   0.02 M MACs   1.07 GMAC/s
+  op58  Conv     k1x1 s1x1    1x64  x64   ->    1x64  x64      59.4 us   0.8%   0.26 M MACs   4.42 GMAC/s
+  op59  Add      k0x0 s0x0    1x64  x64   ->    1x64  x64       0.5 us   0.0%   0.00 M MACs 
+  op60  DwConv   k1x5 s1x1    1x64  x64   ->    1x64  x64      17.0 us   0.2%   0.02 M MACs   1.21 GMAC/s
+  op61  Conv     k1x1 s1x1    1x64  x64   ->    1x64  x64      65.0 us   0.8%   0.26 M MACs   4.03 GMAC/s
+  op62  Add      k0x0 s0x0    1x64  x64   ->    1x64  x64       0.3 us   0.0%   0.00 M MACs 
+  op63  Conv     k1x1 s1x1    1x64  x64   ->    1x64  x75      88.6 us   1.1%   0.31 M MACs   3.47 GMAC/s

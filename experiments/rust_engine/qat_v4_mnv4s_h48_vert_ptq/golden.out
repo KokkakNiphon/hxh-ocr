@@ -1,0 +1,76 @@
+
+    ___________ ____        ____  ____  ____
+   / ____/ ___// __ \      / __ \/ __ \/ __ \
+  / __/  \__ \/ /_/ /_____/ /_/ / /_/ / / / /
+ / /___ ___/ / ____/_____/ ____/ ____/ /_/ /
+/_____//____/_/         /_/   /_/    \___\_\
+
+
+wrote experiments\rust_engine\qat_v4_mnv4s_h48_vert_ptq\model.hxhm
+  version 1, 65 ops, 66 tensors, file 338352 B (weights 312352 B, biases 22016 B), arena 368640 B, MACs 153,993,216
+  op0   Conv     /conv_stem/Conv                        -> 24x384x32 e-4 @36864
+  op1   Conv     /blocks/blocks.0/blocks.0.0/conv/Conv  -> 12x192x16 e-4 @331776
+  op2   Conv     /blocks/blocks.0/blocks.0.1/conv/Conv  -> 12x192x16 e-3 @36864
+  op3   Conv     /blocks/blocks.1/blocks.1.0/conv/Conv  -> 6x192x48 e-4 @73728
+  op4   Conv     /blocks/blocks.1/blocks.1.1/conv/Conv  -> 6x192x32 e-4 @36864
+  op5   DwConv   /blocks/blocks.2/blocks.2.0/dw_start/c -> 6x192x32 e-3 @73728
+  op6   Conv     /blocks/blocks.2/blocks.2.0/pw_exp/con -> 6x192x96 e-2 @110592
+  op7   DwConv   /blocks/blocks.2/blocks.2.0/dw_mid/con -> 3x192x96 e-4 @36864
+  op8   Conv     /blocks/blocks.2/blocks.2.0/pw_proj/co -> 3x192x48 e-3 @92160
+  op9   Conv     /blocks/blocks.2/blocks.2.1/pw_exp/con -> 3x192x96 e-3 @36864
+  op10  DwConv   /blocks/blocks.2/blocks.2.1/dw_mid/con -> 3x192x96 e-4 @119808
+  op11  Conv     /blocks/blocks.2/blocks.2.1/pw_proj/co -> 3x192x48 e-3 @36864
+  op12  Add      /blocks/blocks.2/blocks.2.1/Add        -> 3x192x48 e-3 @36864 (in place)
+  op13  Conv     /blocks/blocks.2/blocks.2.2/pw_exp/con -> 3x192x96 e-3 @64512
+  op14  DwConv   /blocks/blocks.2/blocks.2.2/dw_mid/con -> 3x192x96 e-4 @119808
+  op15  Conv     /blocks/blocks.2/blocks.2.2/pw_proj/co -> 3x192x48 e-3 @64512
+  op16  Add      /blocks/blocks.2/blocks.2.2/Add        -> 3x192x48 e-3 @64512 (in place)
+  op17  Conv     /blocks/blocks.2/blocks.2.3/pw_exp/con -> 3x192x96 e-3 @92160
+  op18  DwConv   /blocks/blocks.2/blocks.2.3/dw_mid/con -> 3x192x96 e-4 @147456
+  op19  Conv     /blocks/blocks.2/blocks.2.3/pw_proj/co -> 3x192x48 e-3 @36864
+  op20  Add      /blocks/blocks.2/blocks.2.3/Add        -> 3x192x48 e-3 @36864 (in place)
+  op21  Conv     /blocks/blocks.2/blocks.2.4/pw_exp/con -> 3x192x96 e-3 @64512
+  op22  Requant  PPQ_Operation_0                        -> 3x192x48 e-2 @36864 (in place)
+  op23  DwConv   /blocks/blocks.2/blocks.2.4/dw_mid/con -> 3x192x96 e-3 @119808
+  op24  Conv     /blocks/blocks.2/blocks.2.4/pw_proj/co -> 3x192x48 e-2 @64512
+  op25  Add      /blocks/blocks.2/blocks.2.4/Add        -> 3x192x48 e-2 @64512 (in place)
+  op26  DwConv   /blocks/blocks.2/blocks.2.5/dw_start/c -> 3x192x48 e-4 @36864
+  op27  Requant  PPQ_Operation_1                        -> 3x192x48 e0 @64512 (in place)
+  op28  Conv     /blocks/blocks.2/blocks.2.5/pw_exp/con -> 3x192x192 e-4 @92160
+  op29  Conv     /blocks/blocks.2/blocks.2.5/pw_proj/co -> 3x192x48 e0 @36864
+  op30  Add      /blocks/blocks.2/blocks.2.5/Add        -> 3x192x48 e0 @36864 (in place)
+  op31  DwConv   /blocks/blocks.3/blocks.3.0/dw_start/c -> 3x192x48 e-4 @64512
+  op32  Conv     /blocks/blocks.3/blocks.3.0/pw_exp/con -> 3x192x288 e-3 @92160
+  op33  DwConv   /blocks/blocks.3/blocks.3.0/dw_mid/con -> 2x192x288 e-3 @258048
+  op34  Conv     /blocks/blocks.3/blocks.3.0/pw_proj/co -> 2x192x64 e-2 @36864
+  op35  DwConv   /blocks/blocks.3/blocks.3.1/dw_start/c -> 2x192x64 e-3 @61440
+  op36  Conv     /blocks/blocks.3/blocks.3.1/pw_exp/con -> 2x192x256 e-2 @86016
+  op37  DwConv   /blocks/blocks.3/blocks.3.1/dw_mid/con -> 2x192x256 e-4 @184320
+  op38  Conv     /blocks/blocks.3/blocks.3.1/pw_proj/co -> 2x192x64 e-2 @61440
+  op39  Add      /blocks/blocks.3/blocks.3.1/Add        -> 2x192x64 e-2 @61440 (in place)
+  op40  Conv     /blocks/blocks.3/blocks.3.2/pw_exp/con -> 2x192x256 e-2 @86016
+  op41  DwConv   /blocks/blocks.3/blocks.3.2/dw_mid/con -> 2x192x256 e-4 @184320
+  op42  Conv     /blocks/blocks.3/blocks.3.2/pw_proj/co -> 2x192x64 e-2 @36864
+  op43  Add      /blocks/blocks.3/blocks.3.2/Add        -> 2x192x64 e-2 @36864 (in place)
+  op44  Conv     /blocks/blocks.3/blocks.3.3/pw_exp/con -> 2x192x192 e-3 @61440
+  op45  DwConv   /blocks/blocks.3/blocks.3.3/dw_mid/con -> 2x192x192 e-4 @135168
+  op46  Conv     /blocks/blocks.3/blocks.3.3/pw_proj/co -> 2x192x64 e-2 @61440
+  op47  Add      /blocks/blocks.3/blocks.3.3/Add        -> 2x192x64 e-2 @61440 (in place)
+  op48  Conv     /blocks/blocks.3/blocks.3.4/pw_exp/con -> 2x192x256 e-3 @86016
+  op49  DwConv   /blocks/blocks.3/blocks.3.4/dw_mid/con -> 2x192x256 e-4 @184320
+  op50  Conv     /blocks/blocks.3/blocks.3.4/pw_proj/co -> 2x192x64 e-2 @36864
+  op51  Add      /blocks/blocks.3/blocks.3.4/Add        -> 2x192x64 e-2 @36864 (in place)
+  op52  Conv     /blocks/blocks.3/blocks.3.5/pw_exp/con -> 2x192x256 e-2 @61440
+  op53  Requant  PPQ_Operation_2                        -> 2x192x64 e-1 @36864 (in place)
+  op54  DwConv   /blocks/blocks.3/blocks.3.5/dw_mid/con -> 2x192x256 e-3 @159744
+  op55  Conv     /blocks/blocks.3/blocks.3.5/pw_proj/co -> 2x192x64 e-1 @61440
+  op56  Add      /blocks/blocks.3/blocks.3.5/Add        -> 2x192x64 e-1 @61440 (in place)
+  op57  AvgPool  /head/ReduceMean                       -> 1x192x64 e-1 @36864
+  op58  DwConv   /head/blocks/blocks.0/dw/Conv          -> 1x192x64 e-4 @49152
+  op59  Conv     /head/blocks/blocks.0/pw/Conv          -> 1x192x64 e-1 @61440
+  op60  Add      /head/blocks/blocks.0/Add              -> 1x192x64 e-1 @36864 (in place)
+  op61  DwConv   /head/blocks/blocks.1/dw/Conv          -> 1x192x64 e-4 @49152
+  op62  Conv     /head/blocks/blocks.1/pw/Conv          -> 1x192x64 e-1 @61440
+  op63  Add      /head/blocks/blocks.1/Add              -> 1x192x64 e-1 @36864 (in place)
+  op64  Conv     /head/cls/Conv                         -> 1x192x75 e-1 @49152
+golden: 512 vectors -> experiments\rust_engine\qat_v4_mnv4s_h48_vert_ptq\golden.bin

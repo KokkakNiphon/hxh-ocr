@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="ja" data-fig="図" data-table="表">
+<head>
+<meta charset="utf-8">
+<script src="../theme.js"></script>
+<script src="i18n-ja.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>ハンター文字を読む初めての OCR: 詳細解説 · HxH OCR</title>
+<meta name="description" content="『HUNTER×HUNTER』のハンター文字を読む初めての OCR の研究報告。合成した行画像とページ画像、MobileNetV4 ベースの CTC 認識器と DBNet-lite 行検出器、int8 の量子化を考慮した学習、WebAssembly 上でビット単位まで一致する Rust エンジン。すべての実験とその数値を掲載。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="blog.css">
+<link rel="stylesheet" href="deep.css">
+<!-- site:begin (scripts/site_meta.py) -->
+<link rel="canonical" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive-ja">
+<link rel="alternate" hreflang="en" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive">
+<link rel="alternate" hreflang="th" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive-th">
+<link rel="alternate" hreflang="ja" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive-ja">
+<link rel="alternate" hreflang="x-default" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive">
+<meta name="author" content="KokkakNiphon">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#2340d8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HxH OCR">
+<meta property="og:title" content="ハンター文字を読む初めての OCR: 詳細解説 · HxH OCR">
+<meta property="og:description" content="『HUNTER×HUNTER』のハンター文字を読む初めての OCR の研究報告。合成した行画像とページ画像、MobileNetV4 ベースの CTC 認識器と DBNet-lite 行検出器、int8 の量子化を考慮した学習、WebAssembly 上でビット単位まで一致する Rust エンジン。すべての実験とその数値を掲載。">
+<meta property="og:url" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive-ja">
+<meta property="og:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HxH OCR: the first OCR for the Hunter × Hunter alphabet, reading a manga page.">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="th_TH">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ハンター文字を読む初めての OCR: 詳細解説 · HxH OCR">
+<meta name="twitter:description" content="『HUNTER×HUNTER』のハンター文字を読む初めての OCR の研究報告。合成した行画像とページ画像、MobileNetV4 ベースの CTC 認識器と DBNet-lite 行検出器、int8 の量子化を考慮した学習、WebAssembly 上でビット単位まで一致する Rust エンジン。すべての実験とその数値を掲載。">
+<meta name="twitter:image" content="https://hxh-ocr.kokkakniphon.workers.dev/og.png">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../site.css">
+<script src="../lang.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "url": "https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive-ja", "inLanguage": "ja", "description": "『HUNTER×HUNTER』のハンター文字を読む初めての OCR の研究報告。合成した行画像とページ画像、MobileNetV4 ベースの CTC 認識器と DBNet-lite 行検出器、int8 の量子化を考慮した学習、WebAssembly 上でビット単位まで一致する Rust エンジン。すべての実験とその数値を掲載。", "image": "https://hxh-ocr.kokkakniphon.workers.dev/og.png", "author": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "headline": "ハンター文字を読む初めての OCR: 詳細解説 · HxH OCR", "datePublished": "2026-11-25", "dateModified": "2026-11-25", "publisher": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "mainEntityOfPage": "https://hxh-ocr.kokkakniphon.workers.dev/blog/deep-dive-ja", "about": [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}], "isPartOf": {"@type": "WebSite", "name": "HxH OCR", "url": "https://hxh-ocr.kokkakniphon.workers.dev/"}}</script>
+<!-- site:end -->
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index-ja.html"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M5.6 6.52H14.4M5.6 13.48H14.4M10 6.52V13.48M19.28 14.39L26.14 5.61M9.92 18.45V25.55M5.73 25.55H14.27M16.8 18.52L19.36 22.04L16.8 25.48M19.36 22.04H24.56M27.2 18.52L24.56 22.04L27.2 25.48"/><circle cx="19.7" cy="7.95" r="1.84"/></svg>HxH OCR</a>
+    <nav aria-label="サイト">
+      <a href="../index-ja.html">リーダー</a>
+      <a href="index-ja.html">しくみ</a>
+      <a href="deep-dive-ja.html" aria-current="page">詳細解説</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="テーマ" data-auto="自動" data-light="ライト" data-dark="ダーク" aria-label="テーマ: 自動">
+      <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      <svg class="ic-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ic-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="nav-cta" href="../index-ja.html">リーダーを試す</a>
+  </div>
+</header>
+
+<main class="post">
+  <div class="post-head">
+    <p class="kicker">研究報告 <span>·</span> 詳細解説</p>
+    <p class="meta">著者: <a class="byline" href="https://github.com/KokkakNiphon" rel="author">KokkakNiphon</a> <span>·</span> 2026年11月25日 <span>·</span> 技術レポート <span>·</span> 読了目安 40 分</p>
+    <h1>発明された文字をブラウザで読む: 『HUNTER×HUNTER』のハンター文字のための 1&nbsp;MB int8 OCR</h1>
+    <p class="dek">合成した行画像とページ画像、MobileNetV4 ベースの CTC 認識器と DBNet-lite 行検出器、Espressif の int8 規則に従う量子化を考慮した学習（QAT）、そしてその規則とビット単位で一致する WebAssembly 上の Rust エンジン。以下の数値はすべて、プロジェクトの研究ジャーナルと実行ログから取っている。</p>
+    <p class="post-update"><b>更新（2026年11月25日）</b> 本レポートは最初のモデル、すなわち v4 認識器（75 クラス）と det_v2 を扱っている。現在の<a href="../index-ja.html">読み取りページ</a>は、写真風のページでも学習したモデルファミリーを使う。「高速」は det_v2 と再学習した小型認識器（91 クラス: かな、空白、数字と <code>! ? : / . -</code>）、「高精度」は 960&nbsp;px の MobileNetV4-small 1.0 検出器と大型認識器で、合計 3.6&nbsp;MB である。学習と評価は <code>docs/research/JOURNAL.md</code>（2026-11-25）にある。</p>
+    <p class="post-update"><b>更新（2026年11月26日）</b> 文字デザインの一部として描かれた数字（型番の <code>07</code> や、タイトル末尾の <code>!!</code> など）を読む新しい認識器を学習・評価した。ただし読み取りページにはまだ入れていない。<a href="#app-v6">付録 E</a> を参照。</p>
+    <p class="paper-meta"><span><b>コード</b> hxh_ocr/, rust/, web/</span><span><b>記録</b> docs/research/JOURNAL.md</span><span><b>評価</b> 生成画像のみ</span></p>
+  </div>
+
+  <div class="post-grid">
+    <aside class="toc-rail">
+      <nav class="toc" aria-label="目次">
+        <p class="label">目次</p>
+        <ol id="toc"></ol>
+      </nav>
+      <a class="rail-card" href="index-ja.html">
+        <span class="label">短い版</span>
+        <span class="rail-title">しくみ</span>
+        <span class="rail-text">数式なしで同じプロジェクトを紹介。OCR がはじめての方に。</span>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+    </aside>
+
+    <article id="article">
+
+      <!-- ============================================================ abstract -->
+      <h2 id="abstract">概要</h2>
+      <div class="abstract">
+        <p>『HUNTER×HUNTER』の漫画とアニメでは、看板や手紙、サブタイトルが発明された文字で書かれている。この文字は日本語のかなと一対一に対応する換字式の暗号である。本稿では、この文字をモバイルの Web ブラウザだけで読む光学文字認識（OCR）システムについて述べる。ラベル付きのデータは存在しないため、すべてのモデルは生成画像で学習した。行画像の生成器は 4 つのバージョンを経ており、どのバージョンも計測された失敗に対処したものである。ページ画像の生成器は、ラベルを付けない一般テキストやアイコンもネガティブとして描く。システムは 3 つの int8 モデルからなり、合計約 1&nbsp;MB である。DBNet 型の行検出器（パラメータ 350k、640&nbsp;×&nbsp;640 のページあたり 1.57&nbsp;G 回の積和演算）が行を見つけ、2 つの CTC 認識器（パラメータ 323k、48&nbsp;×&nbsp;768 の行あたり 154&nbsp;M MACs）が横書きの行と縦書きの列を読む。3 つとも MobileNetV4-small のバックボーンを共有する。Espressif の 2 のべき乗 int8 規則を再現する量子化を考慮した学習（QAT）により、int8 化による精度低下の大半が解消された。no_std の Rust エンジンは WebAssembly にコンパイルされ、Espressif の整数シミュレーションをビット単位で再現し、デスクトップの 1 スレッドで約 16&nbsp;G MAC/s で動作する。生成データ上で、認識器の int8 での文字誤り率（CER）は 0.84%（横書き）と 0.71%（縦書き）、検出器の F1 は fp32 で 0.922 である。int8 のブラウザパイプライン全体では、1 ページ約 0.2&nbsp;s で F1 91.0% に達する。失敗も含めたすべてのアブレーションと、実画像を一切使わない評価の限界も報告する。</p>
+        <p class="keywords">キーワード: シーンテキスト認識 · CTC · DBNet · 合成データ · int8 量子化 · QAT · WebAssembly · 2 のべき乗スケール</p>
+      </div>
+
+      <div class="stats" role="list">
+        <div role="listitem"><span class="stat">1.0 MB</span><span class="label">int8 モデル 3 つの合計</span></div>
+        <div role="listitem"><span class="stat">9.5 ms</span><span class="label">1 行あたり（wasm SIMD、node）</span></div>
+        <div role="listitem"><span class="stat">0.922</span><span class="label">検出器の F1（fp32）</span></div>
+        <div role="listitem"><span class="stat">0.84%</span><span class="label">認識器の CER（int8）</span></div>
+      </div>
+
+      <figure class="fig" id="f-teaser">
+        <div class="fig-media fig-page"><img src="img/pipeline/05_boxes.webp" alt="ハンター文字の 12 行が読み順に枠で囲まれ、番号が振られた生成マンガページ。縦書きの列は紫。" loading="eager"></div>
+        <figcaption>図 # — 生成した検証用ページに対するブラウザパイプラインの出力。枠 1 つが検出された 1 行で、番号は読み順を表す。紫の枠は縦書きの列。ここに写っているものはどれも学習で見ていない。</figcaption>
+      </figure>
+
+      <!-- ============================================================ 1 -->
+      <h2 id="intro"><span class="sec-n">1</span> はじめに</h2>
+      <p>『HUNTER×HUNTER』では、作中世界の文字が発明された文字で描かれている。ファンの解読により、これは日本語のかなの換字式暗号であることが分かっている（Hunterpedia、Omniglot）。かなのグリフが 46 個、それに長音符 ー を加えた 47 個が基本グリフである。濁音は日本語と同じしくみで、右下の小さな黒点で か が が に、小さな丸で は が ぱ になる。ひらがなとカタカナは同じグリフを使い、小書きのかな（ゃ、っ）は小さく描かれる。したがってこの文字を読むことは、かなを読むことに等しい（<a class="xref" href="#f-glyphs">図</a>）。その後のローマ字化や翻訳は容易である。</p>
+      <p>目標は、スマホのブラウザで動くほど小さな認識器である。写真、スクリーンショット、カメラのフレームを入力すると、サーバーなしでかなとローマ字が出力される。最初の目標はさらに小さく、ESP32-S3 マイコンだった。この目標は途中で保留になったが、その制約がモデルの形を決めた。テンソル単位の 2 のべき乗スケールによる int8 演算と、畳み込み・ReLU・加算だけでの構成である。</p>
+
+      <figure class="fig" id="f-glyphs">
+        <div class="fig-box">
+          <div class="fig-title">ハンター文字の一覧</div>
+          <div class="fig-sub">五十音順に並べた基本グリフ 47 個。生成器が使う筆画データから描いている。グリフにマウスを重ねるか、タップする。</div>
+          <div class="glyph-chart" id="glyph-chart" role="list"></div>
+          <div class="glyph-detail" id="glyph-detail" aria-live="polite"></div>
+        </div>
+        <figcaption>図 # — 暗号表。各グリフが 1 つのかなを表し、右下の点または丸が濁音と半濁音を示す。3 つのグリフには公式の字形が 2 種類ある。</figcaption>
+      </figure>
+
+      <p>この問題は見た目以上に難しく、その理由は 3 つある。第一に、データセットがない。実例は数十件しかなく、しかも著作権のあるコマである。第二に、濁点・半濁点が非常に小さい。濁点の半径は 0.065&nbsp;em で、行の高さが 32&nbsp;px なら直径 1〜2 画素にしかならない。が を か と取り違える誤りは、本稿を通じて最も多い誤りである。第三に、この文字はほかのものに混じって現れる。吹き出し、キャラクターの絵、日本語や英語の文、アイコン。ハンター文字だけで学習した検出器には、普通の文字を無視する理由がない。</p>
+      <p><a class="xref" href="#f-overview">図</a>にシステムの全体像を示す。オフラインでは 2 つの生成器が学習画像を作り、PyTorch でモデルを学習し、量子化の工程で int8 ファイルに変換する。オンラインでは、WebAssembly にコンパイルした Rust エンジンがブラウザ内で検出器 1 つと認識器 2 つを動かす。</p>
+
+      <figure class="fig" id="f-overview">
+        <div class="fig-box dfig">
+          <div class="fig-title">システムの全体像</div>
+          <div class="fig-sub">上: オフライン（PC 1 台）。下: オンライン（ブラウザ内）。青いノードは int8。</div>
+          <div class="lanes" id="d-overview"></div>
+        </div>
+        <figcaption>図 # — システムの 2 つの半分。ブラウザが動かすものはすべて上段の工程で作られ、int8 ファイルは Espressif のシミュレータとビット単位で一致する。</figcaption>
+      </figure>
+
+      <p>本稿の貢献は、アルゴリズム上のものというより実践的なものである。</p>
+      <ol class="contrib">
+        <li><strong>発明された文字のための合成データ。</strong>ベクター描画の行生成器（計測された失敗をきっかけに作った 4 つのバージョン）と、DBNet の教師データを書き出す Rust 製のページ生成器。後者は第 3 版から、ラベルなしの一般テキストとアイコンをハードネガティブとして描く（<a href="#data">第 3 章</a>）。</li>
+        <li><strong>限られた演算だけで構成した小さな int8 モデル。</strong>ImageNet で事前学習した MobileNetV4-small 上の、畳み込みだけの CTC 認識器と DBNet-lite 検出器。使う演算は Conv、ReLU、Add だけで、検出器ではこれに最近傍 Resize と Concat が加わる（<a href="#models">第 4 章</a>）。</li>
+        <li><strong>ターゲットと完全に一致する量子化を考慮した学習。</strong>ESP-PPQ の 2 のべき乗規則を再現する疑似量子化で、指数もロジットも 1 つ残らず一致することを確認した（<a href="#quant">第 6 章</a>）。</li>
+        <li><strong>ビット単位で一致する int8 エンジン。</strong>no_std で依存ライブラリのない Rust エンジンと WebAssembly SIMD カーネル。テストしたすべてのベクトルで、出力が ESP-PPQ のシミュレーションと一致する（<a href="#quant">第 6 章</a>）。</li>
+        <li><strong>パイプライン全体の率直な評価。</strong>生成ページ上で、後処理と切り出しの掃引、信頼度フィルタ、ハンター文字以外のテキストでの誤検出を調べた（<a href="#experiments">第 7 章</a>）。</li>
+      </ol>
+
+      <!-- ============================================================ 2 -->
+      <h2 id="related"><span class="sec-n">2</span> 関連研究</h2>
+      <p><strong>ハンター文字の読み取り。</strong>調べた限り、本稿は『HUNTER×HUNTER』のハンター文字を対象とした初めての OCR である。2026 年 11 月 25 日に Web、GitHub、Hugging Face を検索したところ、見つかったのは逆方向のツールだった。入力したテキストをハンター文字に変換するもので、たとえば読みに従ってテキストをハンター文字のフォントで組む変換ツールである。作品名を冠した Hugging Face のリポジトリもいくつかあるが、中身のないプレースホルダーか、無関係な画像分類器だった。画像からこの文字を読むものは 1 つもなかった。</p>
+      <p><strong>CTC による行認識。</strong>Connectionist Temporal Classification <a class="cite" href="#ref-1">[1]</a> は、時刻ごとに「ブランク」を含む 1 クラスを出力するネットワークを、分割されていないラベルに対して学習させる手法である。CRNN <a class="cite" href="#ref-2">[2]</a> は畳み込みの特徴抽出器、再帰層、CTC の転写層を 1 つの学習可能なモデルにまとめ、シーンテキストに適用した。本稿の認識器は CRNN の構成と CTC 損失を受け継ぐが、再帰層を depthwise 畳み込みに置き換えている。畳み込みだけのネットワークにすれば、int8 エンジンの演算は約 6 種類で済み、すべて同じ規則で量子化できる。</p>
+      <p><strong>セグメンテーションによるテキスト検出。</strong>DBNet <a class="cite" href="#ref-3">[3]</a> は、縮小したテキスト領域の確率マップとしきい値マップを予測し、両者の差に急峻なシグモイドをかけることで二値化を微分可能にする。推論時に必要なのは確率マップだけで、その連結成分を広げる（「unclip」する）ことで枠を復元する。本稿では DBNet の教師データと損失をほぼそのまま使う。ハードネガティブマイニングは OHEM <a class="cite" href="#ref-7">[7]</a> に従う。PP-OCR <a class="cite" href="#ref-8">[8]</a> は、小さな DB 検出器と小さな CTC 認識器を組み合わせれば実用的な軽量 OCR システムになることを示した。本稿の検出器と行認識器への分割も同じ設計に従うが、アルファベットが 74 トークンしかないため、規模ははるかに小さい。</p>
+      <p><strong>バックボーン。</strong>MobileNetV4 <a class="cite" href="#ref-4">[4]</a> は Universal Inverted Bottleneck（UIB）とモバイル向けのモデル群を提案した。その「conv-small」系は通常の畳み込みと depthwise 畳み込み、ReLU だけを使い、squeeze-excitation も hard-swish も含まないため、固定小数点ハードウェアに向いている。本稿では ImageNet で事前学習した幅 0.5 版を使う。</p>
+      <p><strong>合成学習データ。</strong>Jaderberg ら <a class="cite" href="#ref-9">[9]</a> はレンダリングした画像だけで単語認識器を学習させ、SynthText <a class="cite" href="#ref-10">[10]</a> は自然画像にテキストを描き込んで位置検出を学習させた。どちらにもレンダリングに使える本物のフォントがあった。本稿では「フォント」そのものをトレースする必要があり、較正の基準になる実画像のベンチマークもない。</p>
+      <p><strong>整数推論。</strong>Jacob ら <a class="cite" href="#ref-5">[5]</a> は整数のみによる推論と、疑似量子化による学習（QAT）を定式化した。TQT <a class="cite" href="#ref-6">[6]</a> は量子化しきい値を対数領域で学習し、スケールを 2 のべき乗に制限することで、再スケールをビットシフトにする。Espressif の ESP-DL ランタイムと ESP-PPQ 量子化ツール <a class="cite" href="#ref-11">[11]</a> は、ESP32-S3 向けにテンソル単位・対称・2 のべき乗の int8 を使う。本稿はこの方式を、学習とエンジンの間の取り決めとして採用する。</p>
+
+      <!-- ============================================================ 3 -->
+      <h2 id="data"><span class="sec-n">3</span> 合成データ</h2>
+      <h3 id="glyphs"><span class="sec-n">3.1</span> グリフ</h3>
+      <p>基本グリフ 47 個はすべて、ファン Wiki の文字表から手作業でトレースし、筆画の部品（直線、円弧、楕円、点、スプライン）に分解した。4〜5 倍に拡大した切り抜きから読み取り、描き直したものを並べて比較している。Omniglot の文字表は、も の末尾を点でなく丸にしている以外、すべてのグリフで一致した。後から見つかった 2 つの公式資料で、残りの字形が確定した。2011 年版アニメの文字表は、46 グリフ中 43 個がトレースと一致した。この表では ま が左右反転（左向き）、せ が「4」のような細い形、も の末尾が丸になっていた。印刷されたガイドブックの文字表も ま は左向きだが、せ は幅広、も は点で終わる。つまりファン Wiki の ま はおそらく誤りで、せ と も には単に公式の書き方が 2 種類あるということになる。</p>
+      <p>そこで生成器は重み付きで字形を選ぶ（<a class="xref" href="#f-variants">図</a>）。ま は 85% の確率で左向き、せ と も はそれぞれの字形を半々で使う。濁点・半濁点は、実際に描いた字形の外接矩形を基準に配置する。行生成器の第 4 版ではこれらの位置も動かす。横方向には字形表のオフセットの 0.55〜1.35 倍の範囲で動かすが、筆画幅の半分と記号の半径と 0.03&nbsp;em の和より近づけることはない。縦方向には U(−0.06,&nbsp;0.03)&nbsp;em だけずらす。</p>
+
+      <figure class="fig" id="f-variants">
+        <div class="fig-box dfig">
+          <div class="fig-title">グリフの字形と濁点・半濁点</div>
+          <div class="fig-sub">左: 字形が 2 種類ある 3 つのグリフと、その抽出の重み。右: 生成器が濁点（点）と半濁点（丸）を置きうる範囲。</div>
+          <div class="gpanel" id="d-variants"></div>
+          <div id="d-marks" style="margin-top:14px"></div>
+        </div>
+        <figcaption>図 # — 公式の字形と記号の配置。網掛けの帯は生成器 v4 での点の中心の範囲で、筆画からの最小限の間隔も保たれる。青い点は字形表そのものの位置。</figcaption>
+      </figure>
+
+      <p>ラベルはかな 73 個と空白の計 74 トークンである。カタカナと小書きのかなは、グリフで確実に区別できないため、通常サイズのひらがなにまとめる。グリフ間の相対的な大きさは字形表のまま保つ。い は点 1 つだけで、て は背が低い。すべてのグリフを em ボックスに正規化すると い が大きな円になり、い と濁点の違いがあいまいになってしまう。</p>
+
+      <h3 id="linegen"><span class="sec-n">3.2</span> 行生成器</h3>
+      <p>行生成器（Python、<code>hxh_ocr/synth.py</code>）はベクターの筆画からグリフを描くので、スタイルを手軽に変えられる。スタイルは 3 種類ある。clean（フォント風）、hand（揺らぎ、筆画のぶれ、わずかな回転、拡大率と縦横比のぶれ）、brush（筆圧で先細りするスタンプ）である。筆画幅は 0.04〜0.24&nbsp;em。行は基本的に横書きで、30% のサンプルは縦書きになる。字間は等幅かプロポーショナルで、ときどき斜体のせん断や曲がったベースラインが入る。背景は単色、グラデーション、バリューノイズ、紙、マンガのスクリーントーン、ハッチング、ランダムな図形など。インクの効果には縁取り、ドロップシャドウ、まだらなインク、グラデーションのインクがある。劣化には、ぼかし、モーションブラー、縮小と拡大、不均一な照明、コントラストとガンマ、ノイズ、二値化、JPEG がある。各サンプルは太さ 64&nbsp;px の切り抜きなので、学習時に縮小して 32、40、48&nbsp;px を選べる。どのサンプルも (seed, split, index) からシードを決めるので、どのセットも完全に再生成できる。</p>
+      <p>生成器は 4 つのバージョンを経た（<a class="xref" href="#t-genver">表</a>、<a class="xref" href="#f-evo">図</a>）。どの変更も、モデルの最悪の予測や実画像で見つかった失敗への対応である。</p>
+
+      <figure class="fig table" id="t-genver">
+        <figcaption>表 # — 行生成器の各バージョン、それぞれが直した点、生成したデータ。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>バージョン</th><th>変更点</th><th>理由</th><th class="num">学習 + 検証</th></tr></thead>
+          <tbody>
+            <tr><td class="k"><strong>v1</strong></td><td>グリフのトレース、3 種のスタイル、背景、効果、劣化。約 65% の行で小書きのかなを 0.55〜0.78 倍で描く。単語間の空白。</td><td>最初の版。Omniglot の文字表から、小書きのかなの大きさと空白を取り入れた。</td><td class="num">100k + 5k</td></tr>
+            <tr><td class="k"><strong>v2</strong></td><td>グレースケール、JPEG q90、雑多な要素を増量。</td><td>データを増やすため。その後、最悪 32 件のグリッドでラベルノイズが見つかった。大津の二値化（サンプルの 5%）で文字が塊になり、隣の行がラベル付きの行と同じくらい写り込むことがあった。</td><td class="num">500k + 10k</td></tr>
+            <tr><td class="k"><strong>v3</strong></td><td>切り抜きを詰める（65% の行で em を行の高さの U(0.58,&nbsp;0.84)、残りは U(0.40,&nbsp;0.62) に）。隣の行は高さの 35% までしか写さず、0.12&nbsp;em 以上離す。二値化は均一な背景でのみ、インクと背景の中間値で行う。</td><td>v2 のラベルノイズを取り除き、記号にもう少し画素を与えるため。</td><td class="num">横書き学習行 349,558</td></tr>
+            <tr><td class="k"><strong>v4</strong></td><td>公式の字形。25% の行で行末の横に「キャラクターの絵」。太字スタイルを 18% の行に（従来 10%）、最大 0.30&nbsp;em まで（従来 0.24）。ドロップシャドウを 18% に（従来 10%）、うち 60% はソフト。記号位置のぶれ。</td><td>アニメのサブタイトルでの失敗: 反転した ま、細い せ、切り抜きの端の絵をグリフとして読む、太い筆画。</td><td class="num">500k + 10k</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">ラウンド 1 では v1 と v2 を合わせて使った（横書き学習行 419,381）。v3 の行は実行設定から得た横書き学習行の数で、ジャーナルには v3 セットの総数が記録されていない。</p>
+      </figure>
+
+      <figure class="fig" id="f-evo">
+        <div class="fig-media">
+          <div class="evo"><div class="evo-labels" aria-hidden="true"><span style="top:11.4%">v1</span><span style="top:37.1%">v2</span><span style="top:62.9%">v3</span><span style="top:88.6%">v4</span></div><img src="img/synth/generator_evolution.webp" alt="生成器のバージョンごとに 1 段ずつ、上の v1 から下の v4 まで並べた生成行画像 4 段。" loading="lazy"></div>
+          <div class="fig-strips" style="border-top:1px solid var(--line)"><img src="img/synth/lines_v4.webp" alt="生成器 v4 による、さまざまな背景の学習用行画像 25 本のグリッド。" loading="lazy"></div>
+        </div>
+        <figcaption>図 # — 上: 各バージョンの検証用の行を 1 段ずつ。下: v4 の検証用の行 25 本。行の横の絵、太い筆画、影が入っている。いずれも高さ 64 px。</figcaption>
+      </figure>
+
+      <p>速度は予想以上に重要だった。最初の本番実行は、14 個のワーカープロセスで毎秒約 180 サンプルしか作れなかった。cProfile でプロファイルすると、遅いのは画像処理ではなく Python のループ（ブラシのスタンプ、接合部の円、ループで書いた点の補間）だった。これらをベクトル化し、BLAS をワーカーごとに 1 スレッドに固定すると、スループットは 572 サンプル/s に達し、100k 行が約 3 分で作れるようになった。第 4 版は 1 コアあたり毎秒約 78 行を描く。</p>
+
+      <h3 id="pagegen"><span class="sec-n">3.3</span> ページ生成器</h3>
+      <p>検出器には、すべての行にラベルが付いたページ全体が必要である。Rust で書いた 2 つ目の生成器（<code>rust/hxh-synth</code>）が、長辺 512〜1024&nbsp;px のマンガ風のページを合成する。最初は Python で書き始め、オーナーの判断で Rust に移した。Rust 版は 6 スレッドで毎秒 92 ページ、Python 版は 16.5 ページだった（1 コアあたり約 3.5 倍速い）。グリフの筆画、字形、重み、単語リストは Python パッケージから 1 つの JSON ファイル（グリフ 73、字形 77、単語 264）に書き出し、バイナリに埋め込む。情報源は 1 か所だけである。</p>
+      <p>ページのレイアウトは 3 種類ある。マンガのコマ（60%）、アニメの静止画やポスター（25%）、段落と罫線入りの表がある文書（15%）。テキストのまとまりは、吹き出し（楕円、雲形、爆発形、しっぽ付き）、キャプション、看板、ソフトな影付きのカード、段落、縁取りしたタイトルや擬音、小さな埋め草、表のセルなどである。まとまりは最大 ±12° 回転し、ときどき透視変形もかかる。約 11% の行は縦書きである。邪魔になる絵はテキストの前後に描き、約 3% のページには文字がまったくない。各行の四角形は筆画の形から求めるのでインクにぴったり沿い、行どうしが重なることはない（<a class="xref" href="#f-pages">図</a>）。</p>
+
+      <figure class="fig" id="f-pages">
+        <div class="fig-media"><img src="img/synth/pages_v2.webp" alt="正解の行四角形を描いた、生成したマンガ風ページ 6 枚。" loading="lazy"></div>
+        <figcaption>図 # — 生成した検出器の学習用ページ（pages_v2）と正解の四角形。横書きの行は青、縦書きの列は紫。</figcaption>
+      </figure>
+
+      <p>主な学習セット pages_v2 は学習 30,000 ページ、検証 1,000 ページからなる。10 スレッドで毎秒 168 ページ、3 分で書き出した（3.2&nbsp;GB）。行は 500,141 本、1 ページ平均 16.7 本（最大 56 本）で、行の高さの中央値は 19&nbsp;px（1 パーセンタイル 9&nbsp;px、99 パーセンタイル 70&nbsp;px）。905 ページは絵だけである。</p>
+
+      <h3 id="negatives"><span class="sec-n">3.4</span> ネガティブとしての一般テキストとアイコン</h3>
+      <p>最初の検出器（det_v1、pages_v2 で学習）を、この文字について書かれた Omniglot のページのスクリーンショットで試した。すると、見出し、漢字まじりの日本語、ローマ字、英語の文章、URL、アイコンの列と、ページ上のあらゆる文字の行を枠で囲んでしまった。続いて認識器が、それらの文字をもっともらしいかなに変えた。検出器はハンター文字と描かれた絵しか見たことがなかったので、文字らしいものはすべて文字だったのである。</p>
+      <p>3 番目のページセット pages_v3 では、本物のフォントによる一般の文字とアイコンを、ラベルを付けずに追加した。DBNet の教師データはラベルのない画素を背景として扱うので、検出器はハンター文字にだけ反応するよう学ばなければならない（<a class="xref" href="#f-negatives">図</a>）。フォントは実行時にシステムのフォントフォルダから読み込み、複製や埋め込みは一切しない。ビルドマシンでは生成器が 80 書体を見つけた。ラテン文字のサンセリフ、セリフ、等幅、ディスプレイ、手書き書体、日本語のゴシック体、韓国語、そしてアイコンフォント（グリフ 1,525 個の Segoe MDL2 Assets、1,624 個の Segoe Fluent Icons、絵文字のアウトライン、Webdings、Wingdings など）である。テキストにはいくつかの種類がある。英語風の文と見出し、ローマ字、URL、日付、価格などの数字、漢字まじりの日本語の文（縦書きの列も）、かな、そして少量の韓国語、ギリシャ文字、キリル文字（それぞれ約 3%）。∀、∇、丸や点などの Unicode 記号は、多くのハンター文字のグリフに似ているため、意図的なハードネガティブとして入れている。</p>
+      <p>一般テキストは 3 つの経路で入る。テキストのまとまり全体が確率 0.15 で一般テキストになる（マンガのページではその 1.6 倍）。両方の種類の行を含む混在グループが確率 0.08 で入る。余ったスペースは追加要素で埋める。ラベル、ページ番号、クレジット、字幕、単独のアイコン、アイコンの列や格子などである。4 つ目のレイアウトはページの 15% で使い、Web ページ、文書、アプリのスクリーンショットを模したものである（その 4 分の 1 はアプリの UI）。ナビゲーションバー、見出し、6〜19&nbsp;px の段落、リスト、表、サイドバー、フッターがあり、ときどきハンター文字のサンプルブロックや Omniglot のような文字表が入る。約 3% のページは、ハンター文字をまったく含まないネガティブである。</p>
+
+      <figure class="fig" id="f-negatives">
+        <div class="fig-media pad"><img src="img/deep/pages_v3.webp" alt="pages_v3 の生成ページ 8 枚（マンガ、文書、静止画、Web のスクリーンショット）。ハンター文字の行は緑かマゼンタ、一般テキストはオレンジ。" loading="lazy"></div>
+        <div class="fig-media pad" style="margin-top:10px"><img src="img/deep/pages_foreign.webp" alt="チェック用セット pages_foreign の生成ページ 8 枚。ほとんどが一般テキストとアイコン。" loading="lazy"></div>
+        <div class="legend-row"><span><i style="border-color:#00be00"></i>ハンター文字の行（ラベルあり）</span><span><i style="border-color:#dc00dc"></i>縦書きのハンター文字の列</span><span><i style="border-color:#ff8200"></i>一般テキスト（ラベルなし）</span><span><i style="border-color:#00aae6"></i>アイコン（ラベルなし）</span></div>
+        <figcaption>図 # — 上: ネガティブを含む学習セット pages_v3。下: ほとんどが一般テキストとアイコンからなるチェック用セット pages_foreign。学習の対象は緑とマゼンタの枠だけで、それ以外はすべて検出器のマップ上で暗いままでなければならない。</figcaption>
+      </figure>
+
+      <p>ラベルをきれいに保つためのルールが 1 つある。一般テキストの行は、ラベル付きのすべての四角形から、2 つの行の高さのうち大きいほうの 0.3 倍に縁取りや影のにじみを加えた距離以上離さなければならない（<a class="xref" href="#f-keep">図</a>）。判定には最終的な四角形どうしの凸多角形間の厳密な距離を使い、まとまりを配置するときと各行を描くときの両方で確認する。既定値より混在を増やして生成した 320 ページで、テストがこのルールを検証している。</p>
+
+      <figure class="fig" id="f-keep">
+        <div class="fig-box dfig">
+          <div class="fig-title">離隔ルール</div>
+          <div class="fig-sub">一般テキストの行は、その四角形が、ラベル付きの四角形をマージン分広げた領域の外にある場合だけ配置される。</div>
+          <div id="d-keep"></div>
+        </div>
+        <figcaption>図 # — 離隔ルールの模式図。マージンは大きいほうの行の高さの 0.3 倍に一般テキストのにじみを加えたもので、ラベル付きの行の上やすぐ隣に一般テキストのインクが来ることはない。</figcaption>
+      </figure>
+
+      <p>学習セット pages_v3 は学習 30,000 ページ、検証 1,000 ページ（seed 3）である。別に用意したチェック用セット pages_foreign（300 ページ、seed 4）は、あえて難しく作ってある。Web レイアウト 55%、ネガティブページ 35%、一般テキストのまとまりの確率 0.5、混在グループ 0.15、一般テキストの追加要素は 1.5 倍、アイコンは 3 倍。これは評価にのみ使う（<a href="#e-foreign">7.8 節</a>）。</p>
+
+      <!-- ============================================================ 4 -->
+      <h2 id="models"><span class="sec-n">4</span> モデル</h2>
+      <h3 id="reader"><span class="sec-n">4.1</span> 行認識器</h3>
+      <p>認識器は再帰層のない CRNN 型の CTC モデルである（<a class="xref" href="#f-reader">図</a>）。バックボーンは ImageNet で事前学習した timm の <code>mobilenetv4_conv_small_050</code> で、第 4 ステージの後で切り、480 チャネルと 1,280 チャネルのヘッドと分類器は捨てる。最初の畳み込みの RGB カーネルは足し合わせて 1 チャネルのグレーにする。最初の 2 ステージは両方向にストライド 2 のままで、幅は 4 分の 1 になる。それ以降のストライドはすべて (2,&nbsp;1) にし、高さは半分にするが幅は保つ。ストライドを変えても重みの形は変わらないので、事前学習済みの重みはそのまま読み込める。48&nbsp;×&nbsp;768 の行は、高さ 2 行、64 特徴の 192 列になる。高さ方向の平均で 1 行にする。系列ヘッドは 2 つの残差ブロック（それぞれ depthwise (1,&nbsp;5) 畳み込みと ReLU 付きの 1&nbsp;×&nbsp;1 畳み込み）、続いてドロップアウト 0.1 と 1&nbsp;×&nbsp;1 の分類器で、列ごとに 75 個のスコア（74 トークンと CTC のブランク）を出す。</p>
+
+      <figure class="fig" id="f-reader">
+        <div class="fig-box dfig">
+          <div class="fig-title">認識器の構成（入力 48 × 768）</div>
+          <div class="fig-sub">板の高さ ∝ 特徴マップの高さ、幅 ∝ 特徴マップの幅、奥行き ∝ チャネル数。ラベルはチャネル × 高さ × 幅。</div>
+          <div id="d-reader-arch"></div>
+        </div>
+        <figcaption>図 # — 48 px 認識器。ストライド s2,2 は両軸を半分に、s2,1 は高さだけを半分にするので、768 px は 1 列 4 px の T = 192 列になる。形状はモデル定義から計算した。</figcaption>
+      </figure>
+
+      <p>演算の種類は意図的に絞っている。BatchNorm を融合すると、32&nbsp;px モデルの ONNX グラフは Conv 49 個、Relu 32 個、Add 12 個、ReduceMean 1 個だけになり、ほかには何もない。エンジンは ReduceMean を平均プーリングとして実行する。LSTM、アテンション、squeeze-excitation、hard-swish はない。<a class="xref" href="#t-variants">表</a>に学習したバリエーションを示す。「3 ステージ」モデルは第 3 ステージで止めたもの（パラメータ 96k）。「tiny」モデルはスクラッチから学習する対照で、通常の depthwise separable ブロックの幅を MobileNet のパラメータ数と MACs に合わせて調整している。</p>
+
+      <figure class="fig table" id="t-variants">
+        <figcaption>表 # — 認識器のバリエーション: パラメータ数と、いくつかの入力サイズでの積和演算数（畳み込みのみ）。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>モデル</th><th class="num">パラメータ</th><th class="num">32 × 256</th><th class="num">48 × 384</th><th class="num">採用した入力</th></tr></thead>
+          <tbody>
+            <tr><td><strong>mnv4s</strong>、4 ステージ、ImageNet</td><td class="num">323.0k<span class="sub">BN 融合後 317.5k</span></td><td class="num">30.2M</td><td class="num">77.0M</td><td class="num">48 × 768 で <strong>154M</strong><span class="sub">32 × 512 で 60.5M</span></td></tr>
+            <tr><td>mnv4s3、3 ステージ</td><td class="num">96.1k</td><td class="num">15.3M</td><td class="num">33.9M</td><td class="num">32 × 512 で 30.5M</td></tr>
+            <tr><td>tiny、スクラッチ</td><td class="num">327.8k<span class="sub">BN 融合後 324.1k</span></td><td class="num">30.1M</td><td class="num">70.4M</td><td class="num">不採用</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>入力の行はグレーで、縦横比を保ったままモデルの高さに合わせて拡大縮小し、幅は高さの 16 倍で打ち切り、[−1,&nbsp;1] に正規化する。学習時のバッチは 8 画素の倍数までパディングし、CTC の入力長にはパディング後の幅ではなく各行の実際の幅 ⌈w/4⌉ を使う。オンラインのデータ拡張は控えめで、水平方向の拡大率 0.85〜1.15、ランダムなパディング、10% の行の白黒反転、少量のノイズだけである。採用したモデルの入力は 48&nbsp;×&nbsp;768 の固定サイズで、行を面積平均で 48&nbsp;px に縮小し、右側を最後の列の繰り返しでパディングし、768&nbsp;px より広い場合だけ横に圧縮する。</p>
+      <p>デコードは貪欲法で行う（<a class="xref" href="#f-ctc">図</a>）。列ごとのスコアを <math><msub><mi>z</mi><mrow><mi>t</mi><mo>,</mo><mi>k</mi></mrow></msub></math> とすると、認識器は各列で最もスコアの高いクラスを選び、連続する重複をまとめ、ブランクを取り除く。</p>
+      <div class="eq"><math display="block"><mrow><msub><mi>π</mi><mi>t</mi></msub><mo>=</mo><munder><mrow><mi>arg</mi><mo>&#x2061;</mo><mi>max</mi></mrow><mi>k</mi></munder><mspace width="0.2em"></mspace><msub><mi>z</mi><mrow><mi>t</mi><mo>,</mo><mi>k</mi></mrow></msub><mo>,</mo><mspace width="1.2em"></mspace><mover><mi>y</mi><mo>^</mo></mover><mo>=</mo><mi mathvariant="script">B</mi><mo stretchy="false">(</mo><msub><mi>π</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>π</mi><mi>T</mi></msub><mo stretchy="false">)</mo></mrow></math><span class="eq-n">(1)</span></div>
+      <p>ここで <math><mi mathvariant="script">B</mi></math> は、連続する重複を除いてからブランクを除く写像である。同じかなが 2 つ続いても間にブランクが入れば区別されるので、んん も書ける。同点の場合は <code>numpy.argmax</code> と同じく最小のクラス ID を選ぶ。表示とフィルタのために、出力された各文字には、それを出した列の区間 <math><msub><mi>τ</mi><mi>i</mi></msub></math> におけるそのクラスのソフトマックス確率の最大値を割り当てる。行の信頼度 <math><mi>c</mi></math> は、<math><mi>n</mi></math> 文字についての平均である。</p>
+      <div class="eq"><math display="block"><mrow><msub><mi>p</mi><mi>t</mi></msub><mo stretchy="false">(</mo><mi>k</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><msup><mi>e</mi><msub><mi>z</mi><mrow><mi>t</mi><mo>,</mo><mi>k</mi></mrow></msub></msup><mrow><msub><mo>∑</mo><mi>j</mi></msub><msup><mi>e</mi><msub><mi>z</mi><mrow><mi>t</mi><mo>,</mo><mi>j</mi></mrow></msub></msup></mrow></mfrac><mo>,</mo><mspace width="1.2em"></mspace><mi>c</mi><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><munder><mi>max</mi><mrow><mi>t</mi><mo>∈</mo><msub><mi>τ</mi><mi>i</mi></msub></mrow></munder><msub><mi>p</mi><mi>t</mi></msub><mo stretchy="false">(</mo><msub><mover><mi>y</mi><mo>^</mo></mover><mi>i</mi></msub><mo stretchy="false">)</mo></mrow></math><span class="eq-n">(2)</span></div>
+
+      <figure class="fig" id="f-ctc">
+        <div class="fig-box"><div class="ctc" id="ctc"></div></div>
+        <figcaption>図 # — 実際の int8 出力に対する貪欲 CTC。ステップごとの argmax（1 段目）、重複をまとめたもの（2 段目）、ブランクを除いたもの（3 段目）。192 ステップ（出力列）のそれぞれが帯の 4 px を受け持つ。パディング上の 73 ステップはすべてブランクなので省いている。拡大図はカーソル周辺の 9 ステップを示す。網掛けの範囲は、そのステップで勝ったクラスのスコアの勾配のうち中央の 80% が集まる入力の部分で、float モデルから求めた。</figcaption>
+      </figure>
+
+      <h3 id="vertical"><span class="sec-n">4.2</span> 縦書き認識器</h3>
+      <p>マンガの吹き出しは縦書きが多い。認識器は縦の列をそのままでは受け取れないので、縦書きの切り抜きを反時計回りに 90° 回転させる。最初のグリフが左端に来て、すべてのグリフが横倒しになる。横倒しのグリフは正立したグリフと衝突する。ふ（⊃ の形）を 90° 回すと う（∩）のように見えるので、共通のモデルでは向きを教える必要が出てくる（<a class="xref" href="#f-vertical">図</a>）。そのため縦書きの列は、同じ設計で、回転させた列だけで学習した 2 つ目の認識器に回す。学習データは synth_v4 の縦書き学習列 150,576 本で、長さの分布は横書きの行と同じである。向きはチェックポイントに保存され、int8 化の工程全体でキャリブレーション、ホールドアウトセット、ゴールデンベクトルを切り替える。</p>
+
+      <figure class="fig" id="f-vertical">
+        <div class="fig-media fig-strips"><img src="img/synth/vertical.webp" alt="縦書きの学習用の列。左が正立、右が反時計回りに 90 度回転したもの。" loading="lazy"></div>
+        <div class="fig-box dfig" style="margin-top:10px"><div class="gpanel" id="d-rotate"></div></div>
+        <figcaption>図 # — 上: 縦書きの列を、正立のままと、縦書き認識器が見る向きで表示。下: 向きが重要な理由。回転したグリフの一部は、正立した別のグリフに似ている。グリフは生成器の筆画データから描いた。</figcaption>
+      </figure>
+
+      <h3 id="detector"><span class="sec-n">4.3</span> 行検出器</h3>
+      <p>検出器は、同じ事前学習済みバックボーン上の DBNet-lite である（<a class="xref" href="#f-det">図</a>）。バックボーンの 4 ステージは、ストライド 4、8、16、32 でチャネル数 16、32、48、64 の特徴を出す。軽量な特徴ピラミッドが、それぞれを 1&nbsp;×&nbsp;1 畳み込みで 48 チャネルに射影し、最近傍の ×2 アップサンプリングの後でトップダウンに足し合わせる。続いて各レベルを depthwise 3&nbsp;×&nbsp;3 と 1&nbsp;×&nbsp;1 の畳み込みで平滑化して 16 チャネルに落とし、ストライド 4 までアップサンプリングして 64 チャネルに連結する。ヘッドは 32 チャネルへの 3&nbsp;×&nbsp;3 畳み込み、×2 アップサンプリング、16 チャネルへの 3&nbsp;×&nbsp;3 畳み込み、そしてストライド 2 で 2 チャネルを出力する 1&nbsp;×&nbsp;1 畳み込みからなる。出力はテキストカーネルのロジットと縦書きのロジットである。640&nbsp;×&nbsp;640 のレターボックスなら 320&nbsp;×&nbsp;320 のマップになる。同じ形のしきい値ヘッドは学習時にだけ使う。すべての層で ReLU を使い、BatchNorm はエクスポート時に融合する。</p>
+
+      <figure class="fig" id="f-det">
+        <div class="fig-box dfig">
+          <div class="fig-title">DBNet-lite 検出器</div>
+          <div class="fig-sub">入力は 640 × 640 のグレーのレターボックス、出力は 320 × 320 のマップ 2 枚。サイズは 高さ = 幅 × チャネル数。</div>
+          <div class="scroll-x" id="d-det-arch"></div>
+          <div class="scroll-hint">横にスクロールすると図全体が見られる →</div>
+        </div>
+        <figcaption>図 # — 検出器: ストライド 4〜32 のバックボーン、トップダウンの FPN-lite、ストライド 2 で終わるヘッド。高解像度での 2 つの通常の 3x3 畳み込みが、1.57 G MACs のうち 947 M を占める。</figcaption>
+      </figure>
+
+      <p>検出器のパラメータは 350k（しきい値ヘッドを除いた採用版は 344k）で、640&nbsp;×&nbsp;640 のページ 1 枚あたり 1.57&nbsp;G MACs かかる。内訳はバックボーン 442&nbsp;M、ピラミッド 180&nbsp;M、ヘッド 947&nbsp;M。ヘッドのコストのほとんどは、高解像度での 2 つの通常の 3&nbsp;×&nbsp;3 畳み込みにある。depthwise separable 版にすれば約 0.8&nbsp;G MACs 減らせるだろう。ストライド 2 の出力は小さな文字のために選んだ。ページ内の行の高さの中央値は 19&nbsp;px で、ページを 640&nbsp;px に縮小するとさらに小さくなる。ま と せ は左右反転すると別の形になるため、検出器には反転したページを見せない。</p>
+
+      <h4>教師データ</h4>
+      <p>ページ生成器は、各行の四角形から DBNet の教師データを書き出す <a class="cite" href="#ref-3">[3]</a>。面積を <math><mi>A</mi></math>、周長を <math><mi>L</mi></math> とすると、各辺を次の距離だけ内側に移動する。</p>
+      <div class="eq"><math display="block"><mrow><mi>D</mi><mo>=</mo><mfrac><mrow><mi>A</mi><mspace width="0.1em"></mspace><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>r</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mi>L</mi></mfrac><mo>,</mo><mspace width="1em"></mspace><mi>r</mi><mo>=</mo><mn>0.4</mn></mrow></math><span class="eq-n">(3)</span></div>
+      <p>そして隣り合う移動後の辺どうしを交差させる（マイター付きのオフセット）。中心が縮小後の四角形の内側にある画素がカーネルマップになる。カーネルが潰れてしまう行や、太さが 3&nbsp;px 未満の行は、背景としてラベル付けせず損失の計算から除外する。しきい値の教師データは四角形の辺に近づくほど高くなる。最も近い辺からの距離が <math><mi>d</mi></math> の画素について、</p>
+      <div class="eq"><math display="block"><mrow><msup><mi>T</mi><mo>*</mo></msup><mo>=</mo><mn>0.3</mn><mo>+</mo><mn>0.4</mn><mspace width="0.15em"></mspace><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>min</mi><mo stretchy="false">(</mo><mn>1</mn><mo>,</mo><mi>d</mi><mo>/</mo><mi>D</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math><span class="eq-n">(4)</span></div>
+      <p>を全四角形での最大値として取り、その損失マスクは四角形を <math><mi>D</mi></math> だけ丸い角で膨張させたものとする。向きの教師データは、縦書きの行のカーネル上で 1 になる。<a class="xref" href="#f-geom">図</a>では行の縦横比を変えて形状を確かめられる。<a class="xref" href="#f-targets">図</a>は実際の生成ページでのマップを示す。Rust の規則を numpy に移植したものは、カーネルを完全に再現する。OpenCV の <code>fillPoly</code> だと各辺で約 0.5&nbsp;px 多く塗ってしまうため、学習側でも numpy の規則を使う。</p>
+
+      <figure class="fig" id="f-geom">
+        <div class="fig-box dfig">
+          <div class="fig-title">縮小、しきい値帯、unclip</div>
+          <div class="fig-sub">太さ h の長方形。ドラッグで長さを変えられる。数値は式 (3) と (7) で計算している。</div>
+          <div class="ctl" id="d-geom-ctl"></div>
+          <div id="d-geom"></div>
+          <div class="readout" id="d-geom-out" aria-live="polite"></div>
+        </div>
+        <figcaption>図 # — 1 行分の教師データの形状。長い行のカーネル（青）の太さは、行の太さの r² = 0.16 しかない。DBNet の比率 1.5 の unclip では、完全なカーネルでも約 0.4 h（破線）までしか戻らないので、予測マップがカーネルより太いことを前提にしている。</figcaption>
+      </figure>
+
+      <figure class="fig" id="f-targets">
+        <div class="fig-media pad"><img src="img/deep/targets.webp" alt="生成ページ 1 枚を 4 つのパネルで表示: 行の四角形付きのページ、縮小したカーネルマップ、しきい値マップ、縦書きのカーネルをマゼンタで示したしきい値マスク。" loading="lazy"></div>
+        <figcaption>図 # — pages_v2 のページ 1 枚に対する DBNet の教師データ。左から: 四角形付きのページ、薄くしたページに重ねたカーネルマップ（白）、しきい値マップ、しきい値の損失マスク（縦書きのカーネルはマゼンタ）。</figcaption>
+      </figure>
+
+      <h4>損失</h4>
+      <p>カーネルマップ <math><mi>P</mi></math> としきい値マップ <math><mi>T</mi></math> を組み合わせて、DBNet の近似二値マップを作る。</p>
+      <div class="eq"><math display="block"><mrow><mover><mi>B</mi><mo>^</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>k</mi><mo stretchy="false">(</mo><mi>P</mi><mo>−</mo><mi>T</mi><mo stretchy="false">)</mo></mrow></msup></mrow></mfrac><mo>,</mo><mspace width="1em"></mspace><mi>k</mi><mo>=</mo><mn>50</mn></mrow></math><span class="eq-n">(5)</span></div>
+      <p>学習の損失は次のとおりである。</p>
+      <div class="eq"><math display="block"><mrow><mi mathvariant="script">L</mi><mo>=</mo><mi>α</mi><msub><mi mathvariant="script">L</mi><mtext>kernel</mtext></msub><mo>+</mo><mi>β</mi><msub><mi mathvariant="script">L</mi><mtext>thresh</mtext></msub><mo>+</mo><msub><mi mathvariant="script">L</mi><mtext>dice</mtext></msub><mo>+</mo><mi>γ</mi><msub><mi mathvariant="script">L</mi><mtext>vert</mtext></msub><mo>,</mo><mspace width="1em"></mspace><mi>α</mi><mo>=</mo><mn>5</mn><mo>,</mo><mspace width="0.4em"></mspace><mi>β</mi><mo>=</mo><mn>10</mn><mo>,</mo><mspace width="0.4em"></mspace><mi>γ</mi><mo>=</mo><mn>1</mn></mrow></math><span class="eq-n">(6)</span></div>
+      <p>ここで <math><msub><mi mathvariant="script">L</mi><mtext>kernel</mtext></msub></math> はカーネルのロジットに対する二値交差エントロピーで、オンラインのハードネガティブマイニング <a class="cite" href="#ref-7">[7]</a>（正例はすべて、負例は最も難しいものを正例 1 つにつき 3 つ）を使う。<math><msub><mi mathvariant="script">L</mi><mtext>thresh</mtext></msub></math> はマスク内のしきい値マップに対する L1 損失、<math><msub><mi mathvariant="script">L</mi><mtext>dice</mtext></msub></math> は <math><mover><mi>B</mi><mo>^</mo></mover></math> に対する Dice 損失、<math><msub><mi mathvariant="script">L</mi><mtext>vert</mtext></msub></math> はテキストカーネル内の向きのロジットに対する二値交差エントロピーである。</p>
+
+      <h4 id="post">後処理</h4>
+      <p>int8 のマップを行に変換するのは Rust のコード（<code>rust/hxh-detect</code>）で、エンジンと同じく no_std で、メモリ確保もしない。検出器は縮小したカーネルを予測するので、DBNet の unclip でそれぞれを元に戻す。連結成分の最小外接矩形（面積 <math><msup><mi>A</mi><mo>′</mo></msup></math>、周長 <math><msup><mi>L</mi><mo>′</mo></msup></math>）の各辺を、次の距離だけ外側に動かす。</p>
+      <div class="eq"><math display="block"><mrow><msup><mi>D</mi><mo>′</mo></msup><mo>=</mo><mfrac><mrow><msup><mi>A</mi><mo>′</mo></msup><mspace width="0.1em"></mspace><mi>ρ</mi></mrow><msup><mi>L</mi><mo>′</mo></msup></mfrac><mo>,</mo><mspace width="1em"></mspace><mi>ρ</mi><mo>=</mo><mn>1.5</mn></mrow></math><span class="eq-n">(7)</span></div>
+      <p>後処理全体は 10 ステップからなる。</p>
+      <ol>
+        <li>整数領域での<strong>しきい値処理</strong>。<math><mi>σ</mi><mo stretchy="false">(</mo><mi>q</mi><mo>·</mo><msup><mn>2</mn><mi>e</mi></msup><mo stretchy="false">)</mo><mo>&gt;</mo><mn>0.3</mn></math> は、事前に計算した整数 <math><mi>t</mi></math> を使って <math><mi>q</mi><mo>&gt;</mo><mi>t</mi></math> になる（ロジットが −0.8473 を超えること）。</li>
+        <li>8 近傍の<strong>連結成分</strong>。それぞれの平均確率（スコア）と縦書きロジットの総和も求める。</li>
+        <li>成分の画素の正方形の<strong>凸包</strong>。こうすると太さ k 画素のカーネルは k と測られる（OpenCV の画素中心の輪郭では k − 1 になる）。</li>
+        <li>回転キャリパー法による<strong>最小外接矩形</strong>。面積がちょうど等しい同点の場合を除き、<code>cv2.minAreaRect</code> と 5×10⁻⁵&nbsp;px 以内で一致する。</li>
+        <li><math><msup><mi>D</mi><mo>′</mo></msup></math>（式 7）による <strong>unclip</strong>。オプションとして、学習時の縮小の厳密な逆変換も選べる。</li>
+        <li><strong>フィルタ</strong>: スコア 0.5 以上、短辺がレターボックスで 3 画素以上、中心がレターボックスのパディングではなくページ上にあること。</li>
+        <li>縦書きロジットの総和の符号から<strong>向き</strong>を決める。</li>
+        <li>読む向きでの左上から時計回りの<strong>四角形</strong>（縦書きの列は右上から始まる）。</li>
+        <li><strong>読み順</strong>: 同じ向きの行は、枠どうしが行の太さ 1 つ分以内ならブロックにまとめる。ブロックは上から下へ、ブロック内の行も上から下へ、縦書きの列は右から左へ。</li>
+        <li><strong>切り出し</strong>: 各四角形の射影変換。行に沿って行の高さの 0.3 倍、行を横切る方向に 0.2 倍のマージンで広げ、ページ本来の解像度で双線形補間してサンプリングする。縦書きの列は反時計回りに 90° 回転して出力される。</li>
+      </ol>
+      <p>すべて f64 とソフトウェア実装の <code>sqrt</code>、<code>exp</code>、<code>floor</code> を使うので、ホスト版と WebAssembly 版で行も切り抜きもビット単位で一致する。約 100k 個のランダムな連結成分で OpenCV と比べると、凸包は完全に一致し、矩形は同点の場合を除いて 5×10⁻⁵&nbsp;px 以内で一致した。60 行を含む 320&nbsp;×&nbsp;320 のマップの後処理は 0.7〜2&nbsp;ms、300&nbsp;dpi の A4 スキャンのレターボックス化は 5〜8&nbsp;ms かかる。</p>
+
+      <!-- ============================================================ 5 -->
+      <h2 id="training"><span class="sec-n">5</span> 学習</h2>
+      <p>すべてのモデルは PC 1 台で学習した。Windows 11 上の RTX 4080 SUPER（16&nbsp;GB）、PyTorch 2.15（CUDA 13.2）、timm 1.0.31 である。<a class="xref" href="#t-setup">表</a>に実行設定から取った設定を示す。認識器は AdamW を使い、学習率 2×10⁻³、重み減衰 0.05（BatchNorm とバイアスには適用しない）、500 ステップのウォームアップの後、1% までコサイン減衰させる。bf16 の autocast で学習し、CTC 損失は fp32 で計算、勾配クリッピングは 5、重みの指数移動平均（EMA）の減衰率は 0.999 で、評価とエクスポートに使うのはこの EMA である。</p>
+
+      <figure class="fig table" id="t-setup">
+        <figcaption>表 # — 学習設定（runs/*/config.json より）。バッチの単位は行（認識器）または 512 px のページ切り抜き（検出器）。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>実行</th><th>データ</th><th class="num">入力</th><th class="num">ステップ</th><th class="num">バッチ</th><th class="num">lr</th><th class="num">ウォームアップ</th><th class="num">BN 再推定</th><th class="num">評価</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="9">認識器（AdamW、wd 0.05、EMA 0.999、ドロップアウト 0.1）</td></tr>
+            <tr><td>ラウンド 1: mnv4s、mnv4s スクラッチ、tiny</td><td>synth_v1 + v2、419,381 行</td><td class="num">32 px</td><td class="num">30k</td><td class="num">128</td><td class="num">2e-3</td><td class="num">500</td><td class="num">50 バッチ</td><td class="num">1k / 2,000 行</td></tr>
+            <tr><td>ラウンド 2: mnv4s 32、48 px、mnv4s3</td><td>synth_v3、349,558 行</td><td class="num">32, 48 px</td><td class="num">30k</td><td class="num">128</td><td class="num">2e-3</td><td class="num">500</td><td class="num">50 バッチ</td><td class="num">1k / 2,000 行</td></tr>
+            <tr><td>ラウンド 3: mnv4s 48 px、mnv4s3 32 px</td><td>synth_v4、349,424 行</td><td class="num">48, 32 px</td><td class="num">30k</td><td class="num">128</td><td class="num">2e-3</td><td class="num">500</td><td class="num">50 バッチ</td><td class="num">1k / 2,000 行</td></tr>
+            <tr><td>縦書き: mnv4s 48 px</td><td>synth_v4、150,576 列</td><td class="num">48 px</td><td class="num">30k</td><td class="num">128</td><td class="num">2e-3</td><td class="num">500</td><td class="num">50 バッチ</td><td class="num">1k / 2,000 行</td></tr>
+            <tr class="group"><td colspan="9">量子化を考慮したファインチューニング（AdamW、wd 0.01、EMA の重みから）</td></tr>
+            <tr><td>qat_v3_*、qat_v4_*（ラウンド 2、3、縦書き）</td><td>各モデル自身のデータ。キャリブレーション: 検証 64 行</td><td class="num">採用時の幅</td><td class="num">4k + 安定化</td><td class="num">128</td><td class="num">1e-4</td><td class="num">200</td><td class="num">–</td><td class="num">500 / 2,000 行</td></tr>
+            <tr class="group"><td colspan="9">検出器（AdamW、wd 0.05、EMA 0.999、bf16）</td></tr>
+            <tr><td>det_v1</td><td>pages_v2、30,000 ページ</td><td class="num">512 切り抜き</td><td class="num">36k</td><td class="num">16</td><td class="num">2e-3</td><td class="num">1,000</td><td class="num">40 バッチ</td><td class="num">2k / 300 ページ</td></tr>
+            <tr><td>det_v2</td><td>pages_v3 + v2、60,000 ページ。det_v1 から</td><td class="num">512 切り抜き</td><td class="num">16k</td><td class="num">16</td><td class="num">5e-4</td><td class="num">500</td><td class="num">40 バッチ</td><td class="num">2k / 300 ページ</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">QAT の「安定化」: 4,000 ステップの後に指数を再キャリブレーションし、変化したものがあれば新しい指数でさらに 50 ステップ学習する（最大 5 回）。ログはステップ 4,250 で終わる。検出器の損失の重みは α, β, γ = 5, 10, 1、k = 50、ハードネガティブマイニングは 3:1。</p>
+      </figure>
+
+      <h3 id="emabn"><span class="sec-n">5.1</span> EMA の重みには専用の BatchNorm 統計が必要</h3>
+      <p>事前学習済みモデルの最初の実行で、ステップ 5,000 に検証 CER が 26%、次に 50%、さらに 36% へと跳ね上がった。その間も学習損失はなめらかに下がり続けていた。EMA は重みをおよそ直近 1,000 ステップにわたって平均していたが、BatchNorm の移動統計は学習中のモデルからそのままコピーしていた。そのため評価では、平均した重みと、別の重みに属する統計とを組み合わせていたことになる。事前学習済みの重みは学習率 2×10⁻³ では速く動くため、この実行が最も大きな被害を受けた。ステップ 5,000 のチェックポイントでの診断結果は明白である（<a class="xref" href="#t-emabn">表</a>）。</p>
+
+      <figure class="fig table" id="t-emabn">
+        <figcaption>表 # — 同じステップ 5,000 のチェックポイントを 4 通りで評価した結果（ラウンド 1、mnv4s 32 px）。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>重み</th><th>BatchNorm 統計</th><th class="num">検証 CER</th><th class="num">完全一致行</th></tr></thead>
+          <tbody>
+            <tr><td>EMA（評価で使っていたもの）</td><td>学習中のモデルからコピー</td><td class="num">35.7%</td><td class="num">26.8%</td></tr>
+            <tr class="hi"><td><strong>EMA</strong></td><td><strong>学習バッチ 100 個で再推定</strong></td><td class="num"><strong>2.5%</strong></td><td class="num"><strong>89.0%</strong></td></tr>
+            <tr><td>生の重み</td><td>保存値</td><td class="num">5.2%</td><td class="num">80.0%</td></tr>
+            <tr><td>生の重み</td><td>再推定</td><td class="num">4.4%</td><td class="num">82.1%</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>修正では、毎回の評価の前に EMA モデルのコピーの BatchNorm 統計を学習バッチ 50 個で（累積平均で）再推定し、そのコピーを保存する。こうすれば、エクスポート時に畳み込みへ融合される統計は正しいものになる。このバグはベストチェックポイントの選択とすべての学習曲線も狂わせていたので、ラウンド 1 の 3 つの実行はすべてやり直した。検出器でも同じ方式を 40 バッチで使っている。</p>
+
+      <h3 id="loading"><span class="sec-n">5.2</span> Windows でのデータ読み込み</h3>
+      <p>どのモデル選択よりも時間を取られたのが、2 つのインフラの問題である。1 つ目は、GPU の使用率が 9% にとどまり、ローダーのワーカー 6 個で毎秒約 830 画像しか処理できなかったこと。spawn で起動したワーカーは 1 画像を 0.69&nbsp;ms で処理したが、メインプロセスは一度も読んだことのないファイルでは 4.19&nbsp;ms、読んだことのあるファイルでは 0.69&nbsp;ms かかった。Windows では小さなファイルを初めて開くたびに数ミリ秒かかる（ファイルシステムと、おそらくはウイルス対策ソフトのオーバーヘッド）。420k 個の JPEG をランダムな順で読むと、ほぼすべてのサンプルでこのコストがかかる。各分割を 1 つのメモリマップファイルにまとめることで解決した。ワーカー 4 個では毎秒 787 画像から 9,211 画像に（11.7 倍）、8 個では 1,294 から 16,240 になった。各ワーカーはマップを遅延して開くので、パックが各ワーカーにコピーされることはない。</p>
+      <p>2 つ目は、後のラウンドで、空き RAM がまだあるのに「paging file too small」（ページングファイルが小さすぎる）でクラッシュしたこと。コミット済みメモリは 72.2&nbsp;GB 中 71.7&nbsp;GB に達していた。Windows では spawn した各ワーカーが PyTorch を再インポートし、データセットの pickle されたコピーを個別に受け取る。当時のデータセットは 350k 要素の Python リスト 3 つだった。1 個約 1.7&nbsp;GB のワーカー 12 個と学習プロセス 3 つで、コミット上限を使い切っていた。パス、ラベル、教師データを numpy 配列で持つ（ワーカーのコピー 1 つあたり 107&nbsp;MB）、1 実行あたりワーカー 2 個、同時実行は最大 2 つ、とすることで解決した。教訓はほかに 2 つある。同時に起動した 3 つの CUDA プロセスが Windows の WDDM ドライバモデルの下でクラッシュしたので、今は実行を 1 つずつ順に起動している。また、dynamo の ONNX エクスポーターは、<code>PYTHONUTF8=1</code> を設定しないと、cp1252 のコンソールに ✓ を表示しようとしてクラッシュする。</p>
+
+      <!-- ============================================================ 6 -->
+      <h2 id="quant"><span class="sec-n">6</span> 量子化と推論エンジン</h2>
+      <h3 id="scheme"><span class="sec-n">6.1</span> int8 方式</h3>
+      <p>Espressif の ESP-PPQ は ONNX モデルを ESP-DL 向けに量子化する <a class="cite" href="#ref-11">[11]</a>。ESP32-S3 向けの <code>.espdl</code> ファイルは、テンソルごとに 1 つのスケール、対称 int8（ゼロ点 0）、整数の指数として保存される 2 のべき乗スケールを使う。指数 <math><mi>e</mi></math> のテンソルは次の値を保存する。</p>
+      <div class="eq"><math display="block"><mrow><mi>q</mi><mo>=</mo><mi>clamp</mi><mo stretchy="false">(</mo><mo>⌊</mo><mi>x</mi><mo>·</mo><msup><mn>2</mn><mrow><mo>−</mo><mi>e</mi></mrow></msup><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>⌋</mo><mo>,</mo><mspace width="0.2em"></mspace><mo>−</mo><mn>128</mn><mo>,</mo><mspace width="0.2em"></mspace><mn>127</mn><mo stretchy="false">)</mo><mo>,</mo><mspace width="1.2em"></mspace><mover><mi>x</mi><mo>^</mo></mover><mo>=</mo><mi>q</mi><mo>·</mo><msup><mn>2</mn><mi>e</mi></msup></mrow></math><span class="eq-n">(8)</span></div>
+      <p>丸めは half up で、同点は +∞ 方向に丸める。バイアスは指数 <math><msub><mi>e</mi><mi>x</mi></msub><mo>+</mo><msub><mi>e</mi><mi>w</mi></msub></math> の int32 で、20 ビットの範囲に制限される。入力の指数は −7 なので、<math><mo stretchy="false">(</mo><mi>p</mi><mo>/</mo><mn>255</mn><mo>−</mo><mn>0.5</mn><mo stretchy="false">)</mo><mo>/</mo><mn>0.5</mn></math> に正規化された画素 <math><mi>p</mi></math> はおおよそ <math><mi>p</mi><mo>−</mo><mn>128</mn></math> に対応する。画素 127 と 128 はそれぞれ −1 と +1 になるので、int8 の入力が 0 になることはない。重みの指数は絶対値の 99.99 パーセンタイル <math><msub><mi>r</mi><mi>w</mi></msub></math> から切り上げで求め、活性の指数は KL ダイバージェンスによるキャリブレーションでクリッピングしきい値 <math><mi>c</mi></math> を選び、最も近い 2 のべき乗に丸めて求める。</p>
+      <div class="eq"><math display="block"><mrow><msub><mi>e</mi><mi>w</mi></msub><mo>=</mo><mo>⌈</mo><msub><mi>log</mi><mn>2</mn></msub><mo>⁡</mo><mo stretchy="false">(</mo><mn>2</mn><msub><mi>r</mi><mi>w</mi></msub><mo>/</mo><mn>255</mn><mo stretchy="false">)</mo><mo>⌉</mo><mo>,</mo><mspace width="1.2em"></mspace><msub><mi>e</mi><mi>a</mi></msub><mo>=</mo><mo>⌊</mo><msub><mi>log</mi><mn>2</mn></msub><mo>⁡</mo><mo stretchy="false">(</mo><mi>c</mi><mo>/</mo><mn>128</mn><mo stretchy="false">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>⌋</mo></mrow></math><span class="eq-n">(9)</span></div>
+      <p>（<code>hxh_ocr/qat.py</code> は ESP-PPQ のソースから両方の規則を再実装している。）スケールがすべて 2 のべき乗なので、畳み込みの再スケールはシフトになる。指数 <math><msub><mi>e</mi><mi>x</mi></msub><mo>+</mo><msub><mi>e</mi><mi>w</mi></msub></math> の累積値 <math><mi>a</mi></math> は、次の式で指数 <math><msub><mi>e</mi><mi>y</mi></msub></math> の出力になる。</p>
+      <div class="eq"><math display="block"><mrow><mi>y</mi><mo>=</mo><mi>clamp</mi><mo stretchy="false">(</mo><mo stretchy="false">(</mo><mi>a</mi><mo>+</mo><msup><mn>2</mn><mrow><mi>s</mi><mo>−</mo><mn>1</mn></mrow></msup><mo stretchy="false">)</mo><mo>≫</mo><mi>s</mi><mo>,</mo><mspace width="0.2em"></mspace><mo>−</mo><mn>128</mn><mo>,</mo><mspace width="0.2em"></mspace><mn>127</mn><mo stretchy="false">)</mo><mo>,</mo><mspace width="1.2em"></mspace><mi>s</mi><mo>=</mo><msub><mi>e</mi><mi>y</mi></msub><mo>−</mo><msub><mi>e</mi><mi>x</mi></msub><mo>−</mo><msub><mi>e</mi><mi>w</mi></msub></mrow></math><span class="eq-n">(10)</span></div>
+      <p><math><mi>s</mi><mo>&gt;</mo><mn>0</mn></math> なら算術シフト、<math><mi>s</mi><mo>≤</mo><mn>0</mn></math> なら左シフトで、その層に ReLU があれば融合して適用する（<a class="xref" href="#f-requant">図</a>）。<a class="xref" href="#f-int8">図</a>は、2 のべき乗のグリッドが実際のテンソルにとって何を意味するかを示す。指数が 1 つ変わると範囲も刻み幅も 2 倍になるので、キャリブレーションは 2 倍ずつ離れた範囲の中からしか選べない。</p>
+
+      <figure class="fig" id="f-int8">
+        <div class="fig-box dfig">
+          <div class="fig-title">採用した認識器での 2 のべき乗 int8 グリッド</div>
+          <div class="fig-sub">テンソルを選ぶ。各バーは 1 つの指数での int8 グリッドの正の半分（負の半分は対称）で、目盛りはグリッド点を示す。オレンジの線は KL のクリッピングしきい値 c。</div>
+          <div class="ctl" id="d-int8-ctl"></div>
+          <div id="d-int8"></div>
+          <div class="readout" id="d-int8-out" aria-live="polite"></div>
+        </div>
+        <figcaption>図 # — キャリブレーションで選ばれたグリッド（青）と、スケールが半分および 2 倍の隣のグリッド。QAT 後の 48 px 認識器の量子化テンソル 63 個について示す。青いバーの上端を超える値は 127 で飽和する。</figcaption>
+      </figure>
+
+      <figure class="fig" id="f-requant">
+        <div class="fig-box dfig">
+          <div class="fig-title">ESP-DL が計算する int8 畳み込み 1 回</div>
+          <div class="fig-sub">浮動小数点はどこにも出てこない。指数は事前に分かっているので、再スケールはシフト 1 回で済む。</div>
+          <div id="d-requant"></div>
+        </div>
+        <figcaption>図 # — 畳み込みの整数演算の流れ。シフト量 s は層ごとに事前計算する。丸めは half up で、飽和は融合した ReLU の前に行う。</figcaption>
+      </figure>
+
+      <p>テンソル単位のスケールは、チャネルごとに値の範囲が大きく異なりうる depthwise 畳み込みでは既知のリスクである。採用した認識器にもそれが表れている（<a class="xref" href="#f-exp">図</a>）。depthwise の重みテンソル 17 個の指数の中央値は −3（範囲 −7〜0）、1&nbsp;×&nbsp;1 の重みテンソル 29 個の中央値は −6（範囲 −8〜−2）である。つまり典型的な depthwise のグリッドは 8 倍粗い。</p>
+
+      <figure class="fig" id="f-exp">
+        <div class="fig-box dfig">
+          <div class="fig-title">採用した認識器の畳み込み 49 個の指数</div>
+          <div class="fig-sub">層ごとの重みの指数（塗りつぶし、種類別）と出力活性の指数（白抜きの四角）を、ネットワークの順に表示。マウスを重ねるとシフト量 s が表示される。</div>
+          <div id="d-exponents"></div>
+          <div class="readout" id="d-exp-out" aria-live="polite"></div>
+        </div>
+        <figcaption>図 # — QAT 後の qat_v4_mnv4s_h48 の指数。depthwise の重みは 1x1 の重みよりずっと上にあり、テンソルごとに 1 つのスケールでは粗く量子化される。</figcaption>
+      </figure>
+
+      <h3 id="ptq"><span class="sec-n">6.2</span> PTQ から QAT へ</h3>
+      <p>まず予備実験で、予定しているすべての演算が ESP32-S3 向けにエクスポートできることを確かめた。1 チャネルでストライド 2 の最初の畳み込み、depthwise の 3&nbsp;×&nbsp;3、5&nbsp;×&nbsp;5、1&nbsp;×&nbsp;5 カーネル、ストライド (2,&nbsp;1)、平均プーリング、Add、ReLU である。すべて警告なしでエクスポートできた。エクスポーターは 2 つのものを追加する。Add の後の ReLU は 256 エントリのルックアップテーブルを持つ別の演算になり、別のスケールで再利用されるスキップ接続のテンソルには RequantizeLinear 演算が入る。重みがランダムなトイモデルは誤差の測定には使えなかった。75 クラスのスコアがほぼ同点だったからである（top-1 のマージンの中央値 0.014）。測定には、7 分間学習したトイモデル（パラメータ 19k、fp32 CER 20.4%）を使った。</p>
+      <p>このトイモデルでは、KL キャリブレーションによる学習後量子化（PTQ）で CER が 2.1 ポイント悪化し、ラベルなしで重みとバイアスをファインチューニングする TQT でそれが回復した（<a class="xref" href="#t-ptq">表</a>）。ところが畳み込み 49 層をもつ実際の認識器では状況が変わった。PTQ で 2.2 ポイント悪化し（信号対雑音比はトイモデルの 22.6&nbsp;dB に対して 9.8&nbsp;dB）、TQT で回復したのは約半分だけだった。誤差は全層に広がっていて、パーセンタイルや minmax のキャリブレーションも、ヘッドや最初の層だけを int16 にすることも効果がなかった。</p>
+
+      <figure class="fig table" id="t-ptq">
+        <figcaption>表 # — int8 化のレシピ。トイ: ホールドアウトした検証用の 256 行。実モデル: ラウンド 1 の mnv4s 32 px、入力は 32 × 256 の固定（ホールドアウトした v1 の 512 行、または v3 の 1,500 行）。SNR と一致率は fp32 モデルとの比較。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>モデル、ホールドアウト</th><th>レシピ</th><th class="num">SNR</th><th class="num">argmax 一致</th><th class="num">fp32 と同じデコード</th><th class="num">fp32 CER</th><th class="num">int8 CER</th></tr></thead>
+          <tbody>
+            <tr><td rowspan="3">トイ（パラメータ 19k）</td><td>PTQ（KL）</td><td class="num">22.6 dB</td><td class="num">98.42%</td><td class="num">65.6%</td><td class="num" rowspan="3">20.4%</td><td class="num">22.5%</td></tr>
+            <tr><td>PTQ + TQT</td><td class="num">24.6–25.0 dB</td><td class="num">98.86%</td><td class="num">67–70%</td><td class="num">19.9–20.5%</td></tr>
+            <tr><td>int16（w16a16）</td><td class="num">69.9 dB</td><td class="num">100%</td><td class="num">100%</td><td class="num">20.4%</td></tr>
+            <tr><td rowspan="2">mnv4s、v1 ホールドアウト</td><td>PTQ（KL）</td><td class="num">9.8 dB</td><td class="num">98.0%</td><td class="num">85.2%</td><td class="num" rowspan="2">3.68%</td><td class="num">5.88%</td></tr>
+            <tr><td>PTQ + TQT</td><td class="num">14.3 dB</td><td class="num">98.7%</td><td class="num">90.4%</td><td class="num">4.87%</td></tr>
+            <tr class="hi"><td rowspan="2">mnv4s QAT、v1 ホールドアウト</td><td><strong>QAT の後に PTQ</strong></td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td><td class="num" rowspan="2">3.92%</td><td class="num"><strong>4.06%</strong></td></tr>
+            <tr><td>QAT の後に PTQ + TQT</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">5.28%</td></tr>
+            <tr><td>mnv4s、v3 ホールドアウト</td><td>PTQ（KL）</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">3.16%</td><td class="num">8.25%</td></tr>
+            <tr class="hi"><td>mnv4s QAT、v3 ホールドアウト</td><td><strong>QAT の後に PTQ</strong></td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">3.58%</td><td class="num"><strong>3.68%</strong></td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">n/r: 記録なし。この固定入力では 256 px より広い行は横に圧縮されるため、fp32 CER は学習時の評価より高い。QAT は synth_v3 で 4k ステップ実行した（611 s）。</p>
+      </figure>
+
+      <p>量子化を考慮した学習 <a class="cite" href="#ref-5">[5]</a> がこの差を埋める。<code>hxh_ocr/qat.py</code> は BatchNorm を融合したモデルを torch.fx でトレースし、ESP-PPQ の規則を再現する疑似量子化を挿入する。重みの指数は 99.99 パーセンタイルから毎ステップ再計算、int32 のバイアスは 20 ビットに制限、丸めは half up、ReLU は量子化の前に融合、Add の入力は Add の指数に再量子化、入力の指数は −7 に固定、活性の指数は ESP-PPQ の KL キャリブレーションの再実装で求め、100 ステップごとに再キャリブレーションする。活性の勾配にはクリップ付きのストレートスルー推定量を使う。同じ重みとキャリブレーション用の行を使えば、49 個の畳み込みの指数はすべて ESP-PPQ と一致し、ホールドアウトのロジットもすべて同一になる。</p>
+      <p>QAT の後、int8 の CER はモデル自身の fp32 CER から 0.10〜0.14 ポイント以内に収まる。単純な PTQ では 2.2〜5 ポイントだった。レシピを決めるうえで、さらに 3 つの知見があった。</p>
+      <ul>
+        <li><strong>KL キャリブレーションは不安定である。</strong>重みに 10⁻⁵ の相対的な摂動を加えると、51 個の活性の指数のうち 2〜10 個が変わる。ほぼ同一の 6 回のキャリブレーションで、ベースラインの PTQ int8 CER は 5.6% から 8.9% までばらついた。つまり 5.88% という 1 回の測定値はリスクを過小評価していた。QAT 後のばらつきは 4.2〜4.5% である。</li>
+        <li><strong>QAT の後の TQT は逆効果である</strong>（4.06% → 5.28%）。ブロックを fp32 側に引き戻し、QAT で学んだものを打ち消してしまう。</li>
+        <li><strong>代替案はどちらも役に立たなかった</strong>。ランダムに抽出した指数の下での学習（4.47% に対して 4.70%）と、minmax キャリブレーション（決定的だが精度が劣り、キャリブレーション用の行が変わると脆い）である。</li>
+      </ul>
+      <p>したがってレシピは次のとおりである。モデル自身のチェックポイントから自身のデータで QAT を行い、QAT と ESP-PPQ で同じキャリブレーション用の行を使い、その後は通常の ESP-PPQ の PTQ を行う。チェックポイントは int8 の検証 CER で選ぶ。<a class="xref" href="#f-qat">図</a>にラウンド 3 の 3 つのファインチューニングを示す。ステップ 0 では、fp32 チェックポイントを疑似量子化すると 48&nbsp;px 認識器で 3.5 ポイント悪化するが、500 ステップ後にはその大半が消えている。「float」の曲線は QAT の重みを疑似量子化なしで動かしたものである。重みはそのために学習したものではないので、最後は int8 より高くなる。</p>
+
+      <figure class="fig" id="f-qat">
+        <div class="fig-box dfig">
+          <div class="ctl" id="d-qat-ctl"></div>
+          <div id="d-qat"></div>
+        </div>
+        <figcaption>図 # — QAT 中の検証 CER（2,000 行のサブセット、500 ステップごと）。実線: ESP-DL と完全に一致する疑似量子化あり。破線: 同じ重みを浮動小数点で計算。ステップ 0 は fp32 チェックポイント。</figcaption>
+      </figure>
+
+      <h3 id="engine"><span class="sec-n">6.3</span> Rust エンジン</h3>
+      <p>int8 モデルは、このプロジェクトのために書いた Rust エンジン <code>hxh-infer</code> で動く。<code>#![no_std]</code> で、アロケータも依存ライブラリもない。変換器は公式の <code>.espdl</code>（16 バイトのヘッダと FlatBuffers のモデル）を読み、最小限の形式 <code>.hxhm</code> を書き出す。64 バイトのヘッダ、16 バイトのテンソルレコード（NHWC の形状、指数、アリーナ内のオフセット）、40 バイトの演算レコード、16 バイト境界に揃えたデータ塊からなる形式である。演算は 8 種類で、Conv、DwConv、Add、Lut、Requant、AvgPool、そして検出器用の最近傍 Resize と Concat である。重みは ESP-DL と同じく、出力 16 チャネルごとのブロックに詰める。256 エントリのテーブルが u8 の画素を int8 の入力に変換し、正規化と入力の量子化もまとめて行うので、実行時に入力で浮動小数点演算をすることはない。テンソルのオフセットはテンソルの生存期間に対するファーストフィットの配置計画で決まるので、実行時のメモリ確保は一切ない。変換器は展開したフィルタをすべて ESP-PPQ 自身の量子化値と照合し、対応していないグラフは推測で処理せずに拒否する。</p>
+      <p>ビット単位で一致させるには、ESP-DL の C ソースを丹念に読む必要があった。丸めは式 (10) のとおり half up で、ほかの方式にするとすべてのテストベクトルが変わる（<a class="xref" href="#t-round">表</a>）。ESP-DL の int8 の Add は指数を無視する。int32 の加算とクリップだけで、ESP-PPQ が RequantizeLinear 演算を挿入して両方の入力を出力と同じ指数に揃えているから成り立っている。ルックアップテーブルは x + 128 でインデックスする。ReLU は飽和の後に適用する。パディング部分のタップは飛ばす。平均プーリングは float の逆数を掛けるので、エンジンはその float32 の計算手順を正確に再現する。検出器では、Concat は指数を無視する単なるメモリコピーで、最近傍 Resize は <math><mi>round</mi><mo stretchy="false">(</mo><mi>x</mi><mo>·</mo><msup><mn>2</mn><mrow><msub><mi>e</mi><mtext>in</mtext></msub><mo>−</mo><msub><mi>e</mi><mtext>out</mtext></msub></mrow></msup><mo stretchy="false">)</mo></math> を計算する。ESP-PPQ は両方を出力の指数に揃えるので、採用した検出器ではすべての Resize が単なるコピーになる。変換器は指数が異なる場合を拒否する。</p>
+
+      <figure class="fig table" id="t-round">
+        <figcaption>表 # — 丸めの方式。左: 各方式での同点の丸め方。右: エンジンが half up の代わりにその方式を使った場合に変わるテストベクトルの値とデコードの数（69 ベクトル）。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>方式</th><th class="num">−2.5</th><th class="num">−1.5</th><th class="num">−0.5</th><th class="num">0.5</th><th class="num">1.5</th><th class="num">2.5</th><th class="num">変わったロジット</th><th class="num">変わったデコード</th></tr></thead>
+          <tbody>
+            <tr class="hi"><td><strong>half up（ESP-DL）</strong></td><td class="num">−2</td><td class="num">−1</td><td class="num">0</td><td class="num">1</td><td class="num">2</td><td class="num">3</td><td class="num">0</td><td class="num">0</td></tr>
+            <tr><td>half to even（偶数丸め、ONNX）</td><td class="num">−2</td><td class="num">−2</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td class="num">2</td><td class="num">250K</td><td class="num">11</td></tr>
+            <tr><td>half away from zero（0 から遠い方へ、TFLite、ESP-NN）</td><td class="num">−3</td><td class="num">−2</td><td class="num">−1</td><td class="num">1</td><td class="num">2</td><td class="num">3</td><td class="num">87K</td><td class="num">6</td></tr>
+            <tr><td>単純なシフト（floor）</td><td class="num">−3</td><td class="num">−2</td><td class="num">−1</td><td class="num">0</td><td class="num">1</td><td class="num">2</td><td class="num">317K</td><td class="num">35</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">実際の 32 px モデルでの 1 回の実行で、畳み込みの出力にちょうど .5 の同点が 1,860 万回現れた。丸めの規則は端の話ではなく、常に効いている。</p>
+      </figure>
+
+      <p>すべての演算は <code>Kernels</code> トレイトを通る。移植性のあるスカラー実装が基準で、WebAssembly SIMD128 実装が畳み込み、depthwise 畳み込み、プーリング、加算、再量子化、Resize、Concat を上書きする。ビット単位の一致を保つには、いくつかの落とし穴に対処する必要があった。</p>
+      <ul>
+        <li>int8 の積 1 つは i16 に収まるが、2 つの和は収まらない（(−128)·(−128)·2 = 32,768）ので、ペアは <code>i32x4.dot_i16x8_s</code> で直接 i32 に入れる。</li>
+        <li>丸め定数 <math><msup><mn>2</mn><mrow><mi>s</mi><mo>−</mo><mn>1</mn></mrow></msup></math> はシフト量 30 以上で i32 をオーバーフローするので、等価な式が必要になる。</li>
+        <li>負のシフトはシフトの前にクランプする。</li>
+        <li>75 クラスの出力の最後のブロックは端数なので、マスク付きのロードが必要になる。</li>
+        <li>1 チャネルのステムは縮約長が奇数（カーネルの 1 行につき 3 項）なので、最後の項はゼロの重みと組にする。</li>
+        <li>ESP-DL の平均プーリングは float なので、ベクトル版も同じ float32 演算を同じ順序で行う。</li>
+      </ul>
+      <p>検証は何層にも重ねた（<a class="xref" href="#t-bitexact">表</a>）。全モデルについての ESP-PPQ のシミュレータによるゴールデンベクトル、独立に書いた素朴な参照実装、そして各 SIMD カーネルとスカラー版とのランダムな差分テスト（モデルでは使わない形状も含む）である。ランダムテスト自体も、わざと壊したカーネルを検出できることを確かめて検証した。</p>
+
+      <figure class="fig table" id="t-bitexact">
+        <figcaption>表 # — ESP-PPQ の int8 シミュレーション（ESP32-S3 の意味論）とのビット単位一致の検証。「ビット単位で一致」とは、出力値の違いがゼロで、CTC のデコードが同一であることを指す。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>検証</th><th>範囲</th><th class="num">結果</th></tr></thead>
+          <tbody>
+            <tr><td>採用した各認識器（横、縦）と各 QAT 認識器</td><td>それぞれホールドアウトの 512 行または 512 列、ホストと wasm</td><td class="num">512 / 512</td></tr>
+            <tr><td>トイのセットと実際の認識器 5 個</td><td>3 × 69 + 5 × 512 ベクトル、SIMD ありとなしの wasm</td><td class="num">相違 0 個</td></tr>
+            <tr><td>検出器 det_v1</td><td>ホールドアウトの 16 ページ。ホスト、wasm SIMD、スカラー</td><td class="num">16 / 16</td></tr>
+            <tr><td>トイの検出器（Resize ×2/×4/×8、入力 6 個の Concat）</td><td>12 ベクトルと中間テンソル 54 個</td><td class="num">すべて一致</td></tr>
+            <tr><td>ランダム、SIMD 対スカラー、認識器の演算</td><td>カーネル 1–5、ストライド 1–3、奇数チャネル、シフト −24..31</td><td class="num">0 / 58,757</td></tr>
+            <tr><td>ランダム、SIMD 対スカラー、Resize と Concat を含む</td><td>倍率 1–5、1–70 チャネル、任意のオフセットとストライド</td><td class="num">0 / 157,421</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>SIMD カーネルにより、どのモデルもスカラー版より約 7 倍速くなり（<a class="xref" href="#f-speed">図</a>）、1 スレッドで約 16&nbsp;G MAC/s に達した。MACs の約 75% を占める 1&nbsp;×&nbsp;1 畳み込みは 28&nbsp;G MAC/s で動き、これは Zen&nbsp;2 の上限（1 サイクルに <code>pmaddwd</code> 1 回）の約 90% にあたる。検出器は SIMD ありで 1 ページ 62&nbsp;ms（25&nbsp;G MAC/s）、なしでは 683&nbsp;ms かかる。SIMD モジュールは検出器対応込みで 80&nbsp;KB（gzip で 31&nbsp;KB）、スカラーのフォールバックは 38&nbsp;KB（gzip で 16&nbsp;KB）。検出器のファイルは 367&nbsp;KB、認識器はそれぞれ 338&nbsp;KB で、モデルは合計約 1.0&nbsp;MB である。</p>
+
+      <figure class="fig" id="f-speed">
+        <div class="fig-box"><div id="chart-speed"></div></div>
+        <figcaption>図 # — node 24、Ryzen 7 3700X の 1 スレッドでの 1 行あたりのミリ秒。スカラー版と WebAssembly SIMD128 版の比較。ARM のスマホは測定していない。</figcaption>
+      </figure>
+
+      <p>将来マイコンに移植する際の注意点が 1 つある。S3 は 20 ビットのレーンで累積するが、ESP-PPQ は float32 でシミュレーションする。観測された最大の累積値は上限 524,287 に対して 73,193 なので余裕はあるが、新しいモデルのたびに確認し直す必要がある。ESP-NN の TFLite 型カーネルもそのままでは使えない。0 から遠い方へ丸めるので、<a class="xref" href="#t-round">表</a>の 87K 個の値の不一致がそれにあたる。</p>
+
+      <!-- ============================================================ 7 -->
+      <h2 id="experiments"><span class="sec-n">7</span> 実験</h2>
+      <p><strong>評価方法。</strong>本章の数値はすべて、モデルが学習していない生成画像で測ったものである。文字誤り率は、行ごとの編集距離の総和を正解の文字数で割ったものである。</p>
+      <div class="eq"><math display="block"><mrow><mi>CER</mi><mo>=</mo><mfrac><mrow><msub><mo>∑</mo><mi>i</mi></msub><mi>edit</mi><mo stretchy="false">(</mo><msub><mover><mi>y</mi><mo>^</mo></mover><mi>i</mi></msub><mo>,</mo><msub><mi>y</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow><mrow><msub><mo>∑</mo><mi>i</mi></msub><mo stretchy="false">|</mo><msub><mi>y</mi><mi>i</mi></msub><mo stretchy="false">|</mo></mrow></mfrac></mrow></math><span class="eq-n">(11)</span></div>
+      <p>「完全一致行」は誤りなく読めた行の割合である。検出された行は、四角形の IoU が 0.5 以上のとき正解の行と一致したとみなす（1 対 1、IoU の高い順）。エンドツーエンドの CER はすべての正解行について計算するので、見逃した行はその文字をすべて削除したものとして数える。「ブラウザパイプライン」と記したページ単位の結果は、デモの JavaScript と WebAssembly をそのまま node で動かしたもの（<code>web/test/page_e2e.mjs</code>）で、モデルはすべて int8 である。</p>
+
+      <h3 id="e-readers"><span class="sec-n">7.1</span> 認識器のアブレーション</h3>
+      <p>認識器の実験を 3 ラウンド行い、いずれもバッチ 128 で 30k ステップ学習した（<a class="xref" href="#t-rounds">表</a>、<a class="xref" href="#f-curves">図</a>）。各ラウンドはそれぞれ別の生成器バージョンを使ったので、比較はラウンド内で行う。</p>
+      <p><strong>ラウンド 1: 事前学習の有無。</strong>同じ MobileNetV4 ネットワークで、ImageNet の重みからは CER 1.16%、スクラッチからは 1.47% となり、誤りが約 21% 少なかった。収束もはるかに速く、ステップ 2,000 で 3.0% 対 7.5% だった。ImageNet で学んだ低レベルのフィルタは、合成の幾何学的なグリフにさえ転用できる。スクラッチから学習した tiny ネットワークは、スクラッチの MobileNet を上回り（1.27% 対 1.47%）、層が少なく幅が広いため、実時間で 30% 速く学習した。</p>
+      <p><strong>ラウンド 2: 画素か深さか。</strong>よりクリーンな v3 データでは、同じ 32&nbsp;px モデルが、モデルを変えずに 1.16% から 0.84% に改善した。48&nbsp;px にすると、MACs は 2.5 倍になるが誤りは約 4 分の 1 減った（0.64%）。第 4 ステージを除くと、MACs が半分、パラメータが 30% になる代わりに 0.30 ポイント悪化した。このタスクでは、層を増やすより入力の画素を増やすほうが効く。残る誤りのほとんどが濁点・半濁点だからである。</p>
+
+      <figure class="fig table" id="t-rounds">
+        <figcaption>表 # — 認識器のアブレーション（fp32）。検証セット全体: synth_v2 val（ラウンド 1）と synth_v3 val の横書き 6,998 行（ラウンド 2）。ラウンド 3 は 2,000 行サブセットでの最良値。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>モデル</th><th class="num">パラメータ</th><th class="num">MACs</th><th class="num">学習時間</th><th class="num">2k ステップ時の CER</th><th class="num">検証 CER</th><th class="num">完全一致行</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="7">ラウンド 1 · synth_v1 + v2 · 32 px</td></tr>
+            <tr class="hi"><td><strong>mnv4s、ImageNet</strong></td><td class="num">323k</td><td class="num">30M</td><td class="num">1,727 s</td><td class="num">3.0%</td><td class="num"><strong>1.16%</strong></td><td class="num"><strong>94.4%</strong></td></tr>
+            <tr><td>mnv4s、スクラッチ</td><td class="num">323k</td><td class="num">30M</td><td class="num">1,757 s</td><td class="num">7.5%</td><td class="num">1.47%</td><td class="num">93.0%</td></tr>
+            <tr><td>tiny、スクラッチ</td><td class="num">328k</td><td class="num">30M</td><td class="num">1,218 s</td><td class="num">5.1%</td><td class="num">1.27%</td><td class="num">93.8%</td></tr>
+            <tr class="group"><td colspan="7">ラウンド 2 · synth_v3</td></tr>
+            <tr class="hi"><td><strong>mnv4s 48 px</strong></td><td class="num">323k</td><td class="num">77M</td><td class="num">1,977 s</td><td class="num">n/r</td><td class="num"><strong>0.64%</strong></td><td class="num"><strong>96.5%</strong></td></tr>
+            <tr><td>mnv4s 32 px</td><td class="num">323k</td><td class="num">30M</td><td class="num">1,921 s</td><td class="num">n/r</td><td class="num">0.84%</td><td class="num">95.4%</td></tr>
+            <tr><td>mnv4s3 32 px（3 ステージ）</td><td class="num">96k</td><td class="num">15M</td><td class="num">1,342 s</td><td class="num">n/r</td><td class="num">1.14%</td><td class="num">94.0%</td></tr>
+            <tr class="group"><td colspan="7">ラウンド 3 · synth_v4 · 2,000 行サブセットでの最良の検証 CER</td></tr>
+            <tr class="hi"><td><strong>mnv4s 48 px</strong></td><td class="num">323k</td><td class="num">77M</td><td class="num">1,963 s</td><td class="num">n/r</td><td class="num"><strong>0.95%</strong></td><td class="num">n/r</td></tr>
+            <tr><td>mnv4s3 32 px（3 ステージ）</td><td class="num">96k</td><td class="num">15M</td><td class="num">1,354 s</td><td class="num">n/r</td><td class="num">1.61%</td><td class="num">n/r</td></tr>
+            <tr><td>mnv4s 48 px、縦書きの列</td><td class="num">323k</td><td class="num">77M</td><td class="num">1,968 s</td><td class="num">n/r</td><td class="num">0.55%</td><td class="num">n/r</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">MACs は 32 × 256 または 48 × 384 での値。各実行はほかの実行と GPU を共有していたので、学習時間は目安である。n/r: 記録なし。</p>
+      </figure>
+
+      <figure class="fig" id="f-curves">
+        <div class="fig-box dfig">
+          <div class="ctl" id="d-curves-ctl"></div>
+          <div id="d-curves"></div>
+        </div>
+        <figcaption>図 # — 各ラウンドの学習中の検証 CER（その実行の検証セットの 2,000 行サブセット、1,000 ステップごと、BatchNorm を再推定した EMA の重み）。対数軸。上でラウンドを選ぶ。</figcaption>
+      </figure>
+
+      <p><strong>誤りの所在。</strong>どのモデルでも、最も多い取り違えは濁点・半濁点に関わるものである（<a class="xref" href="#f-conf">図</a>）。点を記号なしと読む、丸を点と読む、あるいはその逆である。次に多いのは単語間の空白の欠落である（ラウンド 2 の 32&nbsp;px モデルで 17 件）。ほかに繰り返し現れるのは、小さな部品 1 つだけが異なる形のペアである。点で終わる も と ち はどちらも十字に点が付いた形で、ぴったり切り抜いた ら（⅃）1 文字は た（⊥）に似る。ラウンド 2 のモデルの最悪 32 件のグリッドには、もう v2 の二値化による塊や、通常サイズで写り込んだ隣の行は見られない。残っているのは難しいが正当なものばかりである。ごく低いコントラストやぼけ、濃いスクリーントーン、かすれた筆画、小さな記号。</p>
+
+      <figure class="fig" id="f-conf">
+        <div class="fig-box dfig">
+          <div class="fig-title">最も多い取り違え（ラウンド 2 の mnv4s 32 px）</div>
+          <div class="fig-sub">正解のグリフ → 読み取った結果。synth_v3 の検証セット 6,998 行での件数</div>
+          <div class="gpanel" id="d-confusions"></div>
+        </div>
+        <figcaption>図 # — 上位の取り違えはすべて濁点・半濁点である。32 px では、1〜2 画素が は、ば、ぱ の違いを決める。グリフは生成器の筆画から描き、件数はジャーナルから取った。</figcaption>
+      </figure>
+
+      <p><strong>ラウンド 3: 公式の字形。</strong>生成器 v4 は、2 つの 48&nbsp;px モデルの交差評価で検証した（<a class="xref" href="#f-cross">図</a>）。v3 のモデルは v4 の左向きの ま、細い せ、行の横の絵、太い筆画につまずき、CER は v4 モデルの 0.90% に対して 3.07% だった。v4 のモデルは従来の条件でもほとんど劣化しなかった（0.63% に対して 0.69%）。v3 は ま を反転した字形でしか描かないので、ラウンド 3 で v3 のデータを混ぜる案は却下した。</p>
+
+      <figure class="fig" id="f-cross">
+        <div class="fig-box"><div id="chart-cross"></div></div>
+        <figcaption>図 # — v3 または v4 で学習した 48 px 認識器の交差評価。各セットの検証 3,000 行で測定（fp32）。v4 はクリーンなデータで 0.06 ポイント悪いが、新しい条件では 3.4 倍良い。</figcaption>
+      </figure>
+
+      <h3 id="e-int8"><span class="sec-n">7.2</span> int8 と fp32 の比較</h3>
+      <p><a class="xref" href="#t-qat">表</a>に、QAT のレシピを通したすべてのモデルを示す。合成データでは、QAT はどこでも PTQ + TQT を上回り、パラメータ 96k の 3 ステージモデルの int8（0.82%）は、4 ステージの PTQ + TQT モデル（1.16%）より良かった。採用した認識器はラウンド 3 の 48&nbsp;px モデルで、ホールドアウトのサンプル各 512 件での int8 CER は、横書きの行で 0.84%、縦書きの列で 0.71% である。縦書きモデルのほうが良いが、検証セットの中身が異なる（縦書きの列は独自のレイアウトと劣化を使う）ので、同条件の比較ではない。</p>
+
+      <figure class="fig table" id="t-qat">
+        <figcaption>表 # — 採用可能な int8 認識器。各モデルのデータのホールドアウト 512 行での CER。QAT モデルの「float」は、QAT の重みを疑似量子化なしで動かしたもの。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>モデル（入力）</th><th>データ</th><th class="num">float</th><th class="num">int8</th><th class="num">.espdl</th><th class="num">QAT 時間</th></tr></thead>
+          <tbody>
+            <tr><td>mnv4s 32 px、PTQ + TQT、QAT なし（32 × 512）</td><td>v3</td><td class="num">0.68%</td><td class="num">1.16%</td><td class="num">400 KB</td><td class="num">–</td></tr>
+            <tr><td>QAT mnv4s3 32 px（32 × 512）</td><td>v3</td><td class="num">1.78%</td><td class="num">0.82%</td><td class="num">141 KB</td><td class="num">8 分</td></tr>
+            <tr><td>QAT mnv4s 32 px（32 × 512）</td><td>v3</td><td class="num">1.69%</td><td class="num">0.96%</td><td class="num">403 KB</td><td class="num">11 分</td></tr>
+            <tr><td>QAT mnv4s 48 px（48 × 768）</td><td>v3</td><td class="num">1.64%</td><td class="num">0.51%</td><td class="num">402 KB</td><td class="num">13 分</td></tr>
+            <tr><td>QAT mnv4s3 32 px（32 × 512）</td><td>v4</td><td class="num">2.06%</td><td class="num">1.75%</td><td class="num">141 KB</td><td class="num">n/r</td></tr>
+            <tr class="hi"><td><strong>QAT mnv4s 48 px、横書き（48 × 768）、採用</strong></td><td>v4</td><td class="num">1.31%</td><td class="num"><strong>0.84%</strong></td><td class="num">402 KB</td><td class="num">n/r</td></tr>
+            <tr class="hi"><td><strong>QAT mnv4s 48 px、縦書き（48 × 768）、採用</strong></td><td>v4 の列</td><td class="num">n/r</td><td class="num"><strong>0.71%</strong></td><td class="num">401 KB</td><td class="num">626 s</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">どの行も、512 件のホールドアウトのサンプルで Rust エンジンとビット単位で一致する。採用した認識器は .hxhm でそれぞれ 338 KB。n/r: 記録なし。</p>
+      </figure>
+
+      <h3 id="e-det"><span class="sec-n">7.3</span> 検出器</h3>
+      <p>det_v1 は pages_v2 の 512&nbsp;px の切り抜き（ランダムな拡大縮小、切り抜き、最大 ±5° の回転）でバッチ 16、36k ステップ学習し、共有 GPU で 71 分かかった。検証 F1 は最後まで上がり続けていたので（<a class="xref" href="#f-detcurve">図</a>）、もっと長く学習すればおそらく改善する。1,000 ページ、16,748 行の検証セット全体で、fp32 での適合率は 0.935、再現率は 0.909、F1 は 0.922 である（<a class="xref" href="#t-det">表</a>）。</p>
+
+      <figure class="fig" id="f-detcurve">
+        <div class="fig-box dfig"><div id="d-det-curve"></div></div>
+        <figcaption>図 # — 学習中の det_v1: 2,000 ステップごとの検証 300 ページでの適合率、再現率、F1（fp32、EMA の重み）。F1 は 36k ステップでも頭打ちになっていなかった。</figcaption>
+      </figure>
+
+      <figure class="fig table" id="t-det">
+        <figcaption>表 # — 生成した検証ページでの det_v1。上: pages_v2 の検証セット全体、fp32。下: ホールドアウトの 100 ページ（val[900:1000]）、ESP-PPQ の int8。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>指標</th><th class="num">値</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="2">検証セット全体、fp32 · 1,000 ページ、16,748 行、四角形 IoU ≥ 0.5</td></tr>
+            <tr><td>適合率 / 再現率 / <strong>F1</strong></td><td class="num">0.935 / 0.909 / <strong>0.922</strong></td></tr>
+            <tr><td>向きの正解率</td><td class="num">98.9%</td></tr>
+            <tr><td>再現率、横書き / 縦書き</td><td class="num">0.921 / 0.816</td></tr>
+            <tr><td>エンドツーエンド CER、横書き（一致した行のみ）</td><td class="num">9.1% (4.9%)</td></tr>
+            <tr><td>エンドツーエンド CER、縦書き（一致した行のみ）</td><td class="num">15.3% (4.7%)</td></tr>
+            <tr><td>正解の四角形での認識器単体、横書き / 縦書き</td><td class="num">3.8% / 3.2%</td></tr>
+          </tbody>
+        </table></div>
+        <div class="table-wrap" style="margin-top:14px"><table class="data compact">
+          <thead><tr><th>ホールドアウトの 100 ページ</th><th class="num">F1</th><th class="num">CER h</th><th class="num">CER v</th></tr></thead>
+          <tbody>
+            <tr><td>fp32</td><td class="num">0.916</td><td class="num">8.6%</td><td class="num">16.4%</td></tr>
+            <tr><td>int8 PTQ（KL、キャリブレーション 64 ページ）</td><td class="num">0.904</td><td class="num">9.7%</td><td class="num">16.5%</td></tr>
+            <tr class="hi"><td><strong>int8 PTQ + TQT（採用）</strong></td><td class="num"><strong>0.914</strong></td><td class="num">9.1%</td><td class="num">18.2%</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">CER v は縦書きの 222 行しか含まないのでばらつきが大きい。TQT は CPU で 28 分かかった。int8 の出力指数（−3）はキャリブレーションで決まるので、アプリはそれをモデルファイルから読み取る。</p>
+      </figure>
+
+      <p>エンドツーエンドの誤りの大半は見逃した行による。見逃しのほとんどは、枠はあるが IoU 0.5 に届かないもので、行の分割やサイズの誤りである。差の残り半分は認識器による。認識器はページから切り出した行では約 3.5% の CER で、自身の合成行セットでの 0.9% より悪い。ページの行は学習用の切り抜きより小さく、傾いていて、枠の取り方も違うからである。検出器では、単純な PTQ で F1 が 1.2 ポイント下がり、TQT でほぼすべて回復した。認識器とは対照的である。<a class="xref" href="#f-detval">図</a>に検証ページを 2 枚示す。</p>
+
+      <figure class="fig" id="f-detval">
+        <div class="fig-media white"><img src="img/deep/det_val.webp" alt="検出した行を枠で囲んで番号を振った生成検証ページ 2 枚と、読み取り結果の一覧（ok、または括弧内に正解）。" loading="lazy"></div>
+        <figcaption>図 # — 検証ページ 2 枚での det_v1（fp32）と認識器の出力。一覧の各読みには ok、または括弧内の正解が付く。右のページの枠のうち 1 つは、ラベル付きのどの行とも一致しない。</figcaption>
+      </figure>
+
+      <p>小さな文字が最大の弱点である（<a class="xref" href="#f-recall">図</a>）。640&nbsp;px のレターボックスで太さ 6〜9&nbsp;px の行が見つかるのは 73% で、14&nbsp;px 以上では 95〜96% である。短いことの多い縦書きの列は、再現率が最も低い（0.816）。</p>
+
+      <figure class="fig" id="f-recall">
+        <div class="fig-box"><div id="chart-recall"></div></div>
+        <figcaption>図 # — 行の太さ別の検出器の再現率。太さは 640 x 640 のレターボックス上の画素数（fp32、pages_v2 の検証セット全体）。細い行ほど見逃される。</figcaption>
+      </figure>
+
+      <h3 id="e-post"><span class="sec-n">7.4</span> unclip と切り出しのマージン</h3>
+      <p>後処理には自由に選べる点が 2 つある。カーネルをどこまで広げて行に戻すかと、認識器に渡す切り抜きの周りにどれだけマージンを残すかである。r&nbsp;=&nbsp;0.4 では、長い行のカーネルは行の太さの 0.16 しかない。縮小の厳密な逆変換はカーネルの誤差を 6 倍に拡大する。ストライド 2 では、マップの 1 画素の誤差がレターボックスでの行の高さの 12 画素分になる。DBNet の比率 1.5 はぼやけたマップを前提にしている。両方をブラウザパイプラインで、ホールドアウトの 100 ページ（1,657 行）について、まず途中のチェックポイント（ステップ 14k）で、次に最終の検出器で測定した（<a class="xref" href="#t-unclip">表</a>）。</p>
+
+      <figure class="fig table" id="t-unclip">
+        <figcaption>表 # — ブラウザパイプラインでの unclip と切り出しマージン（全モデル int8、pages_v2 val[900:1000]、1,657 行）。マージンは行に沿った方向 / 横切る方向で、単位は行の高さ。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>後処理</th><th class="num">マージン</th><th class="num">F1</th><th class="num">CER h</th><th class="num">CER v</th><th class="num">CER（一致行）</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="6">途中の検出器、ステップ 14k</td></tr>
+            <tr><td>厳密な逆変換、r = 0.4</td><td class="num">0.3 / 0.2</td><td class="num">87.7%</td><td class="num">14.0%</td><td class="num">28.7%</td><td class="num">5.6%</td></tr>
+            <tr><td>unclip 1.0</td><td class="num">0.3 / 0.3</td><td class="num">89.0%</td><td class="num">11.6%</td><td class="num">20.4%</td><td class="num">4.9%</td></tr>
+            <tr class="hi"><td><strong>unclip 1.5</strong></td><td class="num">0.3 / 0.2</td><td class="num"><strong>89.6%</strong></td><td class="num"><strong>10.3%</strong></td><td class="num">20.6%</td><td class="num"><strong>4.4%</strong></td></tr>
+            <tr><td>unclip 1.5</td><td class="num">0 / 0</td><td class="num">89.6%</td><td class="num">23.1%</td><td class="num">26.2%</td><td class="num">17.3%</td></tr>
+            <tr><td>unclip 2.0</td><td class="num">0.3 / 0.2</td><td class="num">86.6%</td><td class="num">11.7%</td><td class="num">28.2%</td><td class="num">4.9%</td></tr>
+            <tr class="group"><td colspan="6">最終の検出器 det_v1</td></tr>
+            <tr class="hi"><td><strong>unclip 1.5</strong></td><td class="num">0.3 / 0.2</td><td class="num"><strong>91.0%</strong></td><td class="num"><strong>9.2%</strong></td><td class="num">18.2%</td><td class="num"><strong>4.4%</strong></td></tr>
+            <tr><td>unclip 1.0</td><td class="num">0.5 / 0.3</td><td class="num">90.3%</td><td class="num">10.7%</td><td class="num">17.7%</td><td class="num">4.4%</td></tr>
+            <tr><td>厳密な逆変換、r = 0.4</td><td class="num">0.3 / 0.2</td><td class="num">89.5%</td><td class="num">11.0%</td><td class="num">26.5%</td><td class="num">5.2%</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>どちらのチェックポイントでも DBNet の 1.5 が勝った。<a class="xref" href="#f-geom">図</a>が予想するとおり、しきい値 0.3 での予測マップは厳密なカーネルより太い。unclip よりもマージンのほうが重要だった。マージンがないと、一致行の CER は 4.4% から 17.3% に悪化した。認識器はグリフの周りに余白のある行で学習しているので、枠が正しくても切り抜きがきついと誤りがおよそ 3 倍になる。途中のチェックポイントと比べて、最終の検出器は F1 を 89.6% から 91.0% に上げ、CER を 10.3% から 9.2%（横書き）、20.6% から 18.2%（縦書き）に下げた。</p>
+
+      <h3 id="e-confidence"><span class="sec-n">7.5</span> 信頼度フィルタ</h3>
+      <p>認識器の信頼度（式 2）は、良い読みと悪い読みを分ける。信頼度がしきい値未満のページ上の行を隠すと、再現率と引き換えに適合率が上がる（<a class="xref" href="#f-confsweep">図</a>、<a class="xref" href="#t-confsweep">表</a>）。0.85 では、適合率が 92.1% から 94.5% に上がり、表示される行の CER は 4.4% から 3.0% に下がる。代わりに再現率は 2.8 ポイント下がる（det_v1）。隠した行は見逃しとして数えるので、エンドツーエンドの CER はしきい値とともに上がる。ハンター文字以外のテキストの大半をすでに無視する det_v2 では、デモは 0.8 を使う（7.8 節）。</p>
+
+      <figure class="fig" id="f-confsweep">
+        <div class="fig-box dfig">
+          <div id="d-conf-a"></div>
+          <div id="d-conf-b" style="margin-top:22px"></div>
+        </div>
+        <figcaption>図 # — pages_v2 val[900:1000] での行の最小信頼度の効果（ブラウザパイプライン、det_v1 int8）。上: 検出性能。下: 文字誤り率。一致行の CER は下がり、エンドツーエンドの CER は上がる。</figcaption>
+      </figure>
+
+      <figure class="fig table" id="t-confsweep">
+        <figcaption>表 # — 信頼度フィルタの掃引（web/test/page_e2e.mjs --conf-sweep）。0 の行は上記の最終検出器の数値を再現している。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th class="num">最小信頼度</th><th class="num">適合率</th><th class="num">再現率</th><th class="num">F1</th><th class="num">CER h</th><th class="num">CER v</th><th class="num">CER（一致行）</th><th class="num">完全一致 h</th><th class="num">完全一致 v</th></tr></thead>
+          <tbody id="d-conf-rows"></tbody>
+        </table></div>
+      </figure>
+
+      <h3 id="e-tap"><span class="sec-n">7.6</span> 大きな写真の中の小さな文字</h3>
+      <p>ページ全体パスはどの画像も長辺 640&nbsp;px に縮小するので、画像全体に対して小さな文字は消えてしまう。これを測るため、生成ページ 1 枚を 3000&nbsp;×&nbsp;3000 のキャンバスに小さく貼り付けた。ページ全体パスでは 14 行中 4 行しか見つからなかった。各行の中心をタップすると、タップ位置の周りのウィンドウで画像本来の解像度のまま検出器を動かす（<a href="#apps">第 8 章</a>）。こうすると、1 タップ 75〜110&nbsp;ms で 14 行中 13 行を完全に読めた。その中には、ページ全体パスが自身の解像度で誤読していた縦書きの列（はくぶつかん）も含まれる。</p>
+
+      <h3 id="e-timing"><span class="sec-n">7.7</span> パイプライン全体の速度</h3>
+      <p><a class="xref" href="#f-timings">図</a>は、1 ページ（<a class="xref" href="#f-teaser">図</a>のページ）をブラウザのコードで node 上で処理したときの内訳である。検出器と行の読み取りが大半を占め、レターボックス化と後処理はわずかである。ブラウザのペインでは、学習ジョブと CPU を共有した状態で、行の検出に 130〜190&nbsp;ms、1 行あたり 10〜14&nbsp;ms かかった。</p>
+
+      <figure class="fig" id="f-timings">
+        <div class="fig-box dfig">
+          <div class="fig-title">1 ページの時間の内訳</div>
+          <div class="fig-sub" id="d-timings-sub">901 × 554 px のページ、node、1 スレッド、wasm SIMD</div>
+          <div id="d-timings"></div>
+        </div>
+        <figcaption>図 # — 例のページでの readPage の時間の中央値: レターボックス、int8 検出器、Rust の後処理、そして検出したすべての行の切り出しと読み取り（空の枠も含む）。</figcaption>
+      </figure>
+
+      <h3 id="e-foreign"><span class="sec-n">7.8</span> 一般テキストでの誤検出</h3>
+      <p><a href="#negatives">3.4 節</a>のネガティブは、det_v1 が英語と日本語の Web ページを丸ごと枠で囲んだことを受けて追加したものである。この問題を測るため、det_v1 によるブラウザパイプライン（unclip 1.5、マージン 0.3/0.2）を、信頼度フィルタのしきい値を変えながら 2 つのセットで実行した（<a class="xref" href="#t-nonhunter">表</a>、<a class="xref" href="#f-fp">図</a>）。誤検出行とは、表示された行（読みが空でないもの）のうち、どのハンター文字の行とも一致しないものである。面積の 40% 以上が一般テキストやアイコンに重なっていれば「テキスト上」「アイコン上」、それ以外は「その他」として数える。</p>
+      <p>ほとんどがハンター文字でない pages_foreign の 150 ページでは、det_v1 は一般テキスト上に 1 ページあたり 25 本の誤検出行を表示し、適合率は 7.98% だった。信頼度フィルタはその大半を取り除く。0.85 では、テキスト上の誤検出行は 1 ページあたり 2.39 本に減り、適合率は 36.45% に上がる。再現率の低下は約 1 ポイントである。pages_v3 の混在ページ 100 枚では、0.85 のフィルタで F1 が 52.62% から 78.78% に上がる。フィルタは役に立つが、症状を隠しているにすぎない。誤読したハンター文字の行と、英語の文字に対する自信ありげな読みは、フィルタにとって見分けがつかないことがある。根本的な解決はデータにある。det_v2（後述）は、ハンター文字以外のテキストとアイコンで埋め尽くされたページから、それらが背景であることを学ぶ。</p>
+
+      <figure class="fig table" id="t-nonhunter">
+        <figcaption>表 # — ブラウザパイプラインでのハンター文字以外への誤検出（unclip 1.5、マージン 0.3 / 0.2）。det_v1 と、ハンター文字以外のテキストとアイコンを背景としてファインチューニングした det_v2 の比較。0.8 の行が採用中の設定。</figcaption>
+        <div class="table-wrap"><table class="data compact" id="det-v2-results">
+          <thead>
+            <tr><th>検出器</th><th class="num">最小信頼度</th><th class="num">適合率</th><th class="num">再現率</th><th class="num">F1</th><th class="num">誤検出 / ページ: テキスト</th><th class="num">アイコン</th><th class="num">その他</th></tr>
+          </thead>
+          <tbody>
+            <tr class="group"><td colspan="8">pages_foreign · 150 ページ、ほとんどがハンター文字以外</td></tr>
+            <tr><td>det_v1</td><td class="num">なし</td><td class="num">7.98%</td><td class="num">56.78%</td><td class="num">13.99%</td><td class="num">25.00</td><td class="num">2.30</td><td class="num">2.67</td></tr>
+            <tr><td>det_v1</td><td class="num">0.85</td><td class="num">36.45%</td><td class="num">55.63%</td><td class="num">44.04%</td><td class="num">2.39</td><td class="num">0.95</td><td class="num">1.17</td></tr>
+            <tr><td>det_v1</td><td class="num">0.9</td><td class="num">46.29%</td><td class="num">55.21%</td><td class="num">50.36%</td><td class="num">1.35</td><td class="num">0.75</td><td class="num">0.87</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">なし</td><td class="num">84.49%</td><td class="num">91.73%</td><td class="num">87.96%</td><td class="num">0.43</td><td class="num">0.16</td><td class="num">0.10</td></tr>
+            <tr class="best"><td><strong>det_v2</strong></td><td class="num">0.8（採用）</td><td class="num"><strong>92.53%</strong></td><td class="num">90.16%</td><td class="num"><strong>91.33%</strong></td><td class="num">0.15</td><td class="num">0.11</td><td class="num">0.07</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">0.85</td><td class="num">93.46%</td><td class="num">89.73%</td><td class="num">91.56%</td><td class="num">0.13</td><td class="num">0.10</td><td class="num">0.07</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">0.9</td><td class="num">94.26%</td><td class="num">89.02%</td><td class="num">91.56%</td><td class="num">0.11</td><td class="num">0.08</td><td class="num">0.07</td></tr>
+            <tr class="group"><td colspan="8">pages_v3 val[900:1000] · 混在ページ 100 枚</td></tr>
+            <tr><td>det_v1</td><td class="num">なし</td><td class="num">37.72%</td><td class="num">86.96%</td><td class="num">52.62%</td><td class="num">13.59</td><td class="num">0.63</td><td class="num">1.35</td></tr>
+            <tr><td>det_v1</td><td class="num">0.85</td><td class="num">76.05%</td><td class="num">81.70%</td><td class="num">78.78%</td><td class="num">1.96</td><td class="num">0.28</td><td class="num">0.60</td></tr>
+            <tr><td>det_v1</td><td class="num">0.9</td><td class="num">82.23%</td><td class="num">80.07%</td><td class="num">81.14%</td><td class="num">1.16</td><td class="num">0.23</td><td class="num">0.52</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">なし</td><td class="num">84.57%</td><td class="num">81.88%</td><td class="num">83.20%</td><td class="num">0.80</td><td class="num">0.14</td><td class="num">0.59</td></tr>
+            <tr class="best"><td><strong>det_v2</strong></td><td class="num">0.8（採用）</td><td class="num"><strong>91.42%</strong></td><td class="num">80.07%</td><td class="num"><strong>85.37%</strong></td><td class="num">0.29</td><td class="num">0.08</td><td class="num">0.46</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">0.85</td><td class="num">92.13%</td><td class="num">79.53%</td><td class="num">85.37%</td><td class="num">0.26</td><td class="num">0.06</td><td class="num">0.43</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">0.9</td><td class="num">93.04%</td><td class="num">77.45%</td><td class="num">84.53%</td><td class="num">0.21</td><td class="num">0.05</td><td class="num">0.38</td></tr>
+            <tr class="group"><td colspan="8">pages_v2 val[900:1000] · すべてハンター文字のページ 100 枚（退行チェック）</td></tr>
+            <tr><td>det_v1</td><td class="num">なし</td><td class="num">92.09%</td><td class="num">89.92%</td><td class="num">90.99%</td><td class="num">n/r</td><td class="num">n/r</td><td class="num">n/r</td></tr>
+            <tr><td><strong>det_v2</strong></td><td class="num">なし</td><td class="num">92.30%</td><td class="num">87.51%</td><td class="num">89.84%</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">1.12</td></tr>
+            <tr class="best"><td><strong>det_v2</strong></td><td class="num">0.8（採用）</td><td class="num">94.66%</td><td class="num">85.64%</td><td class="num">89.92%</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.80</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">n/r: 記録なし。det_v2 = ハンター文字以外のテキストとアイコンを含むページ（pages_v3 + pages_v2）で det_v1 をファインチューニングしたもの。int8 PTQ + TQT で、ホールドアウトの 16 ページでエンジンとビット単位で一致する。</p>
+      </figure>
+
+      <p class="note"><strong>結果。</strong>det_v2 は det_v1 から、pages_v3 と pages_v2 を合わせたデータ（60,000 ページ、16k ステップ、学習率 5×10⁻⁴、27 分）でファインチューニングし、PTQ + TQT で量子化した（ホールドアウトの pages_v3 100 ページで int8 F1 0.836、fp32 では 0.847）。信頼度フィルタなしでも、一般テキスト上の誤検出行は pages_foreign で 1 ページあたり 25.0 本から 0.43 本に、pages_v3 で 13.6 本から 0.80 本に減り、pages_foreign での再現率は 56.8% から 91.7% に上がる。Web や文書のレイアウトが、もはや見慣れないものではなくなったためである。代償は、すべてハンター文字のページでのわずかな退行である（再現率 89.9% → 87.5%、F1 91.0% → 89.8%）。det_v2 では最適な信頼度のしきい値が 0.8 に下がり、これが現在の採用設定である（<a class="xref" href="#t-nonhunter">表</a>）。</p>
+
+      <figure class="fig" id="f-fp">
+        <div class="fig-box dfig"><div id="d-fp"></div></div>
+        <figcaption>図 # — 表示された 1 ページあたりの誤検出行を、何に重なっているかで分類したもの。det_v1 では一般テキストが主な原因で、信頼度フィルタはそれを削るだけである。ハンター文字以外のテキストとアイコンを背景として学習した det_v2 は、フィルタなしでも誤検出がほとんどない。</figcaption>
+      </figure>
+
+      <!-- ============================================================ 8 -->
+      <h2 id="apps"><span class="sec-n">8</span> アプリケーション</h2>
+      <p>デモは静的なページで、HTML、JavaScript、WebAssembly モジュール、3 つの <code>.hxhm</code> ファイルからなる。カメラには HTTPS が必要なので、Cloudflare Worker から静的アセットとして HTTPS で配信している。端末の外には何も出ない。モジュールは 1 回だけコンパイルし、モデルごとに 1 回インスタンス化する。バンプアロケータが 1 つのモデルしか保持しないためである。</p>
+
+      <h3 id="a-page"><span class="sec-n">8.1</span> ページ全体の読み取り</h3>
+      <p>ページはグレーに変換し、640&nbsp;×&nbsp;640 にレターボックス化（長辺を 640 に、左上に配置、白でパディング）してから、検出、後処理、切り出しを行い、各切り抜きを横書きまたは縦書きの認識器に渡す（<a class="xref" href="#f-flow">図</a>）。ページ上には、すべての行が読み順に番号付きで、かなとローマ字とともに表示される。認識器が何も読み取れなかった行は捨て、信頼度がしきい値未満の行は隠す。枠をタップすると、その行の不確かな文字と、認識器が見た帯画像そのものが表示される。</p>
+
+      <figure class="fig" id="f-flow">
+        <div class="fig-box"><div class="flow" id="flow"></div></div>
+        <figcaption>図 # — 図 1 のページに対するブラウザパイプラインと、実際の中間画像と所要時間。テキストカーネルのマップは検出器の int8 の生の出力で、帯画像は認識器が見たものそのままである。</figcaption>
+      </figure>
+
+      <h3 id="a-tap"><span class="sec-n">8.2</span> 行をタップ</h3>
+      <p>枠のない文字をタップすると、タップ位置の周りの正方形のウィンドウを元の画像から切り出し、検出器をもう一度動かす。まず検出器の入力サイズと同じ 640&nbsp;px（ウィンドウはまったく縮小されない）、次に 1,280&nbsp;px、その次に 320&nbsp;px である（<a class="xref" href="#f-tap">図</a>）。タップ位置の下に、またはそこから行の太さの 1.5 倍以内に行がある最初のウィンドウを採用する。枠をドラッグする方法も予備として残してあり、その枠を 1 本の横書きの行として読む。</p>
+
+      <figure class="fig" id="f-tap">
+        <div class="fig-box dfig">
+          <div class="fig-title">行をタップ</div>
+          <div class="fig-sub">ページ全体パスでは 3,000 px の写真を 640 px で見る。タップすると、本来の解像度のウィンドウ内で検出し直す。</div>
+          <div id="d-tap"></div>
+        </div>
+        <figcaption>図 # — タップ位置の周りで順に試すウィンドウ。3,000 px のテストでは、ページ全体パスで見つかったのは 14 行中 4 行だったが、タップでは 1 回 75〜110 ms で 14 行中 13 行を完全に読めた。</figcaption>
+      </figure>
+
+      <h3 id="a-live"><span class="sec-n">8.3</span> ライブカメラ</h3>
+      <p>ライブモードはカメラの映像をループで読む。各サイクルで長辺 960&nbsp;px のフレームを取得し、行を検出し、大きいものから最大 10 行を読む。フレームごとに独立に読むと表示がちらつくので、トラッカーで安定させる（<a class="xref" href="#f-track">図</a>）。検出した各行は、四角形の IoU によって、IoU の高いペアから順に過去のフレームのトラックと対応付ける。対応しなかった行は新しいトラックになり、数フレーム見えなかったトラックは捨てる。トラックは直近 5 フレームで最も多かった読みを表示し（同数なら最新のもの）、2 回見えてはじめて表示される。同じ文字列が 3 回続けて読めた行は、読み直さずにその結果を最大 2 フレーム再利用するので、静止した場面では読み取り時間が減る。一時停止するか行をタップすると、現在のフレームが通常のページ表示に切り替わる。</p>
+
+      <figure class="fig" id="f-track">
+        <div class="fig-box dfig">
+          <div class="fig-title">追跡と多数決</div>
+          <div class="fig-sub">模式図: 8 フレームにわたる 1 行。読みは説明用の例。</div>
+          <div class="scroll-x" id="d-track"></div>
+          <div class="scroll-hint">横にスクロールすると全フレームが見られる →</div>
+        </div>
+        <figcaption>図 # — 追跡中の行のラベルの決め方。直近 5 回の読みの多数決で 1 フレームだけの誤読は隠れ、同じ読みが 3 回続くと次の 2 フレームは認識器を飛ばせる。</figcaption>
+      </figure>
+
+      <p>ブラウザのペインで CPU を共有した状態では、ライブモードは毎秒 2〜2.5 フレームで動いた。検出に約 195&nbsp;ms、10 行の読み取りに 145〜210&nbsp;ms である。スマホでの時間は測定していない。</p>
+
+      <!-- ============================================================ 9 -->
+      <h2 id="limits"><span class="sec-n">9</span> 限界と今後の課題</h2>
+      <ul>
+        <li><strong>実画像での評価がない。</strong>本稿の数値はすべて生成画像でのものである。実際のスキャン、写真、アニメのコマはもっと難しく、どれだけ難しいかは分からない。最初に集めた実画像の 26 行は、すべてアニメのサブタイトル（テンプレート 1 種、約 100 文字）からのもので、モデルの順位付けには少なすぎ、均質すぎたため、失敗パターンを探すことだけに使った（それが生成器 v4 につながった）。収集した画像は著作権があるためローカルにとどめ、学習には一切使っていない。多様で、手作業でラベル付けした実画像のテストセットが、いちばん欠けているものである。</li>
+        <li><strong>ページからの切り抜きでは認識器が弱い。</strong>ページから切り出した行では CER 約 3.5%、自身の行セットでは 1% 未満。検出器の切り抜きで認識器をファインチューニングするのが、当然の次の一手である。</li>
+        <li><strong>小さな文字と短い列は見逃される。</strong>レターボックスで太さ 6〜9&nbsp;px の行の再現率は 73%、縦書きの列では 0.816。タップ操作がすでにやっているように、大きなページを本来の解像度でタイル分割すれば改善するはずである。</li>
+        <li><strong>検出器がハンター文字以外のテキストを読んでしまう。</strong>信頼度フィルタでその大半は隠れる。ネガティブで学習した det_v2 がその大部分を解決し、一般テキスト上の誤検出行は 1 ページあたり 25 本から 0.43 本に減った。その代わり、すべてハンター文字のページではわずかに性能が落ちる（<a class="xref" href="#t-nonhunter">表</a>）。</li>
+        <li><strong>検出器は学習不足で重い。</strong>F1 は 36k ステップでも上がり続けていた。1.57&nbsp;G MACs のうち 947&nbsp;M は 2 つの通常の 3&nbsp;×&nbsp;3 畳み込みにあり、depthwise separable 版にすればその大部分を削れる。これはスマホとライブモードで重要になる。</li>
+        <li><strong>読み順は局所的である。</strong>ブロック内の列は右から左へ読むが、ページ全体でのマンガのコマ順はモデル化していない。</li>
+        <li><strong>出力は簡略化されている。</strong>句読点はなく、カタカナと小書きのかなは通常サイズのひらがなとして出力される。グリフでは区別できないからである。</li>
+        <li><strong>スマホでは測定していない。</strong>V8 は arm64 でドット積命令を 3 つの演算に展開する。スマホでの速度が期待外れなら、extmul ベースのカーネルセットでおよそ 2 倍速くなるかもしれない。</li>
+        <li><strong>マイコンへの移植は保留中。</strong>モデルは ESP-DL の規則に従っており、<code>rust/KERNELS.md</code> に ESP32-S3 の SIMD バックエンドに必要なことをまとめてあるが、20 ビットの累積レーン、2 のべき乗でないプーリング面積、デバイスの再量子化の丸めは、ボードがないため未検証である。</li>
+      </ul>
+
+      <!-- ============================================================ 10 -->
+      <h2 id="conclusion"><span class="sec-n">10</span> 結論</h2>
+      <p>生成器を研究の主対象として扱い、モデルの最悪の予測が指し示すたびに改訂していけば、実際の学習データがなくても発明された文字の OCR は作れる。成果の大部分をもたらしたのは、4 つのバージョンの行生成器と 3 つのバージョンのページ生成器である。ラベルのクリーン化（モデルを変えずに 1.16% → 0.84%）、公式の字形（新しい条件で 3.07% → 0.90%）、そして一般テキストのネガティブ。畳み込みと ReLU に限定した事前学習済みの MobileNetV4-small は、それぞれ 400k 未満のパラメータで、読み取りと検出の両方に十分である。QAT から ESP-PPQ、小さな Rust エンジンまで整数の規則を完全に一致させたことで、int8 化はほぼ無償になり、すべての結果がブラウザ内でビット単位まで再現可能になった。このプロジェクトがまだ言えないのは、これらが実画像でどれだけうまく動くかである。それが次に行うべき測定である。</p>
+
+      <!-- ============================================================ refs -->
+      <h2 id="references">参考文献</h2>
+      <ol class="refs">
+        <li id="ref-1">A. Graves, S. Fernández, F. Gomez and J. Schmidhuber. Connectionist Temporal Classification: Labelling Unsegmented Sequence Data with Recurrent Neural Networks. <em>ICML</em>, 2006.</li>
+        <li id="ref-2">B. Shi, X. Bai and C. Yao. An End-to-End Trainable Neural Network for Image-based Sequence Recognition and Its Application to Scene Text Recognition. <a href="https://arxiv.org/abs/1507.05717">arXiv:1507.05717</a>.</li>
+        <li id="ref-3">M. Liao, Z. Wan, C. Yao, K. Chen and X. Bai. Real-time Scene Text Detection with Differentiable Binarization. <em>AAAI</em>, 2020. <a href="https://arxiv.org/abs/1911.08947">arXiv:1911.08947</a>.</li>
+        <li id="ref-4">D. Qin et al. MobileNetV4: Universal Models for the Mobile Ecosystem. <a href="https://arxiv.org/abs/2404.10518">arXiv:2404.10518</a>.</li>
+        <li id="ref-5">B. Jacob et al. Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference. <em>CVPR</em>, 2018. <a href="https://arxiv.org/abs/1712.05877">arXiv:1712.05877</a>.</li>
+        <li id="ref-6">S. R. Jain et al. Trained Quantization Thresholds for Accurate and Efficient Fixed-Point Inference of Deep Neural Networks. <a href="https://arxiv.org/abs/1903.08066">arXiv:1903.08066</a>.</li>
+        <li id="ref-7">A. Shrivastava, A. Gupta and R. Girshick. Training Region-based Object Detectors with Online Hard Example Mining. <a href="https://arxiv.org/abs/1604.03540">arXiv:1604.03540</a>.</li>
+        <li id="ref-8">Y. Du et al. PP-OCR: A Practical Ultra Lightweight OCR System. <a href="https://arxiv.org/abs/2009.09941">arXiv:2009.09941</a>.</li>
+        <li id="ref-9">M. Jaderberg, K. Simonyan, A. Vedaldi and A. Zisserman. Synthetic Data and Artificial Neural Networks for Natural Scene Text Recognition. <a href="https://arxiv.org/abs/1406.2227">arXiv:1406.2227</a>.</li>
+        <li id="ref-10">A. Gupta, A. Vedaldi and A. Zisserman. Synthetic Data for Text Localisation in Natural Images. <a href="https://arxiv.org/abs/1604.06646">arXiv:1604.06646</a>.</li>
+        <li id="ref-11">Espressif Systems. ESP-DL and ESP-PPQ. <a href="https://github.com/espressif/esp-dl">github.com/espressif/esp-dl</a>, <a href="https://github.com/espressif/esp-ppq">github.com/espressif/esp-ppq</a>.</li>
+      </ol>
+
+      <!-- ============================================================ appendix -->
+      <h2 id="appendix">付録</h2>
+      <h3 id="app-repro"><span class="sec-n">A</span> 再現手順</h3>
+      <p>学習用にはプロジェクトの仮想環境（<code>.venv</code>）を持つ Python 3.10 以上、ESP-PPQ 1.3.15 用には別の仮想環境（<code>.venv-ppq</code>）、wasm32 ターゲット付きの Rust、ブラウザのテスト用に node 24 を使う。主なエントリポイントは次のとおりで、リポジトリのルートから実行する。</p>
+      <pre class="cmd"><span class="c"># 1 行データ（生成器 v4）と、Windows で高速に読み込むためのパック</span>
+python scripts/generate.py --out data/synth_v4 --train 500000 --val 10000 --seed 3 --gray
+python scripts/pack_dataset.py data/synth_v4
+
+<span class="c"># 2 認識器（ラウンド 3）と縦書き認識器。launch_round3.sh は起動を時間差にする</span>
+bash scripts/launch_round3.sh
+python scripts/train.py --data data/synth_v4 --arch mnv4s --height 48 --max-width 768 --orient v --name v4_mnv4s_h48_vert
+
+<span class="c"># 3 QAT -> ONNX -> ESP-PPQ PTQ -> .hxhm -> ビット単位一致の検証。モデルごとにコマンド 1 つ</span>
+DATA=data/synth_v4 bash scripts/qat_pipeline.sh qat_v4_mnv4s_h48 v4_mnv4s_h48 48 768
+HXH_ORIENT=v DATA=data/synth_v4 bash scripts/qat_pipeline.sh qat_v4_mnv4s_h48_vert v4_mnv4s_h48_vert 48 768
+
+<span class="c"># 4 ページ、検出器、int8 検出器</span>
+cargo build --release -p hxh-synth --manifest-path rust/Cargo.toml
+rust/target/release/hxh-synth pages --out data/pages_v3 --train 30000 --val 1000 --seed 3 --threads 8
+python scripts/train_det.py --data data/pages_v2 --name det_v1 --steps 36000
+python scripts/export_det.py --run runs/det_v1
+python scripts/quantize_det.py --onnx exports/det_v1.onnx --tag det_v1_tqt --tqt
+
+<span class="c"># 5 ブラウザ用ビルドとページ単位のテスト</span>
+pwsh scripts/build_web.ps1
+node web/test/page_e2e.mjs --sweep
+node web/test/page_e2e.mjs --conf-sweep</pre>
+      <p>各実行の正確な引数は <code>runs/&lt;name&gt;/config.json</code> にある。データセットのサイズは<a class="xref" href="#t-datasets">表</a>に、採用した推論設定は<a class="xref" href="#t-hparams">表</a>に示す。ネガティブとチェック用セットの生成器フラグは <code>rust/hxh-synth/FOREIGN.md</code> と README にある。</p>
+
+      <h3 id="app-compute"><span class="sec-n">B</span> 計算資源</h3>
+      <p>Windows 11 の PC 1 台。RTX 4080 SUPER（16&nbsp;GB）、AMD Ryzen 7 3700X（8 コア）、コミット上限 72.2&nbsp;GB。認識器の実行はそれぞれ 1,218〜1,977&nbsp;s（30k ステップ、たいてい 2 つの実行で GPU を共有）、QAT のファインチューニングは 8〜13 分、det_v1 は 71 分、認識器の ESP-PPQ による PTQ は混雑した CPU で約 11 分、検出器の TQT は CPU で 28 分かかった。500k 行の生成には約 15 分（synth_v2 で毎秒 552 行）、31,000 ページの生成には 3 分かかった。ブラウザでの時間はすべて同じ CPU の 1 スレッドで node 24 を使って測ったもので、たいてい学習ジョブと共有していたため上限値である。</p>
+
+      <h3 id="app-data"><span class="sec-n">C</span> データセットの統計</h3>
+      <figure class="fig table" id="t-datasets">
+        <figcaption>表 # — 生成したデータセット。行は太さ 64 px の切り抜き、ページは長辺 512〜1024 px。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>セット</th><th>生成器</th><th class="num">学習 + 検証</th><th>備考</th></tr></thead>
+          <tbody>
+            <tr><td class="k">synth_v1</td><td>行 v1、seed 0</td><td class="num">100k + 5k</td><td>横書き学習行 69,970。14 ワーカーで 572 サンプル/s</td></tr>
+            <tr><td class="k">synth_v2</td><td>行 v2、seed 1</td><td class="num">500k + 10k</td><td>グレー、JPEG q90。905 s。v1 と合わせて横書き 419,381 行</td></tr>
+            <tr><td class="k">synth_v3</td><td>行 v3</td><td class="num">n/r</td><td>横書き学習行 349,558。横書き検証行 6,998</td></tr>
+            <tr><td class="k">synth_v4</td><td>行 v4、seed 3</td><td class="num">500k + 10k</td><td>学習行は横書き 349,424 + 縦書き 150,576。縦書き検証列 3,030</td></tr>
+            <tr><td class="k">pages_v1</td><td>hxh-synth</td><td class="num">2,000 + 200</td><td>動作確認用: 1 ページ 16 行、行の高さの中央値 19 px、縦書き 11%</td></tr>
+            <tr><td class="k">pages_v2</td><td>hxh-synth、seed 1</td><td class="num">30,000 + 1,000</td><td>学習行 500,141（1 ページ 16.7 行、最大 56）、縦書き 11.2%、絵だけのページ 905。検証 16,748 行。3.2 GB</td></tr>
+            <tr><td class="k">pages_v3</td><td>hxh-synth（フォント使用）、seed 3</td><td class="num">30,000 + 1,000</td><td>ラベルなしの一般テキストとアイコンを追加。15% のページで Web レイアウト</td></tr>
+            <tr><td class="k">pages_foreign</td><td>hxh-synth（フォント使用）、seed 4</td><td class="num">0 + 300</td><td>評価専用: Web レイアウト 55%、ネガティブページ 35%</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <h3 id="app-hparams"><span class="sec-n">D</span> 推論のハイパーパラメータ</h3>
+      <figure class="fig table" id="t-hparams">
+        <figcaption>表 # — 採用したパラメータ（web/models/det.json、model.json、model_v.json）。</figcaption>
+        <div class="table-wrap"><table class="data compact">
+          <thead><tr><th>パラメータ</th><th class="num">値</th><th>意味</th></tr></thead>
+          <tbody>
+            <tr><td class="k">検出器の入力</td><td class="num">640 × 640</td><td>長辺を 640 に、左上に配置、255 でパディング</td></tr>
+            <tr><td class="k">bin_thresh</td><td class="num">0.3</td><td>sigmoid(カーネルのロジット) &gt; 0.3 ならテキストの画素</td></tr>
+            <tr><td class="k">min_score</td><td class="num">0.5</td><td>連結成分のカーネル確率の平均の最小値</td></tr>
+            <tr><td class="k">min_side</td><td class="num">3</td><td>短辺の最小値（レターボックスの画素）</td></tr>
+            <tr><td class="k">unclip_ratio</td><td class="num">1.5</td><td>D′ = A′ ρ / L′</td></tr>
+            <tr><td class="k">block_gap</td><td class="num">1.0</td><td>読み順のブロック: 行の太さ単位の間隔</td></tr>
+            <tr><td class="k">切り出しマージン</td><td class="num">0.3 / 0.2</td><td>行に沿って / 行を横切って、単位は行の高さ</td></tr>
+            <tr><td class="k">min_conf</td><td class="num">0.8</td><td>文字の信頼度の平均がこれより低いページ上の行を隠す（det_v1 では 0.85）</td></tr>
+            <tr><td class="k">認識器の入力</td><td class="num">48 × 768</td><td>面積平均で縮小、右端の繰り返しでパディング、広すぎれば圧縮。75 クラス、ブランクは 0</td></tr>
+            <tr><td class="k">ライブモード</td><td class="num">960 px、10 行</td><td>フレームの長辺。1 フレームで読む行数（大きい順）。5 フレームで多数決</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <h3 id="app-v6"><span class="sec-n">E</span> 文字デザインの中の数字（認識器 v6、2026年11月）</h3>
+      <p>いま読み取りページで使っている認識器（モデルファミリー）の出力は 91 クラスで、かなと空白、数字と <code>! ? : / . -</code>、CTC の blank からなる。だが数字は普通のテキストフォントでしか見ていなかったため、デザイン文字の一部として描かれた数字は読めなかった。そうした行を集めた評価用セットでは、数字と記号の 61〜64% を読み誤った。よくあるのは、太く縦長の型番 <code>07</code>、日付、タイトル末尾の斜体の <code>!!</code> である。対策は本レポートの他の箇所と同じで、まず生成器を直した。</p>
+      <p><strong>生成器 v6</strong>（<code>hxh-synth --v6 1</code>、既定ではオフ。v5 の出力はバイト単位で変わらない）:</p>
+      <ul>
+        <li>数字を含む行の 55% では、数字と記号をすべて筆画の骨格として描く。隣のグリフと同じ変形、手の揺れ、筆画幅、筆端、効果を通るので、<code>07</code> はその行と同じインクと太さで描かれる。数字は縦長だったり細身だったり、くっついていたり離れていたりし、<code>!</code> と <code>?</code> はよく斜体や先細りになる。</li>
+        <li>残りの 45% では、太字・極太・細身のオープンなディスプレイフォントの数字を使い、輪郭をグリフの筆画幅まで太らせる。</li>
+        <li>内容は現実的なもの: 型番、年、日付、時刻、価格、範囲、<code>! !! !? ?!</code>。語彙にラテン文字がないので、ラテン文字は使わない。</li>
+        <li>行の上に小さなかなの読み仮名（ふりがな）を描く。ラベルは付けない。認識器はそれを読んではならない。</li>
+        <li>太い縁取りと柔らかい影のあるステッカー風の文字と、商品告知の場面（<a class="xref" href="#f-v6pages">図</a>）。</li>
+        <li>筆画幅より小さい濁点。太い印刷文字によくあるが、これまでの生成器は一度も描かなかった。</li>
+      </ul>
+
+      <figure class="fig" id="f-v6pages">
+        <div class="fig-media"><img src="img/deep/v6_pages.webp" alt="生成器 v6 で作った 2 ページ。大理石風の背景の商品の横に、感嘆符付きの太い縁取りのステッカー文字が 3 行あるページと、小さなかなの読み仮名の下に大きなハンター文字の行があり、年、時刻、分数もある静止画。" loading="lazy"></div>
+        <figcaption>図 # — pages_v6 の検証ページ 2 枚。左: 商品告知の場面。ステッカー文字、<code>!!</code>、ロゴがある。右: 大きな行の上に読み仮名がある静止画（オレンジ: ラベルなし）。年、時刻、<code>1/3</code> を含む行もある。緑: ラベル付きのハンター文字の行。</figcaption>
+      </figure>
+
+      <p><strong>学習。</strong> 横書きの認識器 2 つを、ファミリーのチェックポイントから 2 段階でファインチューニングした。第 1 段階では v6 の行を全体の 43% にした。数字は覚えたが、小型認識器の int8 誤りが従来の synth_v4 評価セットで 2 倍になり（1.61% → 3.06%）、行末に余分な <code>!</code> が出るようになった。第 2 段階（3,000 ステップ、lr 3e-4）で synth_v4 を行の約 70% に戻した。その後はいつもどおり QAT、ESP-PPQ PTQ、<code>.hxhm</code> 書き出しを行った。どちらの認識器も、ホストのエンジン、素朴な参照実装、WASM の SIMD と scalar で 1 ビットまで一致する（512/512）。検出器と縦書きの認識器は変えていない。</p>
+
+      <figure class="fig table" id="t-v6">
+        <figcaption>表 # — 読み取りページのファミリー認識器と v6 の比較（int8、アプリ自身のコード）。行セットは横書きの行を <code>readCrop</code> で読んだもの。ページセットはブラウザのパイプライン全体を読み取り信頼度 0.8 で通したもの。検出器は現行のものなので、F1 が動くのはこの絞り込みを通じてだけである。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>指標</th><th class="num">高速</th><th class="num">高速 v6</th><th class="num">高精度</th><th class="num">高精度 v6</th></tr></thead>
+          <tbody>
+            <tr><td class="k">数字テストの CER（7,859 行）</td><td class="num">24.84%</td><td class="num"><strong>10.56%</strong></td><td class="num">23.41%</td><td class="num"><strong>8.54%</strong></td></tr>
+            <tr><td class="k">数字・記号の誤り率</td><td class="num">64.1%</td><td class="num"><strong>19.8%</strong></td><td class="num">60.9%</td><td class="num"><strong>14.6%</strong></td></tr>
+            <tr><td class="k">lines_v5b val の CER</td><td class="num">9.22%</td><td class="num"><strong>7.68%</strong></td><td class="num">8.85%</td><td class="num"><strong>6.88%</strong></td></tr>
+            <tr><td class="k">synth_v4 val の CER（3,000 行）</td><td class="num">1.50%</td><td class="num">1.57%</td><td class="num">1.16%</td><td class="num"><strong>0.96%</strong></td></tr>
+            <tr><td class="k">数字のない lines_v5b の行に出た余分な数字・記号</td><td class="num">21 / 5,924</td><td class="num">23 / 5,924</td><td class="num">5 / 5,924</td><td class="num">17 / 5,924</td></tr>
+            <tr><td class="k">pages_v5 val の F1</td><td class="num">76.34%</td><td class="num">77.13%</td><td class="num">83.07%</td><td class="num">83.49%</td></tr>
+            <tr><td class="k">pages_v6 val の F1</td><td class="num">74.26%</td><td class="num">74.63%</td><td class="num">85.28%</td><td class="num">85.79%</td></tr>
+            <tr><td class="k">pages_v6 val、見つかった行の CER</td><td class="num">14.62%</td><td class="num"><strong>8.04%</strong></td><td class="num">14.33%</td><td class="num"><strong>7.51%</strong></td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">数字テストは評価専用のセット（lines_v6_digits val、1,500 ページ、独自のシード）で、横書きの 7,859 行のうち 4,425 行に数字か記号がある。悪化したページセットはない。pages_v2、v3o、foreign_open、v5、v6 で F1 は 0.1〜0.8 ポイント上がり、誤検出の行数は変わらなかった。</p>
+      </figure>
+
+      <figure class="fig" id="f-v6lines">
+        <div class="fig-media white"><img src="img/deep/v6_lines_ja.webp" alt="数字を含む生成された行 10 本と、それぞれの正解、現行の高精度認識器の読み、v6 認識器の読み。現行は 10 本中 3 本、v6 は 6 本を完全に読む。" loading="lazy"></div>
+        <figcaption>図 # — 数字テストから無作為に選んだ数字入りの行 10 本を、読み取りページの高精度認識器とその v6 版（int8）で読んだ結果。赤: 誤った文字。薄く取り消し線: 認識器が落とした文字。✓: 完全一致。完全一致は 10 本中 3 本から 6 本になった。ぼやけた 9 行目と 7 行目の に は、どちらもまだ誤る。</figcaption>
+      </figure>
+
+      <p><strong>代償と残る課題。</strong></p>
+      <ul>
+        <li><strong>余分な数字。</strong> 高精度 v6 は、数字のない写真風の行の 0.29% で、ない数字や記号を読む（以前は 0.08%）。多くは、ぼやけた最後のグリフを <code>!</code> と読むもので、き、し、に は棒と点の形をしている。</li>
+        <li><strong>検出器が数字入りの行を見落とす。</strong> 数字入りの行は普通の行より見つかりにくい。pages_v6 で det_v2 は 63.8%（普通の行は 71.7%）、960&nbsp;px の検出器は 78.6%（84.3%）。検出器は数字を無視すべき文字としてしか見たことがない。次は v6 のページで検出器をファインチューニングする。</li>
+        <li><strong>短い行の後に続く <code>!</code>。</strong> int8 の認識器は、短い行の後の余白部分にこれを出すことがある。アプリはどの行も最後の列を繰り返して 768&nbsp;px まで埋めるが、学習ではその部分を blank として教えていない。現行の高速認識器は synth_v4 の 3,000 行中 8 行でこれを起こす。</li>
+        <li>太い文字の<strong>小さな濁点</strong>は、今もいちばん多い読み落としである。</li>
+      </ul>
+      <p>v6 の認識器はそのまま差し替えられる（<code>experiments/family/tiny_v6</code> と <code>base_v6</code>）が、読み取りページは当面ファミリーの認識器を使い続ける。学習は <code>scripts/launch_v6.sh</code> と、研究ジャーナルの 2026-11-25 の項にある。</p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <p>HxH OCR はファンによるプロジェクトです。『HUNTER×HUNTER』の権利は冨樫義博氏、集英社および制作スタジオに帰属し、本プロジェクトはこれらと一切関係ありません。文字の形はファンによる資料からトレースしたもので、学習用の画像はすべて生成したものです。</p>
+  </div>
+</footer>
+
+<script type="module" src="blog.js"></script>
+<script type="module" src="deep.js"></script>
+</body>
+</html>
