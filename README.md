@@ -9,6 +9,11 @@ models: a **Fast** set of about 1 MB for the live camera and phones, and an **Ac
 
 **Try it:** https://hxh-ocr.kokkakniphon.workers.dev (whole pages, tap a line, live camera)
 
+**On your phone:** [HxH Translator](https://hxhtranslator.com), a fan web app built on these
+models. Read points your camera at Hunter script and reads it, Write types kana in the script on
+a 12-key pad, and Learn teaches the alphabet with a quiz. The app's own code is not in this
+repository.
+
 ![The browser pipeline on a generated page: every detected line boxed and numbered in reading order, vertical columns in purple](web/blog/img/pipeline/05_boxes.webp)
 
 *The browser pipeline on a generated validation page. Each box is one detected line, numbered

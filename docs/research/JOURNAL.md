@@ -2141,8 +2141,10 @@ Freeze onto a second line.
 
 ## 2026-11-25: HxH Translator (not in this repository)
 
-The owner built a separate fan web app, HxH Translator, on the Reader's models and the traced
-glyphs. It is not part of the public repository, so its design notes are left out here.
+The owner built a separate fan web app, HxH Translator (https://hxhtranslator.com), on the
+Reader's models and the traced glyphs: Read points a phone's camera at Hunter script and reads
+it, Write types kana in the script, Learn teaches it. Its code is not part of the public
+repository, so its design notes are left out here.
 
 ## 2026-11-25: readers v6: numbers in the lettering
 
