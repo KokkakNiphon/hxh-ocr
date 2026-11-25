@@ -7,6 +7,12 @@ Everything runs in the browser on a small Rust engine compiled to WebAssembly, w
 models: a **Fast** set of about 1 MB for the live camera and phones, and an **Accurate** set of
 3.6 MB for still images. Nothing is uploaded.
 
+![Animation: nine Hunter symbols are drawn stroke by stroke; under each appears its kana, then its romaji, then the meaning: hantā raisensu, "Hunter License"](docs/readme/decoder.gif)
+
+*Each symbol stands for one kana; together they spell hantā raisensu, "Hunter License". The
+animations in this README are recorded from the
+[How it works](https://hxh-ocr.kokkakniphon.workers.dev/blog/) page.*
+
 **Try it:** https://hxh-ocr.kokkakniphon.workers.dev (whole pages, tap a line, live camera)
 
 **On your phone:** [HxH Translator](https://hxhtranslator.com), a fan web app built on these
@@ -53,6 +59,11 @@ images.
    reader training lines out of its pages exactly the way the browser does. Ordinary writing
    is rendered only with openly licensed fonts (OFL-1.1 and Apache-2.0, pinned by hash in
    `rust/hxh-synth/fonts.lock.json`).
+
+   ![Animation: a training picture of ごん is made in five steps: clean strokes, drawn by hand, a screentone background with a speech bubble, a tilt, then blur and grain](docs/readme/training_picture.gif)
+
+   *How one training picture is made: clean strokes, drawn by hand, a background, a tilt, then
+   blur and grain. The generators pick every setting at random.*
 2. **Models.** A DBNet-style line detector and two CTC line readers (one for horizontal lines,
    one for vertical columns turned on their side), on ImageNet-pretrained MobileNetV4-small
    backbones restricted to convolutions and ReLU. They come as a small family:
@@ -66,6 +77,17 @@ images.
    The family readers know 90 tokens: the 74 of the `v4` readers (hiragana, ー, space) and
    `0-9 ! ? : / . -`. Fast also looks at overlapping tiles of a big photo; Accurate reads still
    images in one pass at 960 px; the live camera always uses Fast.
+
+   ![Animation: the reader steps along a strip of Hunter script; each step's answer is coloured, repeats are glued together, blanks are dropped, and the reading grows to ぐりーどあいらんど](docs/readme/ctc_reading.gif)
+
+   *The real reader on a real strip, one step at a time. It answers once for every 4 pixels (192
+   steps): row 1 is what each step says, row 2 glues repeats together, row 3 drops the "nothing
+   here" steps (CTC decoding). Below: the steps around the cursor and the top guesses at each.*
+
+   ![Animation: a vertical column of four symbols turns a quarter turn into a horizontal strip, and the vertical reader reads はんたー](docs/readme/vertical_turn.gif)
+
+   *A vertical column is turned a quarter turn, first symbol on the left, and read by the
+   vertical reader.*
 3. **int8.** Quantisation-aware training reproduces Espressif's ESP-DL rules (per-tensor
    power-of-two scales, half-up rounding), then ESP-PPQ quantises. `hxh-infer`, a `no_std`
    Rust engine with no dependencies, reproduces ESP-PPQ's integer simulation bit for bit and
