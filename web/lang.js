@@ -2,7 +2,7 @@
 // - puts a language button in the site nav, next to the theme toggle;
 // - remembers the reader's choice (localStorage "hxh-lang") and, when a default (English)
 //   address is opened later, shows that page in the chosen language if it exists;
-// - points the site's own links (Reader, How it works, Deep dive) at the pages in the language
+// - points the site's own links (Reader, How it works, Deep dive, DSi) at the pages in the language
 //   of the current page.
 // Which pages exist in which language is listed in AVAIL; keep it in step with the files.
 (() => {
@@ -10,6 +10,7 @@
     reader: ["en", "th", "ja"],
     explainer: ["en", "th", "ja"],
     deep: ["en", "th", "ja"],
+    dsi: ["en", "th", "ja"],
   };
   const LANGS = [["en", "English", "EN"], ["th", "ไทย", "ไทย"], ["ja", "日本語", "日本語"]];
   const LABEL = { en: "Language", th: "ภาษา", ja: "言語" };
@@ -19,11 +20,11 @@
 
   // which page family a path is, and the site root it lives under
   const parse = (path) => {
-    const m = path.match(/^(.*?\/)(blog\/)?(?:(index|deep-dive)(?:-(th|ja))?(?:\.html)?)?$/);
+    const m = path.match(/^(.*?\/)(blog\/)?(?:(index|deep-dive|dsi)(?:-(th|ja))?(?:\.html)?)?$/);
     if (!m) return null;
     const [, root, blog, base, lang] = m;
-    if (!blog && base === "deep-dive") return null;
-    const family = blog ? (base === "deep-dive" ? "deep" : "explainer") : "reader";
+    if (!blog && (base === "deep-dive" || base === "dsi")) return null;
+    const family = blog ? (base === "deep-dive" ? "deep" : base === "dsi" ? "dsi" : "explainer") : "reader";
     return { root, family, lang: lang || "en" };
   };
   // clean URLs on the live site (it drops ".html"), file names everywhere else
@@ -31,7 +32,7 @@
   const urlOf = (root, family, lang) => {
     const sfx = lang === "en" ? "" : `-${lang}`;
     const dir = family === "reader" ? root : `${root}blog/`;
-    const base = family === "deep" ? "deep-dive" : "index";
+    const base = family === "deep" ? "deep-dive" : family === "dsi" ? "dsi" : "index";
     if (clean) return base === "index" && !sfx ? dir : `${dir}${base}${sfx}`;
     return `${dir}${base}${sfx}.html`;
   };

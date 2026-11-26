@@ -54,6 +54,7 @@
       <a href="../index.html">Reader</a>
       <a href="index.html">How it works</a>
       <a href="deep-dive.html" aria-current="page">Deep dive</a>
+      <a href="dsi.html">DSi</a>
     </nav>
     <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="Theme" data-auto="auto" data-light="light" data-dark="dark" aria-label="Theme: auto">
       <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
@@ -72,6 +73,7 @@
     <p class="dek">Synthetic lines and pages, a MobileNetV4 CTC reader and a DBNet-lite line detector, quantisation-aware training that follows Espressif's int8 rules, and a Rust engine in WebAssembly that matches them bit for bit. Every number below comes from the project's research journal and run logs.</p>
     <p class="post-update"><b>Update, November 25, 2026.</b> This report describes the first models: the v4 readers (75 classes) and det_v2. The <a href="../index.html">Reader</a> now runs a model family trained with photo-style pages as well. Fast is det_v2 with retrained tiny readers (91 classes: the kana, space, digits and <code>! ? : / . -</code>); Accurate is a MobileNetV4-small 1.0 detector at 960&nbsp;px with wider readers, 3.6&nbsp;MB in all. Their training and benchmarks are in <code>docs/research/JOURNAL.md</code> (2026-11-25).</p>
     <p class="post-update"><b>Update, November 26, 2026.</b> The <a href="../index.html">Reader</a> now runs the v7 readers. They also read numbers drawn as part of the lettering, such as a model number <code>07</code> or a <code>!!</code> after a title (<a href="#app-v6">Appendix E</a>), and the cross <code>×</code> of the anime&#39;s episode titles (<a href="#app-v7">Appendix F</a>).</p>
+    <p class="post-update"><b>Update, November 26, 2026.</b> A three-stage 32&nbsp;px reader for the Nintendo DSi, <code>dsi_v1</code> (30.6&nbsp;M MACs a line, 104&nbsp;KB int8), runs bit-exact on the console's ARM9 with hand-written <code>SMLAxy</code> kernels. Its training, accuracy and speed are in <a href="dsi.html">the DSi post</a>.</p>
     <p class="paper-meta"><span><b>Code</b> hxh_ocr/, rust/, web/</span><span><b>Record</b> docs/research/JOURNAL.md</span><span><b>Evaluation</b> generated images only</span></p>
   </div>
 

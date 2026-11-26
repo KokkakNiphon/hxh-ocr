@@ -25,6 +25,7 @@ WEB = ROOT / "web"
 SITE = "https://hxh-ocr.kokkakniphon.workers.dev"
 AUTHOR = {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}
 PUBLISHED, MODIFIED = "2026-11-25", "2026-11-25"
+DATES = {"dsi": ("2026-11-26", "2026-11-26")}  # (published, modified) for pages that differ from the above
 LOCALE = {"en": "en_US", "th": "th_TH", "ja": "ja_JP"}
 MARK = (WEB / "brand" / "mark-inline.txt").read_text(encoding="utf-8").strip()
 
@@ -33,8 +34,12 @@ FAMILIES = {
     "reader": {"en": ("index.html", "/"), "th": ("index-th.html", "/index-th"), "ja": ("index-ja.html", "/index-ja")},
     "explainer": {"en": ("blog/index.html", "/blog/"), "th": ("blog/index-th.html", "/blog/index-th"), "ja": ("blog/index-ja.html", "/blog/index-ja")},
     "deep": {"en": ("blog/deep-dive.html", "/blog/deep-dive"), "th": ("blog/deep-dive-th.html", "/blog/deep-dive-th"), "ja": ("blog/deep-dive-ja.html", "/blog/deep-dive-ja")},
+    "dsi": {"en": ("blog/dsi.html", "/blog/dsi"), "th": ("blog/dsi-th.html", "/blog/dsi-th"), "ja": ("blog/dsi-ja.html", "/blog/dsi-ja")},
 }
-KIND = {"reader": "WebApplication", "explainer": "BlogPosting", "deep": "TechArticle"}
+KIND = {"reader": "WebApplication", "explainer": "BlogPosting", "deep": "TechArticle", "dsi": "BlogPosting"}
+# the social card: the site's own, or a page family's (path on the site, alt text)
+OG = {"dsi": ("/blog/img/dsi/og.jpg", "HxH Translator for DSi: the app's pick-a-mode screen with the 3D beetle opened, and はんたー in Hunter script.")}
+OG_DEFAULT = ("/og.png", "HxH OCR: the first OCR for the Hunter × Hunter alphabet, reading a manga page.")
 ABOUT = [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}]
 
 
@@ -46,7 +51,8 @@ def published(family: str, lang: str) -> bool:
 def block(family: str, lang: str, title: str, desc: str, prefix: str) -> str:
     url = SITE + FAMILIES[family][lang][1]
     alts = [(l, SITE + FAMILIES[family][l][1]) for l in ("en", "th", "ja") if published(family, l)]
-    og_image = f"{SITE}/og.png"
+    og_path, og_alt = OG.get(family, OG_DEFAULT)
+    og_image = SITE + og_path
     ld: dict = {"@context": "https://schema.org", "@type": KIND[family], "url": url, "inLanguage": lang,
                 "description": desc, "image": og_image, "author": AUTHOR}
     if family == "reader":
@@ -55,8 +61,10 @@ def block(family: str, lang: str, title: str, desc: str, prefix: str) -> str:
                    "browserRequirements": "Requires JavaScript and WebAssembly", "isAccessibleForFree": True,
                    "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "about": ABOUT})
     else:
-        ld.update({"headline": title, "datePublished": PUBLISHED, "dateModified": MODIFIED, "publisher": AUTHOR,
-                   "mainEntityOfPage": url, "about": ABOUT, "isPartOf": {"@type": "WebSite", "name": "HxH OCR", "url": SITE + "/"}})
+        pub, mod = DATES.get(family, (PUBLISHED, MODIFIED))
+        about = ABOUT + ([{"@type": "Thing", "name": "Nintendo DSi"}] if family == "dsi" else [])
+        ld.update({"headline": title, "datePublished": pub, "dateModified": mod, "publisher": AUTHOR,
+                   "mainEntityOfPage": url, "about": about, "isPartOf": {"@type": "WebSite", "name": "HxH OCR", "url": SITE + "/"}})
     e = lambda s: html.escape(s, quote=True)
     lines = [
         "<!-- site:begin (scripts/site_meta.py) -->",
@@ -75,7 +83,7 @@ def block(family: str, lang: str, title: str, desc: str, prefix: str) -> str:
         f'<meta property="og:image" content="{og_image}">',
         '<meta property="og:image:width" content="1200">',
         '<meta property="og:image:height" content="630">',
-        '<meta property="og:image:alt" content="HxH OCR: the first OCR for the Hunter × Hunter alphabet, reading a manga page.">',
+        f'<meta property="og:image:alt" content="{e(og_alt)}">',
         f'<meta property="og:locale" content="{LOCALE[lang]}">',
         *[f'<meta property="og:locale:alternate" content="{LOCALE[l]}">' for l, _ in alts if l != lang],
         '<meta name="twitter:card" content="summary_large_image">',
@@ -119,7 +127,7 @@ def sitemap():
     for family, langs in FAMILIES.items():
         alts = [(l, SITE + langs[l][1]) for l in ("en", "th", "ja") if published(family, l)]
         for l, u in alts:
-            out.append(f"  <url><loc>{u}</loc><lastmod>{MODIFIED}</lastmod>")
+            out.append(f"  <url><loc>{u}</loc><lastmod>{DATES.get(family, (PUBLISHED, MODIFIED))[1]}</lastmod>")
             out += [f'    <xhtml:link rel="alternate" hreflang="{l2}" href="{u2}"/>' for l2, u2 in alts]
             out.append(f'    <xhtml:link rel="alternate" hreflang="x-default" href="{SITE + langs["en"][1]}"/>')
             out.append("  </url>")

@@ -30,6 +30,10 @@
 .lang-list a[aria-current="page"]::after { content: " ✓"; }
 .lang-list .soon { color: var(--muted); cursor: default; }
 .lang-list .soon::after { content: " · soon"; font-size: 12px; }
+/* the call-to-action button stays on one line; below 820 px the four nav links leave it no room
+   (where it leads is also one of the nav links) */
+.site-nav .nav-cta { white-space: nowrap; flex: none; }
+@media (max-width: 820px) { .site-nav .nav-cta { display: none; } }
 /* phones: the nav keeps one line, so the logo drops its word and the globe its label */
 @media (max-width: 560px) {
   .brand { font-size: 0; gap: 0; }
@@ -38,8 +42,13 @@
   .lang-btn span { display: none; }
   .lang-menu + .theme-toggle { margin-left: 6px; }
 }
+/* four links (Reader, How it works, Deep dive, DSi) still fit one line on a 360 px phone */
 @media (max-width: 400px) {
-  .site-nav .nav-inner { gap: 10px; }
-  .site-nav nav { gap: 10px; }
-  .site-nav nav a { font-size: 13px; }
+  .site-nav .nav-inner {
+    gap: 8px;
+    padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px));
+  }
+  .site-nav nav { gap: 7px; }
+  .site-nav nav a { font-size: 12px; }
+  .lang-menu + .theme-toggle { margin-left: 4px; }
 }

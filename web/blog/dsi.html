@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en" data-fig="Fig." data-table="Table">
+<head>
+<meta charset="utf-8">
+<script src="../theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Reading Hunter × Hunter script on a Nintendo DSi · HxH OCR</title>
+<meta name="description" content="How the HxH Translator was rebuilt for the Nintendo DSi: a Rust app on a 133 MHz ARM9, a 3D beetle drawn by the console's own toon hardware, and a 100 KB int8 reader that does a fifth of the web reader's arithmetic and reads Hunter script through the DSi's camera.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="blog.css">
+<link rel="stylesheet" href="deep.css">
+<link rel="stylesheet" href="dsi.css">
+<!-- site:begin (scripts/site_meta.py) -->
+<link rel="canonical" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi">
+<link rel="alternate" hreflang="en" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi">
+<link rel="alternate" hreflang="th" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-th">
+<link rel="alternate" hreflang="ja" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-ja">
+<link rel="alternate" hreflang="x-default" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi">
+<meta name="author" content="KokkakNiphon">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#2340d8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HxH OCR">
+<meta property="og:title" content="Reading Hunter × Hunter script on a Nintendo DSi · HxH OCR">
+<meta property="og:description" content="How the HxH Translator was rebuilt for the Nintendo DSi: a Rust app on a 133 MHz ARM9, a 3D beetle drawn by the console&#x27;s own toon hardware, and a 100 KB int8 reader that does a fifth of the web reader&#x27;s arithmetic and reads Hunter script through the DSi&#x27;s camera.">
+<meta property="og:url" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi">
+<meta property="og:image" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/img/dsi/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HxH Translator for DSi: the app&#x27;s pick-a-mode screen with the 3D beetle opened, and はんたー in Hunter script.">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="th_TH">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Reading Hunter × Hunter script on a Nintendo DSi · HxH OCR">
+<meta name="twitter:description" content="How the HxH Translator was rebuilt for the Nintendo DSi: a Rust app on a 133 MHz ARM9, a 3D beetle drawn by the console&#x27;s own toon hardware, and a 100 KB int8 reader that does a fifth of the web reader&#x27;s arithmetic and reads Hunter script through the DSi&#x27;s camera.">
+<meta name="twitter:image" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/img/dsi/og.jpg">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../site.css">
+<script src="../lang.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "url": "https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi", "inLanguage": "en", "description": "How the HxH Translator was rebuilt for the Nintendo DSi: a Rust app on a 133 MHz ARM9, a 3D beetle drawn by the console's own toon hardware, and a 100 KB int8 reader that does a fifth of the web reader's arithmetic and reads Hunter script through the DSi's camera.", "image": "https://hxh-ocr.kokkakniphon.workers.dev/blog/img/dsi/og.jpg", "author": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "headline": "Reading Hunter × Hunter script on a Nintendo DSi · HxH OCR", "datePublished": "2026-11-26", "dateModified": "2026-11-26", "publisher": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "mainEntityOfPage": "https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi", "about": [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}, {"@type": "Thing", "name": "Nintendo DSi"}], "isPartOf": {"@type": "WebSite", "name": "HxH OCR", "url": "https://hxh-ocr.kokkakniphon.workers.dev/"}}</script>
+<!-- site:end -->
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M5.6 6.52H14.4M5.6 13.48H14.4M10 6.52V13.48M19.28 14.39L26.14 5.61M9.92 18.45V25.55M5.73 25.55H14.27M16.8 18.52L19.36 22.04L16.8 25.48M19.36 22.04H24.56M27.2 18.52L24.56 22.04L27.2 25.48"/><circle cx="19.7" cy="7.95" r="1.84"/></svg>HxH OCR</a>
+    <nav aria-label="Site">
+      <a href="../index.html">Reader</a>
+      <a href="index.html">How it works</a>
+      <a href="deep-dive.html">Deep dive</a>
+      <a href="dsi.html" aria-current="page">DSi</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="Theme" data-auto="auto" data-light="light" data-dark="dark" aria-label="Theme: auto">
+      <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      <svg class="ic-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ic-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="nav-cta" href="../index.html">Try the reader</a>
+  </div>
+</header>
+
+<main class="post">
+  <div class="post-head">
+    <p class="kicker">Project <span>·</span> HxH Translator for DSi</p>
+    <p class="meta">By <a class="byline" href="https://github.com/KokkakNiphon" rel="author">KokkakNiphon</a> <span>·</span> November 26, 2026 <span>·</span> 14 min read</p>
+    <h1>Reading Hunter&nbsp;×&nbsp;Hunter script on a Nintendo&nbsp;DSi</h1>
+    <p class="dek">The HxH Translator's three modes, Read, Write and Learn, rebuilt for a handheld from 2008: a Rust app on a 133&nbsp;MHz ARM9, a 3D beetle drawn by the console's own toon hardware, and a 100&nbsp;KB int8 reader that does a fifth of the web reader's arithmetic and reads a line through the DSi's camera.</p>
+    <p class="post-update"><b>Status, November 26, 2026.</b> The app runs on a real DSi and has passed the owner's tests there, but it is not released yet. Its source code is not published. Its reader model, <a href="https://huggingface.co/KokkakNiphon/hxh-ocr/tree/main/int8/dsi_v1">dsi_v1</a>, is on Hugging Face with the other models.</p>
+  </div>
+
+  <div class="post-grid">
+    <aside class="toc-rail">
+      <nav class="toc" aria-label="Table of contents">
+        <p class="label">Contents</p>
+        <ol id="toc"></ol>
+      </nav>
+      <a class="rail-card" href="index.html">
+        <span class="label">New to OCR?</span>
+        <span class="rail-title">How it works</span>
+        <span class="rail-text">How the reader sees, learns and reads a line, in pictures, before it was squeezed onto a DS.</span>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+    </aside>
+
+    <article id="article">
+      <figure class="fig" id="f-hero">
+        <div class="screens">
+          <div class="shot"><img src="img/dsi/home.webp" width="540" height="824" alt="The DSi app's home: the brown 3D beetle on a sky-blue card with hollow Hunter letters behind it, and an OPEN button on the touch screen." loading="eager"><span>Home, lid shut</span></div>
+          <div class="shot"><img src="img/dsi/modes.webp" width="540" height="824" alt="The beetle opened, wings up, with three mode cards below: READ, WRITE and LEARN." loading="eager"><span>Opened: pick a mode</span></div>
+          <div class="shot"><img src="img/dsi/read.webp" width="540" height="824" alt="Read mode: a line of Hunter script in a green guide bar, read as はんたー しけん, hantā shiken, with a transcript below." loading="eager"><span>Read: one line</span></div>
+        </div>
+        <figcaption>Fig. # — The app's own screens, top screen above the touch screen, rendered on a PC by the same Rust code the console runs (the 3D beetle by a software model of the DS's 3D chip). The Read shot uses a test camera that draws a sign; no real photo is used anywhere in this post.</figcaption>
+      </figure>
+
+      <p class="lede">The <a href="https://hxhtranslator.com/">HxH Translator</a> is a web app with three modes: <strong>Read</strong> points a phone's camera at Hunter script and turns it into kana and Latin letters, <strong>Write</strong> turns what you type into Hunter script, and <strong>Learn</strong> teaches the alphabet. This post is about putting all three on a <strong>Nintendo DSi</strong>, a handheld from 2008 with two small screens, a stylus, a camera and a 133&nbsp;MHz processor. The hardest part was Read: a PC reads a line in about a millisecond, and the DS, in an emulator, took eleven seconds. It took a reader that does a fifth of the arithmetic, and hand-written ARM kernels, to bring that down.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="idea">A beetle that opens with the lid</h2>
+      <p>The web app's mascot is a beetle whose wings open to show a screen. The DSi is a clamshell, so the idea wrote itself: <strong>opening the console opens the beetle</strong>. The top screen is the beetle's screen; the bottom touch screen is the panel with the buttons. The three modes stay as they are on the web.</p>
+      <p>Before any code, the screens were drawn as a page of twelve mockups, each a real 256&nbsp;×&nbsp;192 canvas scaled only by whole numbers so every DS pixel shows. Nothing on that page was retyped: it imported the web app's own glyph renderer, beetle model, Learn data and romaji converter. Drawing them settled a few things early. The Hunter Exam's four answers sit where the Y, X, B and A buttons are, so the stylus is optional. Learn's example glyph is く, not ね, because ね is a single closed stroke in Hunter script and can't show stroke order; く has three.</p>
+
+      <p>What the hardware offers decided most of the rest:</p>
+      <div class="hw" role="list">
+        <div role="listitem"><b>133 MHz</b><span>ARM946E-S processor (67&nbsp;MHz in original-DS mode), with no instructions that work on many small numbers at once</span></div>
+        <div role="listitem"><b>16 MB</b><span>of memory (4&nbsp;MB on an original DS)</span></div>
+        <div role="listitem"><b>2 × 256 × 192</b><span>screens; the bottom one is a touch screen for a stylus</span></div>
+        <div role="listitem"><b>640 × 480</b><span>two cameras, inner and outer</span></div>
+        <div role="listitem"><b>2,048</b><span>3D polygons a frame, with toon shading and outlines built into the chip</span></div>
+        <div role="listitem"><b>SD card</b><span>for saving stickers, progress and a reading log</span></div>
+      </div>
+      <p>The toon shading was a gift: the web draws the beetle with flat bands of colour and an ink outline, and the DS's 3D chip does exactly that in hardware. The processor was the problem. The web's Fast reader takes 154 million multiply-adds (MACs) to read one line. At a guessed 30–60 million a second, that is 2.6–5 seconds a line, and the line finder that finds text on a whole page would take most of a minute. So the DSi's Read does not look for lines. You aim one line into a guide bar, and only that line is read.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="split">C for the hardware, Rust for the rest</h2>
+      <p>DS homebrew is mostly written in C; this app uses <a href="https://blocksds.skylyrac.net/">BlocksDS</a>, a free toolchain and set of libraries. Rust can target the DS's processor too (<code>thumbv5te-none-eabi</code>, a nightly-only target), and the project's int8 engine was already written in Rust without the standard library. So the app is split: a thin C layer owns the hardware, and Rust does everything else.</p>
+
+      <figure class="fig" id="f-split">
+        <div class="fig-box">
+          <div class="fig-title">Who owns what</div>
+          <div class="fig-sub">C calls Rust once a frame; Rust asks the hardware for things through a short list of commands</div>
+          <div class="split">
+            <div class="split-col">
+              <p class="split-h">C · BlocksDS</p>
+              <p class="split-s">owns the hardware</p>
+              <ul>
+                <li>waits for each screen refresh and copies the rows Rust changed</li>
+                <li>3D: the beetle's display lists, toon table and outlines</li>
+                <li>sound, through maxmod</li>
+                <li>the cameras, the SD card and the files inside the ROM</li>
+                <li>the lid, sleep and the clock</li>
+              </ul>
+            </div>
+            <div class="split-mid">
+              <span class="to-r">buttons, stylus, date</span>
+              <span class="to-l">two screens + commands: play a sound, pose the beetle, start the camera</span>
+            </div>
+            <div class="split-col rust">
+              <p class="split-h">Rust · no_std</p>
+              <p class="split-s">everything else</p>
+              <ul>
+                <li>every scene: home, Read, Write, Learn</li>
+                <li>draws both screens into 16-bit pictures, with its own font renderer</li>
+                <li>Hunter glyph layout and the kana rules</li>
+                <li>Learn's similarity, exams and puzzles</li>
+                <li>the int8 reader, with ARM9 kernels in fast on-chip memory</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <figcaption>Fig. # — The split. The Rust side is a static library linked into the BlocksDS build; the first ROM that drew text this way was 140&nbsp;KB.</figcaption>
+      </figure>
+
+      <p>The Rust side is ports of the web app's JavaScript: the kana converter, the Hunter glyph layout, Learn's similarity measure and puzzles. A port can drift from the original in small ways, so every port is tested against <strong>the web app's own code</strong>. Node scripts run the JavaScript and save its answers, and the Rust tests must match them:</p>
+      <ul>
+        <li>the kana converter: 0 mismatches over 5,437 distinct inputs and 10,769 conversion cases;</li>
+        <li>the glyph layout: within 0.0001 of the font size in 120 cases, and text widths within 0.1&nbsp;px of what Chrome measures;</li>
+        <li>Learn's similarity: all 3,403 pairs of chart kana within 0.00000054 of the font size, the same 200 lookalike lists, 15 seeded exams and 440 days of daily puzzles.</li>
+      </ul>
+      <p>The similarity port needed a second try. Its first version used rounded fixed-point coordinates, and 5 of the 200 lookalike lists came out in a different order. The JavaScript has exact ties (は, ば and ぱ are the same shape apart from their marks) and gaps as small as 0.0000046, so rounding was enough to swap neighbours. Integer coordinates with more bits, taken straight from the glyph data, fixed it.</p>
+      <p>The tests also found two bugs in the web app itself. Typing the name “Reā” made Write show <code>リーundefined</code>, and the word “constructor” was looked up as JavaScript's own <code>Object</code> function, so the bar showed <code>function Object() { [native code] }</code>. Both are now fixed in the web app's code too.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="tracks">Six tracks at once</h2>
+      <p>Once the skeleton drew Hunter text in an emulator (melonDS), the work was split into six tracks that ran at the same time, each in its own AI coding session with its own files, and reported back to a coordinating session that merged them, kept the journal and did the checks in the emulator. All six finished in about an hour.</p>
+
+      <figure class="fig table" id="t-tracks">
+        <figcaption>Table # — The six tracks and what each one delivered.</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>track</th><th>what it built</th><th>the number that mattered</th></tr></thead>
+          <tbody>
+            <tr><td class="k"><strong>A</strong> text</td><td>Three free fonts (Dela Gothic One, M PLUS 1p, M PLUS 1 Code) baked into 46 bitmap fonts with kerning; 482 interface strings in English and Japanese.</td><td>A frame of handwriting went from 72.8&nbsp;µs to 1.0&nbsp;µs on the PC by redrawing only the box that changed (a median of 77 pixels instead of 49,152).</td></tr>
+            <tr><td class="k"><strong>B</strong> beetle</td><td>The web's beetle exported from its own code, cut down, and baked into DS display lists with a toon table and outlines.</td><td>25,736 triangles down to 1,484; about 800 polygons a frame of the 2,048 allowed.</td></tr>
+            <tr><td class="k"><strong>C</strong> Write</td><td>The kana converter and the 12-key multi-tap pad, with the web's timings.</td><td>0 mismatches over 5,437 inputs; two web bugs found.</td></tr>
+            <tr><td class="k"><strong>D</strong> Learn</td><td>The chart, its 200 example words, 42 puzzles, the similarity measure, and a new score for tracing with the stylus.</td><td>Perfect tracings earn 3 stamps for all 83 kana; no lookalike earns 2 or more.</td></tr>
+            <tr><td class="k"><strong>E</strong> Read</td><td>The int8 engine built for the DS, plus a hand-written ARM9 kernel for its most common layer.</td><td>Bit-exact with the PC on about 3,200 random layers and 24 reference outputs.</td></tr>
+            <tr><td class="k"><strong>F</strong> sound</td><td>The web's 13 sound effects and 12 keypad tones, converted for the DS's mixer.</td><td>Each keypad tone within 2&nbsp;Hz of the web's; 478&nbsp;KB of sound.</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <figure class="fig" id="f-firstlight">
+        <div class="fig-media fig-small">
+          <div class="shot"><img class="melon" src="img/dsi/melonds_m0.webp" width="258" height="440" alt="The melonDS emulator window: はんたー written in Hunter script on a sky-blue top screen, with an orange pill below." loading="lazy"><span>The first ROM</span></div>
+          <div class="shot"><img class="melon" src="img/dsi/melonds_beetle.webp" width="258" height="440" alt="The melonDS window showing the 3D beetle opened with パカッ! written beside it, and a CLOSE button on the touch screen." loading="lazy"><span>The 3D beetle, opened</span></div>
+        </div>
+        <figcaption>Fig. # — In the melonDS emulator. Left: the first ROM, where Rust writes はんたー stroke by stroke. Right: track B's beetle after A is pressed: wings up, the screen inside showing the app's icon, and パカッ!</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="beetle">What the emulator didn't show</h2>
+      <p>melonDS is a very good emulator, but it draws each 3D frame in one go. A real DS draws its 3D picture <strong>line by line</strong> while the screen is being shown, with a small buffer of finished lines. The first time the app ran on the owner's DSi, the beetle had holes: rows of white dots across its shell, and a shredded screen when it opened. None of it had ever appeared in the emulator.</p>
+      <p>The white was the picture behind the beetle showing through, so the beetle's own pixels weren't being drawn on those lines. The holes sat in rows where many layers pile up, such as the eye lenses over the shell. The app had a debug overlay, so the next ROM added four test modes that switch features off. The owner tried each one on the DSi:</p>
+
+      <figure class="fig table" id="t-modes">
+        <figcaption>Table # — The test modes on a real DSi. Only turning off the rear-plane bitmap made the beetle whole.</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th></th><th>T0, as designed</th><th>T1, no outlines</th><th>T2, no rear-plane bitmap</th><th>T3, neither</th></tr></thead>
+          <tbody>
+            <tr><td class="k">home, closed</td><td class="bad">holes</td><td class="bad">holes</td><td class="ok">whole</td><td class="ok">whole</td></tr>
+            <tr><td class="k">opened</td><td class="bad">holes</td><td class="bad">holes</td><td class="ok">whole</td><td class="ok">whole</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>The culprit was the <strong>rear-plane bitmap</strong>, a DS feature that puts a picture behind the 3D scene. It makes the 3D chip read a colour and a depth value for every pixel behind the beetle, and on crowded lines that extra reading made it run out of time. The outlines cost nothing visible. The fix moved the picture behind the beetle out of the 3D chip altogether, onto an ordinary 2D layer:</p>
+
+      <figure class="fig" id="f-layers">
+        <div class="fig-box">
+          <div class="fig-title">The top screen's layers, front to back</div>
+          <div class="fig-sub">The 2D hardware mixes the layers; the 3D chip only draws the beetle</div>
+          <div class="lyr-cmp">
+            <div class="lyr">
+              <p class="lyr-h">First build</p>
+              <div class="layer"><b>BG3 · 2D, in front</b>title, words, buttons</div>
+              <div class="layer d3"><b>3D layer</b>the beetle</div>
+              <div class="layer bad"><b>rear plane · inside the 3D chip</b>the card and hollow letters, read again for every pixel of every line</div>
+              <p class="lyr-r bad">holes on crowded lines</p>
+            </div>
+            <div class="lyr">
+              <p class="lyr-h">Fixed</p>
+              <div class="layer"><b>BG3 · 2D, in front</b>title, words, buttons</div>
+              <div class="layer d3"><b>3D layer</b>the beetle, on a see-through background</div>
+              <div class="layer ok"><b>BG2 · 2D, behind</b>the card and hollow letters, mixed in by the 2D hardware</div>
+              <p class="lyr-r ok">whole on the DSi</p>
+            </div>
+          </div>
+        </div>
+        <figcaption>Fig. # — The fix that made the beetle whole on hardware: what sits behind the beetle moved from the 3D chip's rear plane to a second 2D background.</figcaption>
+      </figure>
+
+      <p>The next hardware test found one more: the whole screen <strong>blinked white</strong> for a frame whenever a word appeared or the beetle opened or closed. To keep old words from leaving a ghost behind the beetle, every change first sent the background alone and the full picture a frame later, and in between the screen showed only the white paper. In the emulator it was a barely visible flicker. The fix is a new command: a scene hands over the picture that belongs behind the beetle, and both layers change in the same screen refresh. The owner's verdict on the next build: “Working great”.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="memory">Fitting in 4&nbsp;MB</h2>
+      <p>The DSi has 16&nbsp;MB, but the same ROM also runs on an original DS, which has 4. At first everything lived in the program's memory image: the fonts alone were 1.3&nbsp;MB, the sounds half a megabyte, and the reader models and their test strips another 0.7&nbsp;MB. Switching from one reader to the other in original-DS mode showed “NO MEMORY: THE READER NEEDS 360K”. A clean message rather than a crash, because the reader asks for its memory in a way that can fail, but a sign of things to come.</p>
+      <p>The fix was to move the fonts, strings, sounds and models into the ROM's own file system (NitroFS) and load them when a scene needs them: a font when it is first drawn with, one language's strings at a time, a sound on first play, one reader at a time. Each scene is built when you enter it, and after its first frame everything it didn't use is freed.</p>
+
+      <figure class="fig table" id="t-memory">
+        <figcaption>Table # — Original-DS mode, before and after loading on demand. The goal was at least 1.5&nbsp;MB free in every scene.</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th></th><th class="num">before</th><th class="num">after</th></tr></thead>
+          <tbody>
+            <tr><td>read-only data in memory</td><td class="num">2,676,824 B</td><td class="num"><strong>180,992 B</strong></td></tr>
+            <tr><td>the whole resident image</td><td class="num">3,196,500 B</td><td class="num"><strong>938,188 B</strong></td></tr>
+            <tr><td>free memory at start</td><td class="num">473,516 B</td><td class="num"><strong>2,731,828 B</strong></td></tr>
+            <tr class="group"><td colspan="3">free in each scene, measured in melonDS</td></tr>
+            <tr><td>home</td><td class="num">–</td><td class="num">2,719 KB</td></tr>
+            <tr><td>Write, after typing ともだち</td><td class="num">–</td><td class="num">2,428 KB</td></tr>
+            <tr><td>Learn, the chart</td><td class="num">–</td><td class="num">2,661 KB</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">In every scene the largest free block equalled the free total, so memory was not fragmenting.</p>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="write">Write: a flip phone, a keyboard and a pen</h2>
+      <p>Write works like an old flip phone: tap a key once for あ, twice for い. The top screen writes each Hunter glyph stroke by stroke as you type, and a meaning card shows known words, such as ともだち, “friend”. A QWERTY keyboard handles romaji and names. Anything you write can become a sticker in seven styles, saved as a PNG to the SD card by a small PNG writer written for the DS.</p>
+      <p>After using it, the owner asked for handwriting. You draw a <strong>Hunter</strong> letter with the stylus, and its kana goes into the text. The pen compares your drawing with 79 templates, every glyph and form with its marks, after every stroke, using the same kind of distance between drawings that Learn uses to find lookalikes. On 3,160 test drawings made from the glyphs' own strokes, the right kana was the top guess 98.9% of the time for neat drawings and 94.3% for sloppy ones, and among the five guesses shown 99.2% of the time or more. A reading takes an estimated 18&nbsp;ms on an original DS. Real handwriting has only been tried by hand, not measured.</p>
+
+      <figure class="fig" id="f-write">
+        <div class="screens c4">
+          <div class="shot"><img src="img/dsi/write.webp" width="540" height="824" alt="Write mode: はんたー in green Hunter script on a black LCD top screen, and a 12-key pad on the touch screen." loading="lazy"><span>The pad</span></div>
+          <div class="shot"><img src="img/dsi/pen.webp" width="540" height="824" alt="The pen: a glyph drawn by stylus in a box, with the top five guesses beside it, は first." loading="lazy"><span>The pen</span></div>
+          <div class="shot"><img src="img/dsi/stickers.webp" width="540" height="824" alt="The sticker sheet: ともだち, tomodachi, Friend, in the Manga style, with style and colour choices and a SAVE PNG button." loading="lazy"><span>Stickers</span></div>
+          <div class="shot"><img src="img/dsi/license.webp" width="540" height="824" alt="My License: a Hunter license card with a name in Hunter script and three exam stamps." loading="lazy"><span>My License</span></div>
+        </div>
+        <figcaption>Fig. # — Write's pad, the pen and the sticker sheet, and the license that Learn's exam earns. The name on the license is a test name.</figcaption>
+      </figure>
+
+      <figure class="fig" id="f-sticker">
+        <div class="fig-media fig-small">
+          <img class="px2" src="img/dsi/sticker_dsi.webp" width="229" height="103" alt="A sticker: ありかと, arikato, in Hunter script on an orange vocabulary card, with the hxhtranslator.com footer." loading="lazy">
+        </div>
+        <figcaption>Fig. # — The first sticker saved on a real DSi, read back from its SD card (229&nbsp;×&nbsp;103, shown at 2×). It went through the DS-side PNG writer and the DSi's SD card driver.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="learn">Learn: trace, exam, puzzles</h2>
+      <p>On a phone, “trace it with your finger” was always a feature for later. With a stylus it became the centre of Learn. <strong>Trace it</strong> shows a ghost glyph with numbered strokes; you trace it, and each stroke is scored by how far it strays from the glyph's own stroke, on average and at its ends. Three stamps need an error of 3.2% of the font size or less; a lookalike drawn perfectly never earns more than one. The <strong>Hunter Exam</strong> asks in three phases (a glyph to its kana, a kana to its glyph, a whole word), with wrong answers picked from the glyph's real lookalikes, and passing it earns the license above.</p>
+      <p><strong>Today's puzzle</strong> gives one word a day to decode a glyph at a time. <strong>Puzzle Run</strong> came later, at the owner's request: words keep coming until three answers are wrong, and the game gets harder as you go.</p>
+
+      <figure class="fig table" id="t-run">
+        <figcaption>Table # — Puzzle Run's difficulty ramp. The rules are tested so that nothing ever gets easier.</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th class="num">words solved</th><th class="num">level</th><th class="num">word length</th><th>wrong answers</th><th>romaji shown</th><th>clock a glyph</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0–2</td><td class="num">1</td><td class="num">1–2</td><td>nothing alike</td><td>yes</td><td>none</td></tr>
+            <tr><td class="num">3–5</td><td class="num">2</td><td class="num">2–3</td><td>a little alike</td><td>yes</td><td>none</td></tr>
+            <tr><td class="num">6–9</td><td class="num">3</td><td class="num">2–3</td><td>closer</td><td>yes</td><td>none</td></tr>
+            <tr><td class="num">10–14</td><td class="num">4</td><td class="num">3–4</td><td>the closest ten</td><td>no</td><td>none</td></tr>
+            <tr><td class="num">15 on</td><td class="num">5+</td><td class="num">3–5</td><td>the closest six</td><td>no</td><td>10&nbsp;s, then ½&nbsp;s less a word, down to 4&nbsp;s</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <figure class="fig" id="f-learn">
+        <div class="screens c4">
+          <div class="shot"><img src="img/dsi/chart.webp" width="540" height="824" alt="Learn's chart of Hunter glyphs on the top screen, with く selected and its example words on the touch screen." loading="lazy"><span>The chart</span></div>
+          <div class="shot"><img src="img/dsi/trace.webp" width="540" height="824" alt="Trace it: a glyph traced with the stylus, three stamps, and a green PASS button." loading="lazy"><span>Trace it</span></div>
+          <div class="shot"><img src="img/dsi/exam.webp" width="540" height="824" alt="The Hunter Exam's result card." loading="lazy"><span>The exam</span></div>
+          <div class="shot"><img src="img/dsi/run.webp" width="540" height="824" alt="Puzzle Run at level 5: a three-glyph word to decode, three beetle lives with one lost, four kana answers and a clock bar." loading="lazy"><span>Puzzle Run</span></div>
+        </div>
+        <figcaption>Fig. # — Learn. The answers sit where the console's face buttons are, so every screen can be played with the buttons or the stylus.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="reader">Reading on a 133&nbsp;MHz ARM9</h2>
+      <p>The reader is a small convolutional neural network (the <a href="index.html#read">How it works</a> article shows how it reads a line). Its numbers are stored as int8, one byte each, and the project's engine runs it with whole-number maths only. That engine was written in Rust without the standard library for an ESP32 microcontroller, so it compiled for the DS unchanged. The question was speed.</p>
+      <p>The DS's ARM9 has no instructions that multiply many small numbers at once, which is how phones and PCs run networks quickly. It does have <code>SMLAxy</code>, which multiplies two 16-bit halves of registers and adds the result in one go. Track E wrote a kernel around it for the 1×1 convolution, the layer that does most of the reader's work: it computes 2 outputs × 4 channels at a time, is 508 bytes long, and lives in the ARM9's small on-chip instruction memory, where it runs without waiting for main memory. Every result must be <strong>bit-exact</strong>: the same bytes as the PC, down to the last digit of every score.</p>
+
+      <p>The first try in the emulator never finished a read. The screen showed READING for five minutes. The cause wasn't slowness: a tool that measures how much stack the reader uses works by filling unused stack with a pattern, and after the compiler inlined it, it painted over its caller's own live variables. The next pointer the reader used was the pattern <code>0xA5C35A3C</code>, the processor faulted, and with no fault handler the screen just froze. PC tests couldn't see it, because the painter does nothing off the DS. With that fixed, the reader ran, and matched the PC exactly: 17,472 of 17,472 output scores.</p>
+
+      <figure class="fig" id="f-readtime">
+        <div class="fig-box"><div class="chart-host" id="chart-read"></div></div>
+        <figcaption>Fig. # — Time to read one line in the melonDS emulator, in original-DS mode (67&nbsp;MHz). The emulator's timing is rough; it charged about 1.5 times what the cost model predicted. A DSi runs at twice the clock.</figcaption>
+      </figure>
+
+      <p>The kernel made the web's Fast reader 2.7 times faster, but 11 seconds a line is still far too slow. A faster kernel can only do so much; the reader itself had to shrink.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="dsi-v1">dsi_v1: a fifth of the arithmetic</h2>
+      <p>Track E priced several smaller readers with a cost model built from the kernel's measured speed, and recommended the cheapest one with a track record: the first three stages of the same MobileNetV4 network (the full reader has four), at 32 pixels tall instead of 48. The project had trained this shape twice before. This time it was trained on the v6 data, so it also reads digits and some punctuation, then fine-tuned for int8 and converted through the same chain as the web's readers, which checks it bit for bit against Espressif's int8 simulator.</p>
+
+      <figure class="fig table" id="t-dsiv1">
+        <figcaption>Table # — The DSi reader next to the web's Fast reader.</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th></th><th class="num">Fast, on the web</th><th class="num">dsi_v1</th></tr></thead>
+          <tbody>
+            <tr><td>network</td><td class="num">MobileNetV4-small, 4 stages</td><td class="num">first 3 stages</td></tr>
+            <tr><td>input line</td><td class="num">48 × 768 px</td><td class="num"><strong>32 × 512 px</strong></td></tr>
+            <tr><td>parameters</td><td class="num">323,995</td><td class="num"><strong>96,923</strong></td></tr>
+            <tr><td>multiply-adds a line</td><td class="num">154.19 M</td><td class="num"><strong>30.62 M</strong></td></tr>
+            <tr><td>model file, int8</td><td class="num">339,552 B</td><td class="num"><strong>103,856 B</strong></td></tr>
+            <tr><td>working memory</td><td class="num">368,640 B</td><td class="num"><strong>163,840 B</strong></td></tr>
+            <tr><td>a line on a PC, WebAssembly</td><td class="num">5.96 ms</td><td class="num"><strong>1.24 ms</strong></td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">Training took about 30 minutes on one RTX 4080 SUPER: two fine-tuning stages (12,000 and 3,000 steps) and 4,000 steps of quantisation-aware training. The int8 model matches Espressif's simulator on 512 of 512 test lines in every build of the engine, the DS's included.</p>
+      </figure>
+
+      <figure class="fig" id="f-cer">
+        <div class="fig-box"><div class="chart-host" id="chart-cer"></div></div>
+        <figcaption>Fig. # — Character error rate, int8, through the app's own crop path (lower is better). The DSi reader makes about half the mistakes on lines with numbers, because it learned from data the Fast reader never saw; on plain lines it is a little behind. All test sets are generated pictures.</figcaption>
+      </figure>
+
+      <p>Most of its extra mistakes are the small marks. At 32 pixels tall, the dot that turns か into が is a few pixels across, so が → か and ぱ → ば are its typical errors, along with missed spaces between words. On the console, the trade is worth it:</p>
+
+      <figure class="fig" id="f-ab">
+        <div class="fig-media fig-small">
+          <img class="melon" src="img/dsi/melonds_read_ab.webp" width="258" height="440" alt="The melonDS window running the DSi reader's speed test: BIT-EXACT 11648/11648 logits, ARM9 2.38 s, scalar 6.06 s, speed-up ×2.53, and a bar chart of time per layer." loading="lazy">
+        </div>
+        <figcaption>Fig. # — The speed test in melonDS: the DSi reader in 2.38&nbsp;s with the ARM9 kernel and 6.06&nbsp;s without, bit-exact on all 11,648 scores. That is 4.6 times faster than the Fast reader for 5 times fewer multiply-adds.</figcaption>
+      </figure>
+
+      <p>The speed test's breakdown by layer showed the next target. The 1×1 convolutions ran at 3.7 processor cycles a multiply-add and the larger ones at 4.2, but the depthwise convolutions, which had no kernel yet, took <strong>18.8 cycles</strong> each and a quarter of the time. A second kernel reads four channels in one 32-bit load and splits them into 16-bit halves with two masks, with no unpacking: 12 instructions for 4 multiply-adds, about 3.5 cycles each by count. It passed 5,000 random layers with no mismatch.</p>
+      <p>One more change keeps the screen alive while it reads. A whole read in one go would freeze the app for a second or two, so the reader now runs in small bands of about half a million multiply-adds and stops after about 12&nbsp;ms each frame. The DSi reader is 86 bands; the progress bar fills as they finish.</p>
+
+      <figure class="fig" id="f-ops">
+        <div class="fig-box"><div class="chart-host" id="chart-ops"></div></div>
+        <figcaption>Fig. # — Processor cycles per multiply-add on the ARM9, by kind of layer (the DSi reader in melonDS). The depthwise kernel's 3.5 is an estimate from counting instructions; the hardware hasn't measured it yet.</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="camera">Read with the camera</h2>
+      <p>The DSi's camera gives the reader its input almost for free. A full photo comes as brightness plus colour, and the brightness part is exactly the grey picture the reader wants. The camera driver streams a live preview into three buffers in main memory, so the camera never waits for the app, and takes 640&nbsp;×&nbsp;480 stills on demand. It uses 888&nbsp;KB while it is on, and nothing when it is off.</p>
+
+      <figure class="fig" id="f-read">
+        <div class="fig-media"><img src="img/dsi/read_host.webp" width="1576" height="784" alt="Three pairs of screens: aiming a line of Hunter script into the guide bar, reading with a progress bar, and the result: はんたー しけん, hantā shiken." loading="lazy"></div>
+        <figcaption>Fig. # — Aiming, reading and the result, rendered on a PC with a test camera that draws a sign. The “READ IN ~0.7&nbsp;s” on this render is an estimate, not a measurement.</figcaption>
+      </figure>
+
+      <ol class="learn-steps">
+        <li><strong>Aim.</strong> The preview is dimmed outside the guide bar. Every sixth frame a quick check inside the bar moves the signal bars and the tip (“Get closer”, “More light”).</li>
+        <li><strong>Press A.</strong> The app takes a still and cuts the bar out of it. The cut is shrunk and padded to 32&nbsp;×&nbsp;512 exactly as the web app prepares a line: a test runs the web's own JavaScript in Node and gets the same bytes.</li>
+        <li><strong>Read.</strong> The camera turns off, so the reader has the processor and memory to itself, and the reader runs in its bands: about 37 frames on the progress bar.</li>
+        <li><strong>The result.</strong> A speech bubble with the kana, the romaji and a meaning when the word is known. Kana the reader is less than 60% sure of are underlined; tap one to see its runner-up. SAVE TO LOG adds the line to a text file on the SD card.</li>
+      </ol>
+      <p>Lines written top to bottom needed one more trick, because there is no small vertical reader. The app cuts a column into glyphs by where the ink is and sets them upright side by side, and then the across reader reads them.</p>
+      <p>Writing the driver turned up a few surprises in the DS library: it numbers the cameras the other way round (the outer one is 1), it mirrors the outer camera, and if the camera sensor never answers, the DS's second processor waits forever where nothing on the main processor can catch it.</p>
+      <p>The emulator can't test any of this: it isn't known to emulate the DSi's cameras. So the first time the camera code ran on anything but a PC was on the owner's DSi. The report back: “It all works.” The preview, the still, the light going off, reading lines across and down, and the log on the SD card.</p>
+
+      <!-- ============================================================ -->
+      <h2 id="status">Where it stands</h2>
+      <p>Everything above happened on one day, November 26, 2026, from the first feature list to a ROM the owner tested on a DSi. The final ROM is 3.8&nbsp;MB, version 0.1.0, and runs the whole app: the beetle, Read, Write with the pen, Learn with Puzzle Run, and saving to the SD card.</p>
+      <ul class="limits">
+        <li><strong>Not released yet.</strong> A release page is being prepared. It will be linked here when it is public.</li>
+        <li><strong>The speed on a DSi hasn't been written down.</strong> The overlay shows it, but the tests so far were about whether things work. The cost model says about 0.6–0.7&nbsp;s a line in DSi mode; the emulator measured 2.38&nbsp;s at the original DS's half clock, before the depthwise kernel.</li>
+        <li><strong>Reading photos from the SD card</strong> is planned and greyed out for now. It would use the line finder as a slow background job.</li>
+        <li><strong>Not yet tested</strong> on an original DS (where Read is greyed out, since there is no camera) or a 3DS.</li>
+        <li><strong>Every accuracy number here is on generated pictures.</strong> The pen and Trace it's stamps are tuned on synthetic drawings, not real handwriting.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <h2 id="words">Words to know</h2>
+      <dl class="glossary">
+        <div><dt>ROM</dt><dd>The file that holds a DS program and its data. Homebrew ROMs run from an SD card through a menu such as TWiLight Menu++.</dd></div>
+        <div><dt>Homebrew</dt><dd>Programs for a games console made by its users, not its maker.</dd></div>
+        <div><dt>melonDS</dt><dd>A DS and DSi emulator for the PC. Good for testing, but its timing isn't exact, and it draws 3D differently from the real chip.</dd></div>
+        <div><dt>ARM9</dt><dd>The DS's main processor. A second, slower one (the ARM7) handles sound, touch and Wi-Fi.</dd></div>
+        <div><dt>MAC</dt><dd>One multiply-add, the basic step of a neural network. The DSi reader needs 30.6 million for one line.</dd></div>
+        <div><dt>int8</dt><dd>Storing each of a network's numbers in one byte and doing the maths with whole numbers.</dd></div>
+        <div><dt>Kernel</dt><dd>A small, hand-tuned piece of code for one kind of layer, written for one processor.</dd></div>
+        <div><dt>Bit-exact</dt><dd>Giving exactly the same bytes as a reference, not just nearly the same numbers.</dd></div>
+        <div><dt>NitroFS</dt><dd>A file system inside the ROM, so data can be loaded when it is needed instead of all at start.</dd></div>
+      </dl>
+
+      <h2 id="more">More</h2>
+      <p>The reader on the DSi is a smaller member of the same family as the web's readers. How those are trained, quantised and checked is in the deep dive; the DSi model itself is on Hugging Face.</p>
+      <p class="cta-row"><a class="button" href="https://huggingface.co/KokkakNiphon/hxh-ocr/tree/main/int8/dsi_v1">The dsi_v1 model →</a> <a class="button ghost" href="deep-dive.html">Read the deep dive</a> <a class="button ghost" href="../index.html">Try the web reader</a></p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <p>Open source: the OCR's code on <a href="https://github.com/KokkakNiphon/hxh-ocr">GitHub</a> and the models on <a href="https://huggingface.co/KokkakNiphon/hxh-ocr">Hugging Face</a> (Apache-2.0, with a credit notice), the DSi reader included. The DSi app's own code is not published.</p>
+    <p>HxH OCR and the HxH Translator are fan projects. <em>Hunter&nbsp;×&nbsp;Hunter</em> belongs to Yoshihiro Togashi, Shueisha and its studios, and Nintendo&nbsp;DSi is a trademark of Nintendo; these projects are not affiliated with them. Every screen in this post was rendered by the app or captured in an emulator.</p>
+  </div>
+</footer>
+
+<script type="module" src="blog.js"></script>
+<script type="module" src="dsi.js"></script>
+</body>
+</html>

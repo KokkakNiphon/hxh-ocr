@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="th" data-fig="รูปที่" data-table="ตารางที่">
+<head>
+<meta charset="utf-8">
+<script src="../theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>อ่านอักษรฮันเตอร์ × ฮันเตอร์บน Nintendo DSi · HxH OCR</title>
+<meta name="description" content="HxH Translator ถูกสร้างใหม่สำหรับ Nintendo DSi อย่างไร: แอปภาษา Rust บน ARM9 133 MHz ด้วง 3D ที่วาดด้วยฮาร์ดแวร์ลงเงาแบบการ์ตูนของตัวเครื่องเอง และตัวอ่าน int8 ขนาด 100 KB ที่ใช้การคำนวณเพียงหนึ่งในห้าของตัวอ่านบนเว็บ ซึ่งอ่านอักษรฮันเตอร์ผ่านกล้องของ DSi">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="blog.css">
+<link rel="stylesheet" href="deep.css">
+<link rel="stylesheet" href="dsi.css">
+<!-- site:begin (scripts/site_meta.py) -->
+<link rel="canonical" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-th">
+<link rel="alternate" hreflang="en" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi">
+<link rel="alternate" hreflang="th" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-th">
+<link rel="alternate" hreflang="ja" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-ja">
+<link rel="alternate" hreflang="x-default" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi">
+<meta name="author" content="KokkakNiphon">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#2340d8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HxH OCR">
+<meta property="og:title" content="อ่านอักษรฮันเตอร์ × ฮันเตอร์บน Nintendo DSi · HxH OCR">
+<meta property="og:description" content="HxH Translator ถูกสร้างใหม่สำหรับ Nintendo DSi อย่างไร: แอปภาษา Rust บน ARM9 133 MHz ด้วง 3D ที่วาดด้วยฮาร์ดแวร์ลงเงาแบบการ์ตูนของตัวเครื่องเอง และตัวอ่าน int8 ขนาด 100 KB ที่ใช้การคำนวณเพียงหนึ่งในห้าของตัวอ่านบนเว็บ ซึ่งอ่านอักษรฮันเตอร์ผ่านกล้องของ DSi">
+<meta property="og:url" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-th">
+<meta property="og:image" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/img/dsi/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HxH Translator for DSi: the app&#x27;s pick-a-mode screen with the 3D beetle opened, and はんたー in Hunter script.">
+<meta property="og:locale" content="th_TH">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="อ่านอักษรฮันเตอร์ × ฮันเตอร์บน Nintendo DSi · HxH OCR">
+<meta name="twitter:description" content="HxH Translator ถูกสร้างใหม่สำหรับ Nintendo DSi อย่างไร: แอปภาษา Rust บน ARM9 133 MHz ด้วง 3D ที่วาดด้วยฮาร์ดแวร์ลงเงาแบบการ์ตูนของตัวเครื่องเอง และตัวอ่าน int8 ขนาด 100 KB ที่ใช้การคำนวณเพียงหนึ่งในห้าของตัวอ่านบนเว็บ ซึ่งอ่านอักษรฮันเตอร์ผ่านกล้องของ DSi">
+<meta name="twitter:image" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/img/dsi/og.jpg">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../site.css">
+<script src="../lang.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "url": "https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-th", "inLanguage": "th", "description": "HxH Translator ถูกสร้างใหม่สำหรับ Nintendo DSi อย่างไร: แอปภาษา Rust บน ARM9 133 MHz ด้วง 3D ที่วาดด้วยฮาร์ดแวร์ลงเงาแบบการ์ตูนของตัวเครื่องเอง และตัวอ่าน int8 ขนาด 100 KB ที่ใช้การคำนวณเพียงหนึ่งในห้าของตัวอ่านบนเว็บ ซึ่งอ่านอักษรฮันเตอร์ผ่านกล้องของ DSi", "image": "https://hxh-ocr.kokkakniphon.workers.dev/blog/img/dsi/og.jpg", "author": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "headline": "อ่านอักษรฮันเตอร์ × ฮันเตอร์บน Nintendo DSi · HxH OCR", "datePublished": "2026-11-26", "dateModified": "2026-11-26", "publisher": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "mainEntityOfPage": "https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-th", "about": [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}, {"@type": "Thing", "name": "Nintendo DSi"}], "isPartOf": {"@type": "WebSite", "name": "HxH OCR", "url": "https://hxh-ocr.kokkakniphon.workers.dev/"}}</script>
+<!-- site:end -->
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index-th.html"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M5.6 6.52H14.4M5.6 13.48H14.4M10 6.52V13.48M19.28 14.39L26.14 5.61M9.92 18.45V25.55M5.73 25.55H14.27M16.8 18.52L19.36 22.04L16.8 25.48M19.36 22.04H24.56M27.2 18.52L24.56 22.04L27.2 25.48"/><circle cx="19.7" cy="7.95" r="1.84"/></svg>HxH OCR</a>
+    <nav aria-label="เว็บไซต์">
+      <a href="../index-th.html">ตัวอ่าน</a>
+      <a href="index-th.html">ทำงานอย่างไร</a>
+      <a href="deep-dive-th.html">เจาะลึก</a>
+      <a href="dsi-th.html" aria-current="page">DSi</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="ธีม" data-auto="อัตโนมัติ" data-light="สว่าง" data-dark="มืด" aria-label="ธีม: อัตโนมัติ">
+      <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      <svg class="ic-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ic-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="nav-cta" href="../index-th.html">ลองใช้ตัวอ่าน</a>
+  </div>
+</header>
+
+<main class="post">
+  <div class="post-head">
+    <p class="kicker">โปรเจกต์ <span>·</span> HxH Translator สำหรับ DSi</p>
+    <p class="meta">โดย <a class="byline" href="https://github.com/KokkakNiphon" rel="author">KokkakNiphon</a> <span>·</span> 26 พฤศจิกายน 2026 <span>·</span> อ่าน 14 นาที</p>
+    <h1><span class="nw">อ่านอักษร</span><wbr><span class="nw">ฮันเตอร์&nbsp;×&nbsp;ฮันเตอร์</span><wbr>บน Nintendo&nbsp;DSi</h1>
+    <p class="dek">สามโหมดของ HxH Translator คือ Read, Write และ Learn ถูกสร้างใหม่สำหรับเครื่องเกมพกพาจากปี 2008: แอปภาษา Rust บน ARM9 133&nbsp;MHz ด้วง 3D ที่วาดด้วยฮาร์ดแวร์ลงเงาแบบการ์ตูนของตัวเครื่องเอง และตัวอ่าน int8 ขนาด 100&nbsp;KB ที่ใช้การคำนวณเพียงหนึ่งในห้าของตัวอ่านบนเว็บ ซึ่งอ่านหนึ่งบรรทัดผ่านกล้องของ DSi</p>
+    <p class="post-update"><b>สถานะ 26 พฤศจิกายน 2026</b> แอปทำงานบน DSi เครื่องจริง และผ่านการทดสอบของเจ้าของโปรเจกต์บนเครื่องนั้นแล้ว แต่ยังไม่ได้ปล่อยออกมาให้ใช้ ซอร์สโค้ดของแอปไม่ได้เผยแพร่ ส่วนโมเดลตัวอ่านของแอป <a href="https://huggingface.co/KokkakNiphon/hxh-ocr/tree/main/int8/dsi_v1">dsi_v1</a> อยู่บน Hugging Face พร้อมกับโมเดลตัวอื่น ๆ</p>
+  </div>
+
+  <div class="post-grid">
+    <aside class="toc-rail">
+      <nav class="toc" aria-label="สารบัญ">
+        <p class="label">สารบัญ</p>
+        <ol id="toc"></ol>
+      </nav>
+      <a class="rail-card" href="index-th.html">
+        <span class="label">เพิ่งรู้จัก OCR?</span>
+        <span class="rail-title">ทำงานอย่างไร</span>
+        <span class="rail-text">ตัวอ่านมองเห็น เรียนรู้ และอ่านหนึ่งบรรทัดอย่างไร อธิบายด้วยภาพ ก่อนที่มันจะถูกบีบให้ลงไปอยู่ใน DS</span>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+    </aside>
+
+    <article id="article">
+      <figure class="fig" id="f-hero">
+        <div class="screens">
+          <div class="shot"><img src="img/dsi/home.webp" width="540" height="824" alt="หน้าแรกของแอป DSi: ด้วง 3D สีน้ำตาลบนการ์ดสีฟ้า มีตัวอักษรฮันเตอร์แบบกลวงอยู่ด้านหลัง และปุ่ม OPEN บนจอสัมผัส" loading="eager"><span>หน้าแรก ฝาปิดอยู่</span></div>
+          <div class="shot"><img src="img/dsi/modes.webp" width="540" height="824" alt="ด้วงที่เปิดออก ปีกกางขึ้น มีการ์ดโหมดสามใบอยู่ด้านล่าง: READ, WRITE และ LEARN" loading="eager"><span>เปิดแล้ว: เลือกโหมด</span></div>
+          <div class="shot"><img src="img/dsi/read.webp" width="540" height="824" alt="โหมด Read: อักษรฮันเตอร์หนึ่งบรรทัดในแถบเล็งสีเขียว อ่านได้ว่า はんたー しけん, hantā shiken พร้อมข้อความที่ถอดได้ด้านล่าง" loading="eager"><span>Read: หนึ่งบรรทัด</span></div>
+        </div>
+        <figcaption>รูปที่ # — หน้าจอจริงของแอป จอบนอยู่เหนือจอสัมผัส เรนเดอร์บนพีซีด้วยโค้ด Rust ชุดเดียวกับที่ตัวเครื่องรัน (ส่วนด้วง 3D เรนเดอร์ด้วยแบบจำลองซอฟต์แวร์ของชิป 3D ของ DS) ภาพโหมด Read ใช้กล้องทดสอบที่วาดป้ายขึ้นมาเอง ทั้งโพสต์นี้ไม่มีการใช้ภาพถ่ายจริงเลย</figcaption>
+      </figure>
+
+      <p class="lede"><a href="https://hxhtranslator.com/">HxH Translator</a> เป็นเว็บแอปที่มีสามโหมด: <strong>Read</strong> (อ่าน) เล็งกล้องโทรศัพท์ไปที่อักษรฮันเตอร์แล้วแปลงเป็นคานะและตัวอักษรละติน <strong>Write</strong> (เขียน) แปลงสิ่งที่คุณพิมพ์เป็นอักษรฮันเตอร์ และ <strong>Learn</strong> (เรียน) สอนตัวอักษรชุดนี้ โพสต์นี้เล่าถึงการนำทั้งสามโหมดไปไว้บน <strong>Nintendo DSi</strong> เครื่องเกมพกพาจากปี 2008 ที่มีจอเล็ก ๆ สองจอ ปากกาสไตลัส กล้อง และโปรเซสเซอร์ 133&nbsp;MHz ส่วนที่ยากที่สุดคือ Read: พีซีอ่านหนึ่งบรรทัดในเวลาราวหนึ่งมิลลิวินาที แต่ DS ในอีมูเลเตอร์ใช้เวลาสิบเอ็ดวินาที ต้องใช้ตัวอ่านที่คำนวณน้อยลงห้าเท่าและเคอร์เนล ARM ที่เขียนด้วยมือ จึงลดเวลานั้นลงมาได้</p>
+
+      <!-- ============================================================ -->
+      <h2 id="idea">ด้วงที่เปิดออกพร้อมฝาเครื่อง</h2>
+      <p>มาสคอตของเว็บแอปคือด้วงที่กางปีกออกแล้วเผยให้เห็นหน้าจอ DSi เป็นเครื่องแบบฝาพับ ไอเดียจึงมาเองแทบไม่ต้องคิด: <strong>เปิดเครื่องก็คือเปิดด้วง</strong> จอบนคือหน้าจอของด้วง ส่วนจอสัมผัสด้านล่างคือแผงที่มีปุ่มต่าง ๆ สามโหมดยังคงเหมือนบนเว็บ</p>
+      <p>ก่อนเขียนโค้ดสักบรรทัด หน้าจอทั้งหมดถูกวาดออกมาเป็นหน้ารวมม็อกอัปสิบสองแบบ แต่ละแบบเป็นแคนวาสขนาด 256&nbsp;×&nbsp;192 จริง ๆ ที่ขยายด้วยจำนวนเท่าที่เป็นจำนวนเต็มเท่านั้น เพื่อให้เห็นพิกเซลของ DS ทุกพิกเซล ไม่มีอะไรบนหน้านั้นที่พิมพ์ขึ้นใหม่: หน้านั้นนำเข้าตัววาดสัญลักษณ์ โมเดลด้วง ข้อมูลของ Learn และตัวแปลงโรมาจิมาจากโค้ดของเว็บแอปเอง การวาดม็อกอัปช่วยให้ตัดสินใจบางเรื่องได้ตั้งแต่เนิ่น ๆ คำตอบสี่ข้อของ Hunter Exam (การสอบฮันเตอร์) วางอยู่ตรงตำแหน่งของปุ่ม Y, X, B และ A จะใช้ปากกาสไตลัสหรือไม่ก็ได้ สัญลักษณ์ตัวอย่างของ Learn คือ く ไม่ใช่ ね เพราะในอักษรฮันเตอร์ ね เป็นเส้นปิดเส้นเดียว จึงแสดงลำดับการลากเส้นไม่ได้ ส่วน く มีสามเส้น</p>
+
+      <p>ส่วนที่เหลือเกือบทั้งหมดถูกกำหนดโดยสิ่งที่ฮาร์ดแวร์มีให้:</p>
+      <div class="hw" role="list">
+        <div role="listitem"><b>133 MHz</b><span>โปรเซสเซอร์ ARM946E-S (67&nbsp;MHz ในโหมด DS รุ่นแรก) ที่ไม่มีคำสั่งสำหรับคำนวณตัวเลขเล็ก ๆ หลายตัวพร้อมกัน</span></div>
+        <div role="listitem"><b>16 MB</b><span>หน่วยความจำ (4&nbsp;MB บน DS รุ่นแรก)</span></div>
+        <div role="listitem"><b>2 × 256 × 192</b><span>หน้าจอ จอล่างเป็นจอสัมผัสสำหรับปากกาสไตลัส</span></div>
+        <div role="listitem"><b>640 × 480</b><span>กล้องสองตัว ด้านในและด้านนอก</span></div>
+        <div role="listitem"><b>2,048</b><span>โพลิกอน 3D ต่อเฟรม พร้อมการลงเงาแบบการ์ตูนและเส้นขอบที่มีมาในชิป</span></div>
+        <div role="listitem"><b>การ์ด SD</b><span>สำหรับบันทึกสติกเกอร์ ความคืบหน้า และบันทึกการอ่าน</span></div>
+      </div>
+      <p>การลงเงาแบบการ์ตูนเป็นเหมือนของขวัญ: เว็บวาดด้วงด้วยแถบสีเรียบ ๆ และเส้นขอบสีหมึก และชิป 3D ของ DS ก็ทำแบบนั้นได้ตรง ๆ ในฮาร์ดแวร์ ปัญหาอยู่ที่โปรเซสเซอร์ ตัวอ่านชุดเร็ว (Fast) บนเว็บต้องคูณบวก (multiply-add หรือ MAC) 154 ล้านครั้งเพื่ออ่านหนึ่งบรรทัด ถ้าเดาว่าทำได้ 30–60 ล้านครั้งต่อวินาที ก็จะใช้ 2.6–5 วินาทีต่อบรรทัด และตัวหาบรรทัดที่หาตัวหนังสือทั้งหน้าจะใช้เวลาเกือบหนึ่งนาที โหมด Read ของ DSi จึงไม่หาบรรทัดเอง คุณเล็งบรรทัดหนึ่งให้อยู่ในแถบเล็ง แล้วแอปจะอ่านเฉพาะบรรทัดนั้น</p>
+
+      <!-- ============================================================ -->
+      <h2 id="split">C ดูแลฮาร์ดแวร์ Rust ทำที่เหลือ</h2>
+      <p>โปรแกรมโฮมบรูว์ (homebrew) ของ DS ส่วนใหญ่เขียนด้วยภาษา C แอปนี้ใช้ <a href="https://blocksds.skylyrac.net/">BlocksDS</a> ซึ่งเป็นชุดเครื่องมือและไลบรารีฟรี Rust ก็คอมไพล์ให้โปรเซสเซอร์ของ DS ได้เช่นกัน (<code>thumbv5te-none-eabi</code> เป้าหมายที่มีเฉพาะใน Rust รุ่น nightly) และเอนจิน int8 ของโปรเจกต์ก็เขียนด้วย Rust โดยไม่ใช้ไลบรารีมาตรฐานอยู่แล้ว แอปจึงถูกแบ่งเป็นสองส่วน: ชั้น C บาง ๆ ดูแลฮาร์ดแวร์ และ Rust ทำทุกอย่างที่เหลือ</p>
+
+      <figure class="fig" id="f-split">
+        <div class="fig-box">
+          <div class="fig-title">ใครดูแลอะไร</div>
+          <div class="fig-sub">C เรียก Rust เฟรมละครั้ง ส่วน Rust ขอให้ฮาร์ดแวร์ทำสิ่งต่าง ๆ ผ่านรายการคำสั่งสั้น ๆ</div>
+          <div class="split">
+            <div class="split-col">
+              <p class="split-h">C · BlocksDS</p>
+              <p class="split-s">ดูแลฮาร์ดแวร์</p>
+              <ul>
+                <li>รอการรีเฟรชหน้าจอแต่ละครั้ง แล้วคัดลอกแถวที่ Rust เปลี่ยน</li>
+                <li>3D: display list ของด้วง ตารางเฉดสีแบบการ์ตูน และเส้นขอบ</li>
+                <li>เสียง ผ่าน maxmod</li>
+                <li>กล้อง การ์ด SD และไฟล์ที่อยู่ใน ROM</li>
+                <li>ฝาเครื่อง โหมดสลีป และนาฬิกา</li>
+              </ul>
+            </div>
+            <div class="split-mid">
+              <span class="to-r">ปุ่ม สไตลัส วันที่</span>
+              <span class="to-l">สองหน้าจอ + คำสั่ง: เล่นเสียง จัดท่าด้วง เปิดกล้อง</span>
+            </div>
+            <div class="split-col rust">
+              <p class="split-h">Rust · no_std</p>
+              <p class="split-s">ทุกอย่างที่เหลือ</p>
+              <ul>
+                <li>ทุกฉาก: หน้าแรก, Read, Write, Learn</li>
+                <li>วาดทั้งสองหน้าจอเป็นภาพ 16 บิต ด้วยตัวเรนเดอร์ฟอนต์ของตัวเอง</li>
+                <li>การจัดวางสัญลักษณ์ฮันเตอร์และกฎของคานะ</li>
+                <li>การวัดความคล้าย ข้อสอบ และปริศนาของ Learn</li>
+                <li>ตัวอ่าน int8 พร้อมเคอร์เนล ARM9 ในหน่วยความจำความเร็วสูงบนชิป</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <figcaption>รูปที่ # — การแบ่งงาน ฝั่ง Rust เป็นไลบรารีแบบสแตติกที่ลิงก์เข้ากับบิลด์ของ BlocksDS ROM แรกที่วาดตัวหนังสือด้วยวิธีนี้มีขนาด 140&nbsp;KB</figcaption>
+      </figure>
+
+      <p>ฝั่ง Rust คือโค้ดที่พอร์ตมาจาก JavaScript ของเว็บแอป: ตัวแปลงคานะ การจัดวางสัญลักษณ์ฮันเตอร์ ตัววัดความคล้ายของ Learn และปริศนา โค้ดที่พอร์ตมาอาจเพี้ยนไปจากต้นฉบับเล็กน้อยได้ ทุกส่วนที่พอร์ตจึงถูกทดสอบเทียบกับ<strong>โค้ดของเว็บแอปเอง</strong> สคริปต์ Node รัน JavaScript แล้วบันทึกคำตอบไว้ และการทดสอบฝั่ง Rust ต้องได้คำตอบตรงกัน:</p>
+      <ul>
+        <li>ตัวแปลงคานะ: ไม่ตรงกัน 0 กรณี จากอินพุตที่ไม่ซ้ำกัน 5,437 แบบ และกรณีการแปลง 10,769 กรณี</li>
+        <li>การจัดวางสัญลักษณ์: คลาดเคลื่อนไม่เกิน 0.0001 ของขนาดฟอนต์ใน 120 กรณี และความกว้างของข้อความคลาดจากที่ Chrome วัดได้ไม่เกิน 0.1&nbsp;px</li>
+        <li>ความคล้ายของ Learn: คานะในตารางครบทั้ง 3,403 คู่ คลาดเคลื่อนไม่เกิน 0.00000054 ของขนาดฟอนต์ และได้รายการตัวที่หน้าตาคล้ายกัน 200 รายการ ข้อสอบที่กำหนด seed ไว้ 15 ชุด และปริศนารายวัน 440 วัน เหมือนกันทุกอย่าง</li>
+      </ul>
+      <p>การพอร์ตตัววัดความคล้ายต้องลองสองรอบ เวอร์ชันแรกใช้พิกัดแบบจุดตรึง (fixed-point) ที่ปัดเศษแล้ว และรายการตัวที่หน้าตาคล้ายกัน 5 จาก 200 รายการออกมาเรียงลำดับต่างไป ใน JavaScript มีค่าที่เท่ากันพอดี (は, ば และ ぱ มีรูปร่างเดียวกัน ต่างกันแค่เครื่องหมาย) และมีช่องห่างที่เล็กเพียง 0.0000046 แค่การปัดเศษจึงพอจะทำให้ตัวที่อยู่ติดกันสลับลำดับกัน การใช้พิกัดจำนวนเต็มที่มีจำนวนบิตมากขึ้น ซึ่งดึงมาจากข้อมูลสัญลักษณ์โดยตรง แก้ปัญหานี้ได้</p>
+      <p>การทดสอบยังเจอบั๊กสองตัวในเว็บแอปเองด้วย การพิมพ์ชื่อ “Reā” ทำให้ Write แสดง <code>リーundefined</code> และคำว่า “constructor” ถูกค้นหาไปเจอฟังก์ชัน <code>Object</code> ของ JavaScript เอง แถบจึงแสดง <code>function Object() { [native code] }</code> ตอนนี้ทั้งสองบั๊กถูกแก้ในโค้ดของเว็บแอปแล้วด้วย</p>
+
+      <!-- ============================================================ -->
+      <h2 id="tracks">หกสายงานพร้อมกัน</h2>
+      <p>เมื่อโครงแอปวาดอักษรฮันเตอร์ในอีมูเลเตอร์ (melonDS) ได้แล้ว งานก็ถูกแบ่งเป็นหกสายงานที่ทำไปพร้อมกัน แต่ละสายงานอยู่ในเซสชันเขียนโค้ดด้วย AI ของตัวเองและมีไฟล์ของตัวเอง แล้วรายงานกลับไปยังเซสชันประสานงาน ซึ่งเป็นผู้รวมงาน จดบันทึกการทำงาน และตรวจผลในอีมูเลเตอร์ ทั้งหกสายงานเสร็จในเวลาราวหนึ่งชั่วโมง</p>
+
+      <figure class="fig table" id="t-tracks">
+        <figcaption>ตารางที่ # — หกสายงานและสิ่งที่แต่ละสายงานส่งมอบ</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>สายงาน</th><th>สิ่งที่สร้าง</th><th>ตัวเลขที่สำคัญ</th></tr></thead>
+          <tbody>
+            <tr><td class="k"><strong>A</strong> ตัวหนังสือ</td><td>ฟอนต์ฟรีสามตัว (Dela Gothic One, M PLUS 1p, M PLUS 1 Code) ถูกแปลงเป็นฟอนต์บิตแมป 46 ชุดพร้อมการจัดระยะตัวอักษร (kerning) และข้อความในอินเทอร์เฟซ 482 ข้อความเป็นภาษาอังกฤษและญี่ปุ่น</td><td>การวาดลายมือหนึ่งเฟรมบนพีซีลดจาก 72.8&nbsp;µs เหลือ 1.0&nbsp;µs ด้วยการวาดใหม่เฉพาะกรอบที่เปลี่ยน (มัธยฐาน 77 พิกเซล แทนที่จะเป็น 49,152)</td></tr>
+            <tr><td class="k"><strong>B</strong> ด้วง</td><td>ด้วงของเว็บที่ส่งออกจากโค้ดของเว็บเอง ลดรายละเอียดลง แล้วแปลงเป็น display list ของ DS พร้อมตารางเฉดสีแบบการ์ตูนและเส้นขอบ</td><td>สามเหลี่ยม 25,736 รูปเหลือ 1,484 รูป ใช้ราว 800 โพลิกอนต่อเฟรม จาก 2,048 ที่ทำได้</td></tr>
+            <tr><td class="k"><strong>C</strong> Write</td><td>ตัวแปลงคานะและแป้นแบบกดซ้ำ (multi-tap) 12 ปุ่ม โดยใช้จังหวะเวลาเดียวกับเว็บ</td><td>ไม่ตรงกัน 0 กรณีจากอินพุต 5,437 แบบ และเจอบั๊กของเว็บสองตัว</td></tr>
+            <tr><td class="k"><strong>D</strong> Learn</td><td>ตารางตัวอักษร คำตัวอย่าง 200 คำ ปริศนา 42 ข้อ ตัววัดความคล้าย และคะแนนแบบใหม่สำหรับการลากตามรอยด้วยปากกาสไตลัส</td><td>การลากตามรอยที่สมบูรณ์แบบได้ 3 ตราประทับกับคานะครบทั้ง 83 ตัว และไม่มีตัวที่หน้าตาคล้ายกันตัวไหนได้ 2 ตราขึ้นไป</td></tr>
+            <tr><td class="k"><strong>E</strong> Read</td><td>เอนจิน int8 ที่บิลด์สำหรับ DS พร้อมเคอร์เนล ARM9 ที่เขียนด้วยมือสำหรับชั้นที่พบบ่อยที่สุดของมัน</td><td>ตรงกับพีซีทุกบิตบนชั้นสุ่มราว 3,200 ชั้น และเอาต์พุตอ้างอิง 24 ชุด</td></tr>
+            <tr><td class="k"><strong>F</strong> เสียง</td><td>เอฟเฟกต์เสียง 13 เสียงและเสียงแป้นกด 12 เสียงของเว็บ ที่แปลงให้ใช้กับมิกเซอร์ของ DS</td><td>เสียงแป้นกดแต่ละเสียงคลาดจากของเว็บไม่เกิน 2&nbsp;Hz รวมเสียงทั้งหมด 478&nbsp;KB</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <figure class="fig" id="f-firstlight">
+        <div class="fig-media fig-small">
+          <div class="shot"><img class="melon" src="img/dsi/melonds_m0.webp" width="258" height="440" alt="หน้าต่างอีมูเลเตอร์ melonDS: はんたー เขียนด้วยอักษรฮันเตอร์บนจอบนสีฟ้า มีป้ายทรงแคปซูลสีส้มอยู่ด้านล่าง" loading="lazy"><span>ROM แรก</span></div>
+          <div class="shot"><img class="melon" src="img/dsi/melonds_beetle.webp" width="258" height="440" alt="หน้าต่าง melonDS แสดงด้วง 3D ที่เปิดออก มีคำว่า パカッ! เขียนอยู่ข้าง ๆ และปุ่ม CLOSE บนจอสัมผัส" loading="lazy"><span>ด้วง 3D ที่เปิดออก</span></div>
+        </div>
+        <figcaption>รูปที่ # — ในอีมูเลเตอร์ melonDS ซ้าย: ROM แรก ที่ Rust เขียน はんたー ทีละเส้น ขวา: ด้วงของสายงาน B หลังกดปุ่ม A: ปีกกางขึ้น หน้าจอข้างในแสดงไอคอนของแอป และ パカッ!</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="beetle">สิ่งที่อีมูเลเตอร์ไม่ได้แสดงให้เห็น</h2>
+      <p>melonDS เป็นอีมูเลเตอร์ที่ดีมาก แต่มันวาดภาพ 3D แต่ละเฟรมในครั้งเดียว ส่วน DS ของจริงวาดภาพ 3D <strong>ทีละบรรทัด</strong> ระหว่างที่หน้าจอกำลังแสดงผล โดยมีบัฟเฟอร์เล็ก ๆ ไว้เก็บบรรทัดที่วาดเสร็จแล้ว ครั้งแรกที่แอปรันบน DSi ของเจ้าของโปรเจกต์ ด้วงมีรูโหว่: จุดสีขาวเรียงเป็นแถวพาดผ่านกระดอง และหน้าจอที่ขาดเป็นริ้ว ๆ เมื่อด้วงเปิดออก ไม่มีอาการเหล่านี้สักอย่างเคยปรากฏในอีมูเลเตอร์</p>
+      <p>สีขาวนั้นคือภาพที่อยู่ด้านหลังด้วงซึ่งโผล่ให้เห็น แปลว่าพิกเซลของตัวด้วงเองไม่ได้ถูกวาดบนบรรทัดเหล่านั้น รูโหว่เรียงตัวอยู่ในแถวที่มีหลายชั้นซ้อนทับกัน เช่น เลนส์ตาที่อยู่บนกระดอง แอปมีโอเวอร์เลย์สำหรับดีบักอยู่แล้ว ROM ถัดมาจึงเพิ่มโหมดทดสอบสี่โหมดที่ปิดฟีเจอร์บางอย่าง เจ้าของโปรเจกต์ลองแต่ละโหมดบน DSi:</p>
+
+      <figure class="fig table" id="t-modes">
+        <figcaption>ตารางที่ # — โหมดทดสอบบน DSi จริง มีเพียงการปิดบิตแมประนาบหลังเท่านั้นที่ทำให้ด้วงสมบูรณ์</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th></th><th>T0 ตามที่ออกแบบ</th><th>T1 ไม่มีเส้นขอบ</th><th>T2 ไม่มีบิตแมประนาบหลัง</th><th>T3 ไม่มีทั้งสองอย่าง</th></tr></thead>
+          <tbody>
+            <tr><td class="k">หน้าแรก ปิดอยู่</td><td class="bad">มีรู</td><td class="bad">มีรู</td><td class="ok">สมบูรณ์</td><td class="ok">สมบูรณ์</td></tr>
+            <tr><td class="k">เปิดออก</td><td class="bad">มีรู</td><td class="bad">มีรู</td><td class="ok">สมบูรณ์</td><td class="ok">สมบูรณ์</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>ตัวการคือ<strong>บิตแมประนาบหลัง</strong> (rear-plane bitmap) ฟีเจอร์ของ DS ที่วางภาพไว้ด้านหลังฉาก 3D มันทำให้ชิป 3D ต้องอ่านค่าสีและค่าความลึกของทุกพิกเซลที่อยู่หลังด้วง และบนบรรทัดที่แออัด การอ่านเพิ่มนี้ทำให้ชิปทำงานไม่ทันเวลา ส่วนเส้นขอบไม่ได้ทำให้เกิดผลเสียที่มองเห็นได้ วิธีแก้คือย้ายภาพที่อยู่หลังด้วงออกจากชิป 3D ไปเลย แล้วไปไว้บนเลเยอร์ 2D ธรรมดา:</p>
+
+      <figure class="fig" id="f-layers">
+        <div class="fig-box">
+          <div class="fig-title">เลเยอร์ของจอบน จากหน้าไปหลัง</div>
+          <div class="fig-sub">ฮาร์ดแวร์ 2D ผสมเลเยอร์เข้าด้วยกัน ชิป 3D วาดแค่ตัวด้วง</div>
+          <div class="lyr-cmp">
+            <div class="lyr">
+              <p class="lyr-h">บิลด์แรก</p>
+              <div class="layer"><b>BG3 · 2D ด้านหน้า</b>ชื่อ คำ ปุ่ม</div>
+              <div class="layer d3"><b>เลเยอร์ 3D</b>ตัวด้วง</div>
+              <div class="layer bad"><b>ระนาบหลัง · ในชิป 3D</b>การ์ดและตัวอักษรแบบกลวง ถูกอ่านซ้ำทุกพิกเซลของทุกบรรทัด</div>
+              <p class="lyr-r bad">มีรูบนบรรทัดที่แออัด</p>
+            </div>
+            <div class="lyr">
+              <p class="lyr-h">หลังแก้</p>
+              <div class="layer"><b>BG3 · 2D ด้านหน้า</b>ชื่อ คำ ปุ่ม</div>
+              <div class="layer d3"><b>เลเยอร์ 3D</b>ตัวด้วง บนพื้นหลังโปร่งใส</div>
+              <div class="layer ok"><b>BG2 · 2D ด้านหลัง</b>การ์ดและตัวอักษรแบบกลวง ผสมเข้ามาโดยฮาร์ดแวร์ 2D</div>
+              <p class="lyr-r ok">สมบูรณ์บน DSi</p>
+            </div>
+          </div>
+        </div>
+        <figcaption>รูปที่ # — วิธีแก้ที่ทำให้ด้วงสมบูรณ์บนเครื่องจริง: สิ่งที่อยู่หลังด้วงถูกย้ายจากระนาบหลังของชิป 3D ไปเป็นพื้นหลัง 2D ชั้นที่สอง</figcaption>
+      </figure>
+
+      <p>การทดสอบบนเครื่องจริงครั้งถัดมาเจออีกหนึ่งปัญหา: ทั้งหน้าจอ<strong>กะพริบเป็นสีขาว</strong>หนึ่งเฟรมทุกครั้งที่มีคำปรากฏขึ้น หรือเมื่อด้วงเปิดหรือปิด เพื่อไม่ให้คำเก่าทิ้งเงาไว้หลังด้วง ทุกการเปลี่ยนแปลงจะส่งพื้นหลังอย่างเดียวไปก่อน แล้วส่งภาพเต็มตามไปในอีกหนึ่งเฟรม ระหว่างนั้นหน้าจอจึงแสดงแต่กระดาษสีขาว ในอีมูเลเตอร์ มันเป็นแค่การกะพริบที่แทบมองไม่เห็น วิธีแก้คือคำสั่งใหม่: ฉากจะส่งภาพที่ควรอยู่หลังด้วงมาให้ แล้วทั้งสองเลเยอร์จะเปลี่ยนในการรีเฟรชหน้าจอครั้งเดียวกัน คำตัดสินของเจ้าของโปรเจกต์ต่อบิลด์ถัดมา: “ใช้งานได้ดีมาก”</p>
+
+      <!-- ============================================================ -->
+      <h2 id="memory">บีบให้พอดีกับ 4&nbsp;MB</h2>
+      <p>DSi มีหน่วยความจำ 16&nbsp;MB แต่ ROM เดียวกันนี้ก็รันบน DS รุ่นแรกได้ด้วย ซึ่งมีแค่ 4 ตอนแรกทุกอย่างอยู่ในอิมเมจหน่วยความจำของโปรแกรม: ฟอนต์อย่างเดียวก็ 1.3&nbsp;MB แล้ว เสียงอีกครึ่งเมกะไบต์ และโมเดลตัวอ่านกับแถบภาพทดสอบของมันอีก 0.7&nbsp;MB การสลับจากตัวอ่านหนึ่งไปอีกตัวในโหมด DS รุ่นแรกทำให้ขึ้นข้อความ “NO MEMORY: THE READER NEEDS 360K” (หน่วยความจำไม่พอ: ตัวอ่านต้องใช้ 360K) เป็นข้อความที่เรียบร้อยแทนที่จะแครช เพราะตัวอ่านขอหน่วยความจำด้วยวิธีที่ยอมให้คำขอล้มเหลวได้ แต่ก็เป็นสัญญาณของปัญหาที่กำลังจะตามมา</p>
+      <p>วิธีแก้คือย้ายฟอนต์ ข้อความ เสียง และโมเดลไปไว้ในระบบไฟล์ของ ROM เอง (NitroFS) แล้วโหลดเมื่อฉากต้องใช้: ฟอนต์โหลดเมื่อถูกใช้วาดครั้งแรก ข้อความโหลดทีละภาษา เสียงโหลดเมื่อเล่นครั้งแรก และตัวอ่านโหลดทีละตัว แต่ละฉากถูกสร้างเมื่อคุณเข้าไป และหลังเฟรมแรกของฉาก ทุกอย่างที่ฉากไม่ได้ใช้จะถูกคืนหน่วยความจำ</p>
+
+      <figure class="fig table" id="t-memory">
+        <figcaption>ตารางที่ # — โหมด DS รุ่นแรก ก่อนและหลังการโหลดเมื่อต้องใช้ เป้าหมายคือมีหน่วยความจำว่างอย่างน้อย 1.5&nbsp;MB ในทุกฉาก</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th></th><th class="num">ก่อน</th><th class="num">หลัง</th></tr></thead>
+          <tbody>
+            <tr><td>ข้อมูลแบบอ่านอย่างเดียวในหน่วยความจำ</td><td class="num">2,676,824 B</td><td class="num"><strong>180,992 B</strong></td></tr>
+            <tr><td>อิมเมจที่อยู่ในหน่วยความจำทั้งหมด</td><td class="num">3,196,500 B</td><td class="num"><strong>938,188 B</strong></td></tr>
+            <tr><td>หน่วยความจำว่างตอนเริ่ม</td><td class="num">473,516 B</td><td class="num"><strong>2,731,828 B</strong></td></tr>
+            <tr class="group"><td colspan="3">หน่วยความจำว่างในแต่ละฉาก วัดใน melonDS</td></tr>
+            <tr><td>หน้าแรก</td><td class="num">–</td><td class="num">2,719 KB</td></tr>
+            <tr><td>Write หลังพิมพ์ ともだち</td><td class="num">–</td><td class="num">2,428 KB</td></tr>
+            <tr><td>Learn หน้าตาราง</td><td class="num">–</td><td class="num">2,661 KB</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">ในทุกฉาก บล็อกว่างที่ใหญ่ที่สุดเท่ากับหน่วยความจำว่างทั้งหมด แปลว่าหน่วยความจำไม่ได้แตกเป็นชิ้น ๆ</p>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="write">Write: โทรศัพท์ฝาพับ คีย์บอร์ด และปากกา</h2>
+      <p>Write ทำงานเหมือนโทรศัพท์ฝาพับรุ่นเก่า: แตะปุ่มหนึ่งครั้งได้ あ สองครั้งได้ い จอบนจะเขียนสัญลักษณ์ฮันเตอร์แต่ละตัวทีละเส้นขณะที่คุณพิมพ์ และการ์ดความหมายจะแสดงคำที่รู้จัก เช่น ともだち “เพื่อน” คีย์บอร์ด QWERTY ใช้พิมพ์โรมาจิและชื่อ ทุกอย่างที่คุณเขียนกลายเป็นสติกเกอร์ได้ในเจ็ดสไตล์ และบันทึกเป็นไฟล์ PNG ลงการ์ด SD ด้วยตัวเขียน PNG ขนาดเล็กที่เขียนขึ้นสำหรับ DS</p>
+      <p>หลังได้ลองใช้ เจ้าของโปรเจกต์ขอให้เพิ่มการเขียนด้วยลายมือ คุณวาดตัวอักษร<strong>ฮันเตอร์</strong>ด้วยปากกาสไตลัส แล้วคานะของตัวนั้นจะถูกใส่ลงในข้อความ หลังทุกเส้นที่ลาก ปากกาจะเทียบภาพวาดของคุณกับแม่แบบ 79 แบบ ซึ่งครอบคลุมทุกสัญลักษณ์และทุกรูปแบบรวมทั้งแบบที่มีเครื่องหมาย โดยใช้การวัดระยะห่างระหว่างภาพวาดแบบเดียวกับที่ Learn ใช้หาตัวที่หน้าตาคล้ายกัน บนภาพวาดทดสอบ 3,160 ภาพที่สร้างจากเส้นของสัญลักษณ์เอง คานะที่ถูกต้องเป็นคำตอบอันดับหนึ่ง 98.9% ของครั้งสำหรับภาพวาดที่เรียบร้อย และ 94.3% สำหรับภาพวาดที่ลวก ๆ และอยู่ในคำตอบห้าอันดับที่แสดง 99.2% ของครั้งหรือมากกว่า ประมาณการว่าการอ่านหนึ่งครั้งใช้เวลา 18&nbsp;ms บน DS รุ่นแรก ส่วนลายมือจริงยังเป็นแค่การลองเขียนดูเอง ยังไม่ได้วัดผล</p>
+
+      <figure class="fig" id="f-write">
+        <div class="screens c4">
+          <div class="shot"><img src="img/dsi/write.webp" width="540" height="824" alt="โหมด Write: はんたー เป็นอักษรฮันเตอร์สีเขียวบนจอบนที่เป็นจอ LCD สีดำ และแป้น 12 ปุ่มบนจอสัมผัส" loading="lazy"><span>แป้นกด</span></div>
+          <div class="shot"><img src="img/dsi/pen.webp" width="540" height="824" alt="ปากกา: สัญลักษณ์ที่วาดด้วยสไตลัสในกรอบ พร้อมคำตอบห้าอันดับแรกอยู่ข้าง ๆ โดย は เป็นอันดับหนึ่ง" loading="lazy"><span>ปากกา</span></div>
+          <div class="shot"><img src="img/dsi/stickers.webp" width="540" height="824" alt="หน้าสติกเกอร์: ともだち, tomodachi, Friend ในสไตล์ Manga พร้อมตัวเลือกสไตล์และสี และปุ่ม SAVE PNG" loading="lazy"><span>สติกเกอร์</span></div>
+          <div class="shot"><img src="img/dsi/license.webp" width="540" height="824" alt="My License: บัตรใบอนุญาตฮันเตอร์ที่มีชื่อเป็นอักษรฮันเตอร์ และตราประทับการสอบสามดวง" loading="lazy"><span>My License</span></div>
+        </div>
+        <figcaption>รูปที่ # — แป้นกด ปากกา และหน้าสติกเกอร์ของ Write กับใบอนุญาตที่ได้จากการสอบใน Learn ชื่อบนใบอนุญาตเป็นชื่อสำหรับทดสอบ</figcaption>
+      </figure>
+
+      <figure class="fig" id="f-sticker">
+        <div class="fig-media fig-small">
+          <img class="px2" src="img/dsi/sticker_dsi.webp" width="229" height="103" alt="สติกเกอร์: ありかと, arikato เป็นอักษรฮันเตอร์บนการ์ดคำศัพท์สีส้ม มีส่วนท้ายเป็น hxhtranslator.com" loading="lazy">
+        </div>
+        <figcaption>รูปที่ # — สติกเกอร์แรกที่บันทึกบน DSi จริง อ่านกลับมาจากการ์ด SD ของเครื่อง (229&nbsp;×&nbsp;103 แสดงที่ 2×) มันผ่านทั้งตัวเขียน PNG ฝั่ง DS และไดรเวอร์การ์ด SD ของ DSi</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="learn">Learn: ลากตามรอย สอบ ปริศนา</h2>
+      <p>บนโทรศัพท์ “ลากตามรอยด้วยนิ้ว” เป็นฟีเจอร์ที่ถูกเลื่อนไปทำทีหลังเสมอ แต่พอมีปากกาสไตลัส มันกลายเป็นหัวใจของ Learn <strong>Trace it</strong> (ลากตามรอย) แสดงสัญลักษณ์จาง ๆ พร้อมหมายเลขกำกับแต่ละเส้น คุณลากตามรอย แล้วแต่ละเส้นจะได้คะแนนตามว่ามันเบี่ยงออกจากเส้นของสัญลักษณ์จริงมากแค่ไหน ทั้งโดยเฉลี่ยและที่ปลายเส้น การได้สามตราประทับต้องคลาดเคลื่อนไม่เกิน 3.2% ของขนาดฟอนต์ และตัวที่หน้าตาคล้ายกันต่อให้วาดได้สมบูรณ์แบบก็ไม่เคยได้เกินหนึ่งตรา <strong>Hunter Exam</strong> (การสอบฮันเตอร์) ถามเป็นสามช่วง (จากสัญลักษณ์ไปคานะ จากคานะไปสัญลักษณ์ และทั้งคำ) โดยคำตอบผิดเลือกมาจากตัวที่หน้าตาคล้ายสัญลักษณ์นั้นจริง ๆ และการสอบผ่านจะได้ใบอนุญาตที่เห็นด้านบน</p>
+      <p><strong>Today's puzzle</strong> (ปริศนาประจำวัน) ให้คำวันละหนึ่งคำ ให้ถอดรหัสทีละสัญลักษณ์ <strong>Puzzle Run</strong> มาทีหลังตามคำขอของเจ้าของโปรเจกต์: คำจะมาเรื่อย ๆ จนกว่าจะตอบผิดครบสามครั้ง และเกมจะยากขึ้นเรื่อย ๆ ขณะเล่น</p>
+
+      <figure class="fig table" id="t-run">
+        <figcaption>ตารางที่ # — ความยากที่ไต่ขึ้นของ Puzzle Run กฎเหล่านี้ผ่านการทดสอบว่าไม่มีอะไรง่ายลงเลย</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th class="num">คำที่ตอบได้</th><th class="num">ระดับ</th><th class="num">ความยาวคำ</th><th>ตัวเลือกที่ผิด</th><th>แสดงโรมาจิ</th><th>เวลาต่อสัญลักษณ์</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0–2</td><td class="num">1</td><td class="num">1–2</td><td>ไม่คล้ายเลย</td><td>ใช่</td><td>ไม่มี</td></tr>
+            <tr><td class="num">3–5</td><td class="num">2</td><td class="num">2–3</td><td>คล้ายนิดหน่อย</td><td>ใช่</td><td>ไม่มี</td></tr>
+            <tr><td class="num">6–9</td><td class="num">3</td><td class="num">2–3</td><td>คล้ายขึ้น</td><td>ใช่</td><td>ไม่มี</td></tr>
+            <tr><td class="num">10–14</td><td class="num">4</td><td class="num">3–4</td><td>สิบตัวที่คล้ายที่สุด</td><td>ไม่</td><td>ไม่มี</td></tr>
+            <tr><td class="num">15 ขึ้นไป</td><td class="num">5+</td><td class="num">3–5</td><td>หกตัวที่คล้ายที่สุด</td><td>ไม่</td><td>10&nbsp;วินาที แล้วลดลงคำละ ½&nbsp;วินาที จนเหลือ 4&nbsp;วินาที</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <figure class="fig" id="f-learn">
+        <div class="screens c4">
+          <div class="shot"><img src="img/dsi/chart.webp" width="540" height="824" alt="ตารางสัญลักษณ์ฮันเตอร์ของ Learn บนจอบน โดยเลือก く ไว้ และมีคำตัวอย่างของมันบนจอสัมผัส" loading="lazy"><span>ตาราง</span></div>
+          <div class="shot"><img src="img/dsi/trace.webp" width="540" height="824" alt="Trace it: สัญลักษณ์ที่ลากตามรอยด้วยสไตลัส ตราประทับสามดวง และปุ่ม PASS สีเขียว" loading="lazy"><span>Trace it</span></div>
+          <div class="shot"><img src="img/dsi/exam.webp" width="540" height="824" alt="การ์ดผลสอบของ Hunter Exam" loading="lazy"><span>การสอบ</span></div>
+          <div class="shot"><img src="img/dsi/run.webp" width="540" height="824" alt="Puzzle Run ระดับ 5: คำสามสัญลักษณ์ที่ต้องถอดรหัส ชีวิตรูปด้วงสามชีวิตที่เสียไปแล้วหนึ่ง ตัวเลือกคานะสี่ตัว และแถบเวลา" loading="lazy"><span>Puzzle Run</span></div>
+        </div>
+        <figcaption>รูปที่ # — Learn คำตอบวางอยู่ตรงตำแหน่งปุ่มหน้าเครื่อง ทุกหน้าจอจึงเล่นได้ทั้งด้วยปุ่มและปากกาสไตลัส</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="reader">อ่านบน ARM9 133&nbsp;MHz</h2>
+      <p>ตัวอ่านเป็นโครงข่ายประสาทเทียมแบบคอนโวลูชันขนาดเล็ก (บทความ<a href="index-th.html#read">ทำงานอย่างไร</a>แสดงวิธีที่มันอ่านหนึ่งบรรทัด) ตัวเลขของมันเก็บเป็น int8 ตัวละหนึ่งไบต์ และเอนจินของโปรเจกต์รันมันด้วยการคำนวณเลขจำนวนเต็มล้วน เอนจินนั้นเขียนด้วย Rust โดยไม่ใช้ไลบรารีมาตรฐาน เพื่อใช้กับไมโครคอนโทรลเลอร์ ESP32 จึงคอมไพล์ให้ DS ได้โดยไม่ต้องแก้อะไรเลย คำถามจึงอยู่ที่ความเร็ว</p>
+      <p>ARM9 ของ DS ไม่มีคำสั่งที่คูณตัวเลขเล็ก ๆ หลายตัวพร้อมกัน ซึ่งเป็นวิธีที่โทรศัพท์และพีซีใช้รันโครงข่ายได้เร็ว แต่มันมี <code>SMLAxy</code> ซึ่งคูณค่า 16 บิตสองค่าที่เป็นครึ่งหนึ่งของรีจิสเตอร์ แล้วบวกผลลัพธ์เข้าไปในคราวเดียว สายงาน E เขียนเคอร์เนลโดยใช้คำสั่งนี้เป็นแกนสำหรับคอนโวลูชัน 1×1 ซึ่งเป็นชั้นที่ทำงานส่วนใหญ่ของตัวอ่าน: มันคำนวณครั้งละ 2 เอาต์พุต × 4 แชนเนล ยาว 508 ไบต์ และอยู่ในหน่วยความจำคำสั่งขนาดเล็กบนชิปของ ARM9 ซึ่งทำให้มันรันได้โดยไม่ต้องรอหน่วยความจำหลัก ผลลัพธ์ทุกค่าต้อง<strong>ตรงกันทุกบิต</strong>: ได้ไบต์เดียวกับพีซี ตรงไปจนถึงหลักสุดท้ายของทุกคะแนน</p>
+
+      <p>การลองครั้งแรกในอีมูเลเตอร์อ่านไม่เคยเสร็จเลย หน้าจอแสดง READING อยู่ห้านาที สาเหตุไม่ใช่ความช้า: เครื่องมือที่วัดว่าตัวอ่านใช้สแต็กไปเท่าไร ทำงานโดยเติมลวดลายลงในสแต็กส่วนที่ยังไม่ได้ใช้ และหลังจากคอมไพเลอร์ inline มันเข้าไป มันก็ทาลวดลายทับตัวแปรที่ยังใช้งานอยู่ของฟังก์ชันที่เรียกมันเอง พอยน์เตอร์ถัดไปที่ตัวอ่านใช้จึงกลายเป็นลวดลาย <code>0xA5C35A3C</code> โปรเซสเซอร์เกิด fault และเพราะไม่มีตัวจัดการ fault หน้าจอจึงค้างไปเฉย ๆ การทดสอบบนพีซีมองไม่เห็นปัญหานี้ เพราะตัวทาลวดลายไม่ทำอะไรเลยเมื่อไม่ได้อยู่บน DS เมื่อแก้แล้ว ตัวอ่านก็รันได้ และตรงกับพีซีทุกค่า: คะแนนเอาต์พุต 17,472 จาก 17,472 ค่า</p>
+
+      <figure class="fig" id="f-readtime">
+        <div class="fig-box"><div class="chart-host" id="chart-read"></div></div>
+        <figcaption>รูปที่ # — เวลาที่ใช้อ่านหนึ่งบรรทัดในอีมูเลเตอร์ melonDS ในโหมด DS รุ่นแรก (67&nbsp;MHz) การจับเวลาของอีมูเลเตอร์เป็นแค่ค่าคร่าว ๆ มันคิดเวลามากกว่าที่แบบจำลองต้นทุนทำนายไว้ราว 1.5 เท่า DSi ทำงานที่ความถี่สัญญาณนาฬิกาสองเท่า</figcaption>
+      </figure>
+
+      <p>เคอร์เนลทำให้ตัวอ่านชุดเร็วของเว็บเร็วขึ้น 2.7 เท่า แต่ 11 วินาทีต่อบรรทัดก็ยังช้าเกินไปมาก เคอร์เนลที่เร็วขึ้นช่วยได้แค่ระดับหนึ่ง ตัวอ่านเองต้องเล็กลง</p>
+
+      <!-- ============================================================ -->
+      <h2 id="dsi-v1">dsi_v1: การคำนวณเหลือหนึ่งในห้า</h2>
+      <p>สายงาน E ประเมินต้นทุนของตัวอ่านขนาดเล็กหลายแบบด้วยแบบจำลองต้นทุนที่สร้างจากความเร็วที่วัดได้ของเคอร์เนล แล้วแนะนำตัวที่ถูกที่สุดในบรรดาตัวที่เคยพิสูจน์ผลงานมาแล้ว: สามสเตจแรกของโครงข่าย MobileNetV4 ตัวเดิม (ตัวอ่านเต็มมีสี่สเตจ) ที่ความสูง 32 พิกเซลแทน 48 โปรเจกต์เคยฝึกโครงข่ายรูปแบบนี้มาแล้วสองครั้ง ครั้งนี้ฝึกด้วยข้อมูล v6 มันจึงอ่านตัวเลขและเครื่องหมายวรรคตอนบางตัวได้ด้วย จากนั้นปรับละเอียดสำหรับ int8 และแปลงผ่านขั้นตอนชุดเดียวกับตัวอ่านของเว็บ ซึ่งตรวจมันทุกบิตเทียบกับตัวจำลอง int8 ของ Espressif</p>
+
+      <figure class="fig table" id="t-dsiv1">
+        <figcaption>ตารางที่ # — ตัวอ่าน DSi เทียบกับตัวอ่านชุดเร็วของเว็บ</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th></th><th class="num">ชุดเร็ว บนเว็บ</th><th class="num">dsi_v1</th></tr></thead>
+          <tbody>
+            <tr><td>โครงข่าย</td><td class="num">MobileNetV4-small, 4 สเตจ</td><td class="num">3 สเตจแรก</td></tr>
+            <tr><td>บรรทัดอินพุต</td><td class="num">48 × 768 px</td><td class="num"><strong>32 × 512 px</strong></td></tr>
+            <tr><td>พารามิเตอร์</td><td class="num">323,995</td><td class="num"><strong>96,923</strong></td></tr>
+            <tr><td>การคูณบวกต่อบรรทัด</td><td class="num">154.19 M</td><td class="num"><strong>30.62 M</strong></td></tr>
+            <tr><td>ไฟล์โมเดล int8</td><td class="num">339,552 B</td><td class="num"><strong>103,856 B</strong></td></tr>
+            <tr><td>หน่วยความจำขณะทำงาน</td><td class="num">368,640 B</td><td class="num"><strong>163,840 B</strong></td></tr>
+            <tr><td>หนึ่งบรรทัดบนพีซี, WebAssembly</td><td class="num">5.96 ms</td><td class="num"><strong>1.24 ms</strong></td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">การฝึกใช้เวลาราว 30 นาทีบน RTX 4080 SUPER หนึ่งตัว: การปรับละเอียดสองขั้น (12,000 และ 3,000 สเต็ป) และการฝึกแบบรับรู้การควอนไทซ์ 4,000 สเต็ป โมเดล int8 ให้ผลตรงกับตัวจำลองของ Espressif บนบรรทัดทดสอบ 512 จาก 512 บรรทัด ในทุกบิลด์ของเอนจิน รวมถึงบิลด์ของ DS</p>
+      </figure>
+
+      <figure class="fig" id="f-cer">
+        <div class="fig-box"><div class="chart-host" id="chart-cer"></div></div>
+        <figcaption>รูปที่ # — อัตราการอ่านตัวอักษรผิด (character error rate) แบบ int8 ผ่านเส้นทางการตัดภาพของแอปเอง (ยิ่งน้อยยิ่งดี) บนบรรทัดที่มีตัวเลข ตัวอ่าน DSi ผิดราวครึ่งหนึ่งของตัวอ่านชุดเร็ว เพราะมันเรียนจากข้อมูลที่ตัวอ่านชุดเร็วไม่เคยเห็น ส่วนบนบรรทัดธรรมดา มันตามหลังอยู่เล็กน้อย ชุดทดสอบทั้งหมดเป็นภาพที่สร้างขึ้น</figcaption>
+      </figure>
+
+      <p>ความผิดพลาดที่เพิ่มขึ้นส่วนใหญ่อยู่ที่เครื่องหมายเล็ก ๆ ที่ความสูง 32 พิกเซล จุดที่เปลี่ยน か เป็น が กว้างแค่ไม่กี่พิกเซล ข้อผิดพลาดที่พบบ่อยของมันจึงเป็น が → か และ ぱ → ば รวมถึงการพลาดช่องว่างระหว่างคำ แต่บนเครื่องเกม การแลกนี้คุ้มค่า:</p>
+
+      <figure class="fig" id="f-ab">
+        <div class="fig-media fig-small">
+          <img class="melon" src="img/dsi/melonds_read_ab.webp" width="258" height="440" alt="หน้าต่าง melonDS ที่กำลังรันการทดสอบความเร็วของตัวอ่าน DSi: BIT-EXACT 11648/11648 logits, ARM9 2.38 s, scalar 6.06 s, speed-up ×2.53 และกราฟแท่งของเวลาต่อชั้น" loading="lazy">
+        </div>
+        <figcaption>รูปที่ # — การทดสอบความเร็วใน melonDS: ตัวอ่าน DSi ใช้ 2.38&nbsp;วินาทีเมื่อใช้เคอร์เนล ARM9 และ 6.06&nbsp;วินาทีเมื่อไม่ใช้ ตรงกันทุกบิตบนคะแนนทั้ง 11,648 ค่า นั่นคือเร็วกว่าตัวอ่านชุดเร็ว 4.6 เท่า จากการคูณบวกที่น้อยกว่า 5 เท่า</figcaption>
+      </figure>
+
+      <p>ผลการทดสอบความเร็วที่แยกตามชั้นชี้ให้เห็นเป้าหมายถัดไป คอนโวลูชัน 1×1 ใช้ 3.7 รอบสัญญาณนาฬิกาของโปรเซสเซอร์ต่อการคูณบวกหนึ่งครั้ง และคอนโวลูชันที่ใหญ่กว่าใช้ 4.2 แต่คอนโวลูชันแบบ depthwise ซึ่งยังไม่มีเคอร์เนล ใช้ครั้งละ <strong>18.8 รอบ</strong> และกินเวลาหนึ่งในสี่ของทั้งหมด เคอร์เนลตัวที่สองอ่านสี่แชนเนลด้วยการโหลด 32 บิตครั้งเดียว แล้วแยกเป็นครึ่ง 16 บิตด้วยมาสก์สองตัว โดยไม่ต้องแตกข้อมูล (unpack): 12 คำสั่งต่อการคูณบวก 4 ครั้ง หรือราว 3.5 รอบต่อครั้งเมื่อนับคำสั่ง มันผ่านการทดสอบกับชั้นสุ่ม 5,000 ชั้นโดยไม่มีค่าไหนไม่ตรงเลย</p>
+      <p>มีการเปลี่ยนแปลงอีกอย่างที่ทำให้หน้าจอยังตอบสนองขณะอ่าน การอ่านทั้งหมดรวดเดียวจะทำให้แอปค้างไปหนึ่งถึงสองวินาที ตอนนี้ตัวอ่านจึงทำงานเป็นช่วงเล็ก ๆ ช่วงละราวครึ่งล้านการคูณบวก และหยุดหลังผ่านไปราว 12&nbsp;ms ในแต่ละเฟรม ตัวอ่าน DSi มีทั้งหมด 86 ช่วง และแถบความคืบหน้าจะเติมขึ้นเมื่อแต่ละช่วงเสร็จ</p>
+
+      <figure class="fig" id="f-ops">
+        <div class="fig-box"><div class="chart-host" id="chart-ops"></div></div>
+        <figcaption>รูปที่ # — จำนวนรอบสัญญาณนาฬิกาของโปรเซสเซอร์ต่อการคูณบวกหนึ่งครั้งบน ARM9 แยกตามชนิดของชั้น (ตัวอ่าน DSi ใน melonDS) ค่า 3.5 ของเคอร์เนล depthwise เป็นค่าประมาณจากการนับคำสั่ง ยังไม่ได้วัดบนฮาร์ดแวร์</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="camera">อ่านด้วยกล้อง</h2>
+      <p>กล้องของ DSi ให้อินพุตกับตัวอ่านแทบจะฟรี ภาพถ่ายเต็มภาพมาในรูปความสว่างบวกสี และส่วนความสว่างก็คือภาพสีเทาที่ตัวอ่านต้องการพอดี ไดรเวอร์กล้องสตรีมภาพพรีวิวสดลงในบัฟเฟอร์สามชุดในหน่วยความจำหลัก กล้องจึงไม่ต้องรอแอปเลย และถ่ายภาพนิ่งขนาด 640&nbsp;×&nbsp;480 เมื่อสั่ง มันใช้หน่วยความจำ 888&nbsp;KB ขณะเปิดอยู่ และไม่ใช้เลยเมื่อปิด</p>
+
+      <figure class="fig" id="f-read">
+        <div class="fig-media"><img src="img/dsi/read_host.webp" width="1576" height="784" alt="หน้าจอสามคู่: การเล็งอักษรฮันเตอร์หนึ่งบรรทัดให้อยู่ในแถบเล็ง การอ่านพร้อมแถบความคืบหน้า และผลลัพธ์: はんたー しけん, hantā shiken" loading="lazy"></div>
+        <figcaption>รูปที่ # — การเล็ง การอ่าน และผลลัพธ์ เรนเดอร์บนพีซีด้วยกล้องทดสอบที่วาดป้ายขึ้นมาเอง ข้อความ “READ IN ~0.7&nbsp;s” ในภาพนี้เป็นค่าประมาณ ไม่ใช่ค่าที่วัดได้</figcaption>
+      </figure>
+
+      <ol class="learn-steps">
+        <li><strong>เล็ง</strong> ภาพพรีวิวนอกแถบเล็งจะถูกหรี่ลง ทุก ๆ หกเฟรม การตรวจแบบเร็วภายในแถบจะขยับขีดสัญญาณและเปลี่ยนคำแนะนำ (“Get closer” หรือเข้าใกล้อีก, “More light” หรือเพิ่มแสง)</li>
+        <li><strong>กด A</strong> แอปถ่ายภาพนิ่งแล้วตัดส่วนที่อยู่ในแถบออกมา ภาพที่ตัดได้จะถูกย่อและเติมขอบให้เป็น 32&nbsp;×&nbsp;512 แบบเดียวกับที่เว็บแอปเตรียมบรรทัดทุกประการ: มีการทดสอบที่รัน JavaScript ของเว็บเองใน Node แล้วได้ไบต์เดียวกัน</li>
+        <li><strong>อ่าน</strong> กล้องจะปิดลง ตัวอ่านจึงได้ใช้โปรเซสเซอร์และหน่วยความจำเต็มที่ แล้วตัวอ่านก็ทำงานไปทีละช่วง: ราว 37 เฟรมบนแถบความคืบหน้า</li>
+        <li><strong>ผลลัพธ์</strong> บอลลูนคำพูดที่มีคานะ โรมาจิ และความหมายถ้าเป็นคำที่รู้จัก คานะที่ตัวอ่านมั่นใจไม่ถึง 60% จะถูกขีดเส้นใต้ แตะที่ตัวนั้นเพื่อดูคำตอบอันดับสอง ปุ่ม SAVE TO LOG จะเพิ่มบรรทัดนั้นลงในไฟล์ข้อความบนการ์ด SD</li>
+      </ol>
+      <p>บรรทัดที่เขียนจากบนลงล่างต้องใช้อีกหนึ่งเคล็ดลับ เพราะไม่มีตัวอ่านแนวตั้งขนาดเล็ก แอปจะตัดคอลัมน์ออกเป็นสัญลักษณ์ทีละตัวตามตำแหน่งของหมึก แล้วจัดให้ตั้งตรงเรียงกันในแนวนอน จากนั้นตัวอ่านแนวนอนก็อ่านมัน</p>
+      <p>การเขียนไดรเวอร์ทำให้เจอเรื่องน่าแปลกใจบางอย่างในไลบรารีของ DS: มันนับหมายเลขกล้องกลับด้าน (กล้องด้านนอกคือ 1) มันกลับภาพของกล้องด้านนอกเหมือนกระจก และถ้าเซ็นเซอร์กล้องไม่ตอบสนองเลย โปรเซสเซอร์ตัวที่สองของ DS จะรอไปตลอดกาล ในจุดที่ไม่มีอะไรบนโปรเซสเซอร์หลักจับได้</p>
+      <p>อีมูเลเตอร์ทดสอบเรื่องเหล่านี้ไม่ได้เลย เพราะเท่าที่รู้ มันไม่ได้จำลองกล้องของ DSi ครั้งแรกที่โค้ดกล้องรันบนอะไรสักอย่างที่ไม่ใช่พีซี จึงเป็นบน DSi ของเจ้าของโปรเจกต์ รายงานที่ส่งกลับมา: “ทุกอย่างใช้งานได้หมด” ทั้งภาพพรีวิว ภาพนิ่ง ไฟที่ดับลง การอ่านบรรทัดทั้งแนวนอนและแนวตั้ง และบันทึกบนการ์ด SD</p>
+
+      <!-- ============================================================ -->
+      <h2 id="status">ตอนนี้อยู่ตรงไหน</h2>
+      <p>ทุกอย่างข้างต้นเกิดขึ้นภายในวันเดียว คือวันที่ 26 พฤศจิกายน 2026 ตั้งแต่รายการฟีเจอร์แรกจนถึง ROM ที่เจ้าของโปรเจกต์ทดสอบบน DSi ROM สุดท้ายมีขนาด 3.8&nbsp;MB เวอร์ชัน 0.1.0 และรันแอปได้ครบทั้งหมด: ด้วง, Read, Write พร้อมปากกา, Learn พร้อม Puzzle Run และการบันทึกลงการ์ด SD</p>
+      <ul class="limits">
+        <li><strong>ยังไม่ได้ปล่อยออกมา</strong> กำลังเตรียมหน้ารีลีสอยู่ และจะใส่ลิงก์ไว้ที่นี่เมื่อเปิดเป็นสาธารณะ</li>
+        <li><strong>ยังไม่ได้จดความเร็วบน DSi ไว้</strong> โอเวอร์เลย์แสดงค่านี้อยู่ แต่การทดสอบจนถึงตอนนี้เน้นว่าทุกอย่างใช้งานได้หรือไม่ แบบจำลองต้นทุนบอกว่าราว 0.6–0.7&nbsp;วินาทีต่อบรรทัดในโหมด DSi ส่วนอีมูเลเตอร์วัดได้ 2.38&nbsp;วินาทีที่ความถี่ครึ่งหนึ่งของ DS รุ่นแรก ก่อนจะมีเคอร์เนล depthwise</li>
+        <li><strong>การอ่านภาพถ่ายจากการ์ด SD</strong> อยู่ในแผน และตอนนี้ยังถูกปิดไว้เป็นสีเทา ถ้าทำ มันจะใช้ตัวหาบรรทัดเป็นงานเบื้องหลังที่ทำงานช้า ๆ</li>
+        <li><strong>ยังไม่ได้ทดสอบ</strong>บน DS รุ่นแรก (ซึ่ง Read ถูกปิดไว้เป็นสีเทา เพราะไม่มีกล้อง) หรือบน 3DS</li>
+        <li><strong>ตัวเลขความแม่นยำทุกตัวในที่นี้วัดบนภาพที่สร้างขึ้น</strong> ปากกาและตราประทับของ Trace it ถูกปรับจูนด้วยภาพวาดสังเคราะห์ ไม่ใช่ลายมือจริง</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <h2 id="words">คำศัพท์น่ารู้</h2>
+      <dl class="glossary">
+        <div><dt>ROM</dt><dd>ไฟล์ที่เก็บโปรแกรมของ DS และข้อมูลของโปรแกรม ROM แบบโฮมบรูว์รันจากการ์ด SD ผ่านเมนูอย่าง TWiLight Menu++</dd></div>
+        <div><dt>Homebrew (โฮมบรูว์)</dt><dd>โปรแกรมสำหรับเครื่องเกมที่ผู้ใช้สร้างขึ้นเอง ไม่ใช่ผู้ผลิตเครื่อง</dd></div>
+        <div><dt>melonDS</dt><dd>อีมูเลเตอร์ DS และ DSi สำหรับพีซี เหมาะสำหรับการทดสอบ แต่การจับเวลาไม่แม่นยำ และวาดภาพ 3D ต่างจากชิปจริง</dd></div>
+        <div><dt>ARM9</dt><dd>โปรเซสเซอร์หลักของ DS อีกตัวที่ช้ากว่า (ARM7) ดูแลเสียง การสัมผัส และ Wi-Fi</dd></div>
+        <div><dt>MAC</dt><dd>การคูณบวกหนึ่งครั้ง ซึ่งเป็นขั้นพื้นฐานของโครงข่ายประสาทเทียม ตัวอ่าน DSi ต้องใช้ 30.6 ล้านครั้งต่อหนึ่งบรรทัด</dd></div>
+        <div><dt>int8</dt><dd>การเก็บตัวเลขแต่ละตัวของโครงข่ายในหนึ่งไบต์ และคำนวณด้วยเลขจำนวนเต็ม</dd></div>
+        <div><dt>Kernel (เคอร์เนล)</dt><dd>โค้ดชิ้นเล็กที่ปรับแต่งด้วยมือสำหรับชั้นชนิดหนึ่ง เขียนขึ้นสำหรับโปรเซสเซอร์ตัวหนึ่ง</dd></div>
+        <div><dt>Bit-exact (ตรงกันทุกบิต)</dt><dd>ให้ไบต์ที่เหมือนกับตัวอ้างอิงทุกประการ ไม่ใช่แค่ตัวเลขที่ใกล้เคียงกัน</dd></div>
+        <div><dt>NitroFS</dt><dd>ระบบไฟล์ที่อยู่ใน ROM ทำให้โหลดข้อมูลได้เมื่อต้องใช้ แทนที่จะโหลดทั้งหมดตอนเริ่ม</dd></div>
+      </dl>
+
+      <h2 id="more">อ่านเพิ่มเติม</h2>
+      <p>ตัวอ่านบน DSi เป็นสมาชิกตัวเล็กกว่าในตระกูลเดียวกับตัวอ่านของเว็บ วิธีฝึก ควอนไทซ์ และตรวจสอบตัวอ่านเหล่านั้นอยู่ในบทความเจาะลึก ส่วนโมเดล DSi เองอยู่บน Hugging Face</p>
+      <p class="cta-row"><a class="button" href="https://huggingface.co/KokkakNiphon/hxh-ocr/tree/main/int8/dsi_v1">โมเดล dsi_v1 →</a> <a class="button ghost" href="deep-dive-th.html">อ่านฉบับเจาะลึก</a> <a class="button ghost" href="../index-th.html">ลองใช้ตัวอ่านบนเว็บ</a></p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <p>โอเพนซอร์ส: โค้ดของ OCR อยู่บน <a href="https://github.com/KokkakNiphon/hxh-ocr">GitHub</a> และโมเดล รวมถึงตัวอ่าน DSi อยู่บน <a href="https://huggingface.co/KokkakNiphon/hxh-ocr">Hugging Face</a> (Apache-2.0 พร้อมประกาศให้เครดิต) ส่วนโค้ดของแอป DSi เองไม่ได้เผยแพร่</p>
+    <p>HxH OCR และ HxH Translator เป็นโปรเจกต์ของแฟน ๆ <em>ฮันเตอร์&nbsp;×&nbsp;ฮันเตอร์</em> เป็นผลงานของโยชิฮิโระ โทงาชิ สำนักพิมพ์ชูเอชะ และสตูดิโอที่เกี่ยวข้อง และ Nintendo&nbsp;DSi เป็นเครื่องหมายการค้าของ Nintendo โปรเจกต์เหล่านี้ไม่มีส่วนเกี่ยวข้องกับเจ้าของเหล่านั้น หน้าจอทุกภาพในโพสต์นี้เรนเดอร์โดยแอป หรือจับภาพจากอีมูเลเตอร์</p>
+  </div>
+</footer>
+
+<script type="module" src="blog.js"></script>
+<script type="module" src="dsi.js"></script>
+</body>
+</html>

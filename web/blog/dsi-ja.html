@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="ja" data-fig="図" data-table="表">
+<head>
+<meta charset="utf-8">
+<script src="../theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>ニンテンドーDSiで『HUNTER×HUNTER』のハンター文字を読む · HxH OCR</title>
+<meta name="description" content="HxH Translator をニンテンドーDSi向けに作り直した記録です。133 MHz の ARM9 で動く Rust のアプリ、本体のトゥーンシェーディング用ハードウェアが描く 3D のビートル、そして DSi のカメラ越しにハンター文字を読む、計算量が Web版の 5 分の 1 の 100 KB の int8 リーダー。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="blog.css">
+<link rel="stylesheet" href="deep.css">
+<link rel="stylesheet" href="dsi.css">
+<!-- site:begin (scripts/site_meta.py) -->
+<link rel="canonical" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-ja">
+<link rel="alternate" hreflang="en" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi">
+<link rel="alternate" hreflang="th" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-th">
+<link rel="alternate" hreflang="ja" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-ja">
+<link rel="alternate" hreflang="x-default" href="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi">
+<meta name="author" content="KokkakNiphon">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#2340d8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="HxH OCR">
+<meta property="og:title" content="ニンテンドーDSiで『HUNTER×HUNTER』のハンター文字を読む · HxH OCR">
+<meta property="og:description" content="HxH Translator をニンテンドーDSi向けに作り直した記録です。133 MHz の ARM9 で動く Rust のアプリ、本体のトゥーンシェーディング用ハードウェアが描く 3D のビートル、そして DSi のカメラ越しにハンター文字を読む、計算量が Web版の 5 分の 1 の 100 KB の int8 リーダー。">
+<meta property="og:url" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-ja">
+<meta property="og:image" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/img/dsi/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HxH Translator for DSi: the app&#x27;s pick-a-mode screen with the 3D beetle opened, and はんたー in Hunter script.">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="th_TH">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ニンテンドーDSiで『HUNTER×HUNTER』のハンター文字を読む · HxH OCR">
+<meta name="twitter:description" content="HxH Translator をニンテンドーDSi向けに作り直した記録です。133 MHz の ARM9 で動く Rust のアプリ、本体のトゥーンシェーディング用ハードウェアが描く 3D のビートル、そして DSi のカメラ越しにハンター文字を読む、計算量が Web版の 5 分の 1 の 100 KB の int8 リーダー。">
+<meta name="twitter:image" content="https://hxh-ocr.kokkakniphon.workers.dev/blog/img/dsi/og.jpg">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="stylesheet" href="../site.css">
+<script src="../lang.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "url": "https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-ja", "inLanguage": "ja", "description": "HxH Translator をニンテンドーDSi向けに作り直した記録です。133 MHz の ARM9 で動く Rust のアプリ、本体のトゥーンシェーディング用ハードウェアが描く 3D のビートル、そして DSi のカメラ越しにハンター文字を読む、計算量が Web版の 5 分の 1 の 100 KB の int8 リーダー。", "image": "https://hxh-ocr.kokkakniphon.workers.dev/blog/img/dsi/og.jpg", "author": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "headline": "ニンテンドーDSiで『HUNTER×HUNTER』のハンター文字を読む · HxH OCR", "datePublished": "2026-11-26", "dateModified": "2026-11-26", "publisher": {"@type": "Person", "name": "KokkakNiphon", "url": "https://github.com/KokkakNiphon"}, "mainEntityOfPage": "https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi-ja", "about": [{"@type": "Thing", "name": "Hunter × Hunter alphabet"}, {"@type": "Thing", "name": "Optical character recognition"}, {"@type": "Thing", "name": "Nintendo DSi"}], "isPartOf": {"@type": "WebSite", "name": "HxH OCR", "url": "https://hxh-ocr.kokkakniphon.workers.dev/"}}</script>
+<!-- site:end -->
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index-ja.html"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M5.6 6.52H14.4M5.6 13.48H14.4M10 6.52V13.48M19.28 14.39L26.14 5.61M9.92 18.45V25.55M5.73 25.55H14.27M16.8 18.52L19.36 22.04L16.8 25.48M19.36 22.04H24.56M27.2 18.52L24.56 22.04L27.2 25.48"/><circle cx="19.7" cy="7.95" r="1.84"/></svg>HxH OCR</a>
+    <nav aria-label="サイト">
+      <a href="../index-ja.html">リーダー</a>
+      <a href="index-ja.html">しくみ</a>
+      <a href="deep-dive-ja.html">詳細解説</a>
+      <a href="dsi-ja.html" aria-current="page">DSi</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="theme-toggle" data-prefix="テーマ" data-auto="自動" data-light="ライト" data-dark="ダーク" aria-label="テーマ: 自動">
+      <svg class="ic-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      <svg class="ic-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="ic-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <a class="nav-cta" href="../index-ja.html">リーダーを試す</a>
+  </div>
+</header>
+
+<main class="post">
+  <div class="post-head">
+    <p class="kicker">プロジェクト <span>·</span> DSi 版 HxH Translator</p>
+    <p class="meta">文: <a class="byline" href="https://github.com/KokkakNiphon" rel="author">KokkakNiphon</a> <span>·</span> 2026年11月26日 <span>·</span> 読了目安 14 分</p>
+    <h1>ニンテンドーDSiで『HUNTER×HUNTER』のハンター文字を読む</h1>
+    <p class="dek">HxH Translator の 3 つのモード「読む」「書く」「学ぶ」を、2008 年の携帯ゲーム機向けに作り直しました。133&nbsp;MHz の ARM9 で動く Rust のアプリ、本体のトゥーンシェーディング用ハードウェアが描く 3D のビートル、そして DSi のカメラ越しに 1 行を読む、計算量が Web版の 5 分の 1 の 100&nbsp;KB の int8 リーダーです。</p>
+    <p class="post-update"><b>現状（2026年11月26日）</b> アプリは実機の DSi で動き、そこでオーナーのテストにも合格していますが、まだ公開していません。ソースコードも公開していません。リーダーのモデル <a href="https://huggingface.co/KokkakNiphon/hxh-ocr/tree/main/int8/dsi_v1">dsi_v1</a> は、ほかのモデルと一緒に Hugging Face で公開しています。</p>
+  </div>
+
+  <div class="post-grid">
+    <aside class="toc-rail">
+      <nav class="toc" aria-label="目次">
+        <p class="label">目次</p>
+        <ol id="toc"></ol>
+      </nav>
+      <a class="rail-card" href="index-ja.html">
+        <span class="label">OCR がはじめての方へ</span>
+        <span class="rail-title">しくみ</span>
+        <span class="rail-text">DS に詰め込む前のリーダーが、どう見て、どう学び、どう 1 行を読むのかを図で紹介します。</span>
+        <span class="arrow" aria-hidden="true">↗</span>
+      </a>
+    </aside>
+
+    <article id="article">
+      <figure class="fig" id="f-hero">
+        <div class="screens">
+          <div class="shot"><img src="img/dsi/home.webp" width="540" height="824" alt="DSi アプリのホーム画面。水色のカードの上に茶色の 3D のビートルがいて、その後ろに中抜きのハンター文字。タッチスクリーンには OPEN ボタン。" loading="eager"><span>ホーム、ふたは閉じたまま</span></div>
+          <div class="shot"><img src="img/dsi/modes.webp" width="540" height="824" alt="開いたビートル。羽が上がり、その下に 3 つのモードのカード（READ、WRITE、LEARN）が並ぶ。" loading="eager"><span>開いたら: モードを選ぶ</span></div>
+          <div class="shot"><img src="img/dsi/read.webp" width="540" height="824" alt="「読む」モード。緑のガイドバーの中のハンター文字の行を はんたー しけん（hantā shiken）と読み、その下に書き起こしを表示。" loading="eager"><span>読む: 1 行</span></div>
+        </div>
+        <figcaption>図 # — アプリ自身の画面。上画面の下にタッチスクリーンを並べています。本体で動くのと同じ Rust のコードを使い、PC 上で描きました（3D のビートルは、DS の 3D チップを再現したソフトウェアモデルで描画）。「読む」の画面は、看板を描くテスト用のカメラを使っています。この記事では、本物の写真は一枚も使っていません。</figcaption>
+      </figure>
+
+      <p class="lede"><a href="https://hxhtranslator.com/">HxH Translator</a> は、3 つのモードを持つ Webアプリです。<strong>読む</strong>（Read）は、スマホのカメラをハンター文字に向けて、かなとラテン文字に変えます。<strong>書く</strong>（Write）は、入力した文字をハンター文字にします。<strong>学ぶ</strong>（Learn）は、この文字を教えます。この記事は、その 3 つすべてを<strong>ニンテンドーDSi</strong>に載せた話です。DSi は 2008 年の携帯ゲーム機で、小さな画面 2 つ、タッチペン、カメラ、そして 133&nbsp;MHz のプロセッサを備えています。いちばん難しかったのは「読む」でした。PC なら 1 行を約 1 ミリ秒で読めますが、DS（エミュレーター上）では 11 秒かかりました。それを縮めるには、計算量が 5 分の 1 のリーダーと、手書きの ARM カーネルが必要でした。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="idea">ふたと一緒に開くビートル</h2>
+      <p>Webアプリのマスコットは、羽を開くと画面が現れるビートルです。DSi は折りたたみ式なので、アイデアは自然に決まりました。<strong>本体を開くと、ビートルも開く</strong>のです。上画面はビートルの画面、下のタッチスクリーンはボタンの並ぶパネルです。3 つのモードは Web版のままです。</p>
+      <p>コードを書く前に、画面を 12 枚のモックアップとして 1 ページに描きました。どれも本物の 256&nbsp;×&nbsp;192 のキャンバスで、DS のピクセルが 1 つ残らず見えるよう、整数倍でしか拡大していません。このページでは何も打ち直していません。Webアプリ自身の文字描画、ビートルのモデル、「学ぶ」のデータ、ローマ字変換をそのまま読み込んでいます。描いてみたことで、いくつかのことが早めに決まりました。ハンター試験の 4 つの答えは Y・X・B・A ボタンの位置に並ぶので、タッチペンはなくても大丈夫です。「学ぶ」の例の文字は ね ではなく く です。ハンター文字の ね は閉じた 1 画なので書き順を見せられませんが、く には 3 画あるからです。</p>
+
+      <p>残りのほとんどは、ハードウェアにできることで決まりました。</p>
+      <div class="hw" role="list">
+        <div role="listitem"><b>133 MHz</b><span>の ARM946E-S プロセッサ（初代 DS モードでは 67&nbsp;MHz）。たくさんの小さな数を一度に計算する命令はありません</span></div>
+        <div role="listitem"><b>16 MB</b><span>のメモリ（初代 DS では 4&nbsp;MB）</span></div>
+        <div role="listitem"><b>2 × 256 × 192</b><span>の画面。下はタッチペンで操作するタッチスクリーン</span></div>
+        <div role="listitem"><b>640 × 480</b><span>のカメラが 2 台（内側と外側）</span></div>
+        <div role="listitem"><b>2,048</b><span>1 フレームあたりの 3D ポリゴン数。トゥーンシェーディングと輪郭線はチップに内蔵</span></div>
+        <div role="listitem"><b>SDカード</b><span>ステッカー、学習の進み具合、読み取りの記録を保存</span></div>
+      </div>
+      <p>トゥーンシェーディングは、うれしいおまけでした。Web版はビートルを、べた塗りの色の帯とインクの輪郭線で描きます。DS の 3D チップは、まさにそれをハードウェアでやってくれるのです。問題はプロセッサでした。Web版の「高速」（Fast）リーダーは、1 行を読むのに 1億5400万回の積和演算（MAC）を使います。1 秒あたり 3000万〜6000万回という推測で計算すると、1 行に 2.6〜5 秒かかります。ページ全体から文字を探す行さがしAIなら、1 分近くかかるでしょう。そこで、DSi の「読む」は行を探しません。ガイドバーに 1 行を合わせると、その行だけを読みます。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="split">ハードウェアは C、それ以外は Rust</h2>
+      <p>DS の自作ソフト（ホームブリュー）は、たいてい C で書かれています。このアプリは、無料のツールチェーンとライブラリ群である <a href="https://blocksds.skylyrac.net/">BlocksDS</a> を使います。Rust も DS のプロセッサ向けにビルドできます（<code>thumbv5te-none-eabi</code>、nightly 版でしか使えないターゲット）。しかも、このプロジェクトの int8 エンジンは、もともと標準ライブラリなしの Rust で書かれていました。そこでアプリを 2 つに分けました。薄い C の層がハードウェアを受け持ち、それ以外はすべて Rust が担当します。</p>
+
+      <figure class="fig" id="f-split">
+        <div class="fig-box">
+          <div class="fig-title">だれが何を受け持つか</div>
+          <div class="fig-sub">C は 1 フレームに 1 回 Rust を呼び出し、Rust は短いコマンドのリストを通じてハードウェアに頼みごとをします</div>
+          <div class="split">
+            <div class="split-col">
+              <p class="split-h">C · BlocksDS</p>
+              <p class="split-s">ハードウェアを受け持つ</p>
+              <ul>
+                <li>画面の更新を毎回待ち、Rust が変えた行をコピーする</li>
+                <li>3D: ビートルのディスプレイリスト、トゥーンテーブル、輪郭線</li>
+                <li>サウンド（maxmod を使用）</li>
+                <li>カメラ、SDカード、ROM の中のファイル</li>
+                <li>ふた、スリープ、時計</li>
+              </ul>
+            </div>
+            <div class="split-mid">
+              <span class="to-r">ボタン、タッチペン、日付</span>
+              <span class="to-l">画面 2 枚 + コマンド: 音を鳴らす、ビートルにポーズをとらせる、カメラを起動する</span>
+            </div>
+            <div class="split-col rust">
+              <p class="split-h">Rust · no_std</p>
+              <p class="split-s">それ以外すべて</p>
+              <ul>
+                <li>すべてのシーン: ホーム、読む、書く、学ぶ</li>
+                <li>自前のフォント描画で、両方の画面を 16 ビットの画像に描く</li>
+                <li>ハンター文字のレイアウトと、かなのルール</li>
+                <li>「学ぶ」の類似度、試験、パズル</li>
+                <li>int8 リーダー（ARM9 カーネルは高速なチップ内メモリに置く）</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <figcaption>図 # — 分担。Rust 側は静的ライブラリで、BlocksDS のビルドにリンクされます。この方法で初めて文字を描いた ROM は 140&nbsp;KB でした。</figcaption>
+      </figure>
+
+      <p>Rust 側は、Webアプリの JavaScript を移植したものです。かな変換、ハンター文字のレイアウト、「学ぶ」の類似度とパズル。移植は細かいところで元とずれることがあるので、どの移植も<strong>Webアプリ自身のコード</strong>と照らし合わせてテストしています。Node のスクリプトが JavaScript を動かして答えを保存し、Rust のテストはそれと一致しなければなりません。</p>
+      <ul>
+        <li>かな変換: 5,437 種類の入力と 10,769 件の変換ケースで、食い違いは 0。</li>
+        <li>文字のレイアウト: 120 ケースで誤差がフォントサイズの 0.0001 以内。文字列の幅は、Chrome が測った値との差が 0.1&nbsp;px 以内。</li>
+        <li>「学ぶ」の類似度: 表のかなの全 3,403 組で、誤差がフォントサイズの 0.00000054 以内。そっくりな文字のリスト 200 個、シード付きの試験 15 回、毎日のパズル 440 日分も同じ。</li>
+      </ul>
+      <p>類似度の移植は、一度やり直しました。最初の版は丸めた固定小数点の座標を使っていて、200 個のそっくりリストのうち 5 個で順番が変わってしまったのです。JavaScript 側には完全な同点（は・ば・ぱ は、濁点・半濁点を除けば同じ形）や、0.0000046 しかない差があるので、丸めるだけで隣どうしが入れ替わりました。文字データから直接取った、ビット数の多い整数の座標にしたら直りました。</p>
+      <p>テストは、Webアプリ自体のバグも 2 つ見つけました。「Reā」という名前を入力すると、「書く」に <code>リーundefined</code> と表示されました。また「constructor」という単語は、JavaScript 自身の <code>Object</code> 関数として引かれてしまい、バーに <code>function Object() { [native code] }</code> と表示されました。どちらも今では Webアプリのコードでも直してあります。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="tracks">6 つのトラックを同時に</h2>
+      <p>骨組みがエミュレーター（melonDS）でハンター文字を描けるようになったところで、作業を 6 つのトラックに分け、同時に進めました。トラックはそれぞれ専用の AI コーディングのセッションで、自分のファイルだけを担当します。結果は取りまとめ役のセッションに報告され、そこで統合し、ジャーナルを書き、エミュレーターで確認しました。6 つとも約 1 時間で終わりました。</p>
+
+      <figure class="fig table" id="t-tracks">
+        <figcaption>表 # — 6 つのトラックと、それぞれが仕上げたもの。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>トラック</th><th>作ったもの</th><th>大事だった数字</th></tr></thead>
+          <tbody>
+            <tr><td class="k"><strong>A</strong> テキスト</td><td>3 つの無料フォント（Dela Gothic One、M PLUS 1p、M PLUS 1 Code）から、カーニング付きのビットマップフォントを 46 個作成。画面の文言 482 個を英語と日本語で。</td><td>変わった枠だけを描き直すことで、手書き 1 フレームの処理が PC で 72.8&nbsp;µs から 1.0&nbsp;µs に（49,152 ピクセルではなく、中央値で 77 ピクセル）。</td></tr>
+            <tr><td class="k"><strong>B</strong> ビートル</td><td>Web版のビートルをそのコードから書き出して軽くし、トゥーンテーブルと輪郭線付きの DS のディスプレイリストに変換。</td><td>三角形 25,736 個を 1,484 個に。1 フレームあたり、上限 2,048 のうち約 800 ポリゴン。</td></tr>
+            <tr><td class="k"><strong>C</strong> 書く</td><td>かな変換と、12 キーのトグル入力パッド（タイミングは Web版と同じ）。</td><td>5,437 個の入力で食い違い 0。Web版のバグを 2 つ発見。</td></tr>
+            <tr><td class="k"><strong>D</strong> 学ぶ</td><td>文字の表とその例の単語 200 個、パズル 42 問、類似度、そしてタッチペンでなぞるための新しい採点。</td><td>完璧になぞれば、83 個のかなすべてでスタンプ 3 つ。そっくりな別の文字では、2 つ以上はもらえない。</td></tr>
+            <tr><td class="k"><strong>E</strong> 読む</td><td>DS 向けにビルドした int8 エンジンと、いちばん多い種類の層のための手書きの ARM9 カーネル。</td><td>約 3,200 個のランダムな層と 24 個の基準出力で、PC とビット単位で一致。</td></tr>
+            <tr><td class="k"><strong>F</strong> サウンド</td><td>Web版の効果音 13 個とキーの音 12 個を、DS のミキサー用に変換。</td><td>キーの音はどれも Web版との差が 2&nbsp;Hz 以内。サウンドは 478&nbsp;KB。</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <figure class="fig" id="f-firstlight">
+        <div class="fig-media fig-small">
+          <div class="shot"><img class="melon" src="img/dsi/melonds_m0.webp" width="258" height="440" alt="melonDS エミュレーターのウィンドウ。水色の上画面にハンター文字で はんたー と書かれ、その下にオレンジ色のピル形の表示。" loading="lazy"><span>最初の ROM</span></div>
+          <div class="shot"><img class="melon" src="img/dsi/melonds_beetle.webp" width="258" height="440" alt="melonDS のウィンドウ。開いた 3D のビートルの横に パカッ! の文字、タッチスクリーンには CLOSE ボタン。" loading="lazy"><span>開いた 3D のビートル</span></div>
+        </div>
+        <figcaption>図 # — melonDS エミュレーターの画面。左: 最初の ROM。Rust が はんたー を 1 画ずつ書いていきます。右: A を押したあとのトラック B のビートル。羽が上がり、中の画面にはアプリのアイコン、そして パカッ!</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="beetle">エミュレーターでは見えなかったこと</h2>
+      <p>melonDS はとてもよくできたエミュレーターですが、3D の 1 フレームを一度にまとめて描きます。本物の DS は、画面を表示しながら 3D の絵を<strong>1 ラインずつ</strong>描き、描き終えたラインを小さなバッファにためておきます。オーナーの DSi で初めてアプリを動かしたとき、ビートルは穴だらけでした。殻には白い点が横に何列も並び、開くと画面がずたずたに乱れました。どれも、エミュレーターでは一度も出なかった症状です。</p>
+      <p>白く見えたのは、ビートルの後ろの絵が透けていたからです。つまり、そのラインではビートル自身のピクセルが描かれていませんでした。穴が並んでいたのは、殻の上の目のレンズのように、たくさんの層が重なるラインでした。アプリにはデバッグ用のオーバーレイがあったので、次の ROM には、機能をオフにする 4 つのテストモードを加えました。オーナーが DSi でそれぞれを試しました。</p>
+
+      <figure class="fig table" id="t-modes">
+        <figcaption>表 # — 実機の DSi でのテストモード。ビートルが欠けずに描けたのは、リアプレーン・ビットマップをオフにしたときだけでした。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th></th><th>T0、設計どおり</th><th>T1、輪郭線なし</th><th>T2、リアプレーン・ビットマップなし</th><th>T3、どちらもなし</th></tr></thead>
+          <tbody>
+            <tr><td class="k">ホーム、閉じた状態</td><td class="bad">穴あり</td><td class="bad">穴あり</td><td class="ok">欠けなし</td><td class="ok">欠けなし</td></tr>
+            <tr><td class="k">開いた状態</td><td class="bad">穴あり</td><td class="bad">穴あり</td><td class="ok">欠けなし</td><td class="ok">欠けなし</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <p>犯人は<strong>リアプレーン・ビットマップ</strong>（rear-plane bitmap）でした。3D シーンの後ろに絵を置く DS の機能です。これを使うと、3D チップはビートルの後ろのピクセル 1 つ 1 つについて、色と深度の値を読まなければなりません。混み合ったラインでは、その余分な読み込みのせいで時間が足りなくなっていたのです。輪郭線のほうは、目に見える負担にはなっていませんでした。修正では、ビートルの後ろの絵を 3D チップから完全に外し、ふつうの 2D レイヤーに移しました。</p>
+
+      <figure class="fig" id="f-layers">
+        <div class="fig-box">
+          <div class="fig-title">上画面のレイヤー（手前から奥へ）</div>
+          <div class="fig-sub">レイヤーを合成するのは 2D のハードウェア。3D チップはビートルだけを描きます</div>
+          <div class="lyr-cmp">
+            <div class="lyr">
+              <p class="lyr-h">最初のビルド</p>
+              <div class="layer"><b>BG3 · 2D、手前</b>タイトル、言葉、ボタン</div>
+              <div class="layer d3"><b>3D レイヤー</b>ビートル</div>
+              <div class="layer bad"><b>リアプレーン · 3D チップの中</b>カードと中抜きの文字。すべてのラインのすべてのピクセルで、読み直される</div>
+              <p class="lyr-r bad">混み合ったラインに穴</p>
+            </div>
+            <div class="lyr">
+              <p class="lyr-h">修正後</p>
+              <div class="layer"><b>BG3 · 2D、手前</b>タイトル、言葉、ボタン</div>
+              <div class="layer d3"><b>3D レイヤー</b>ビートル（背景は透明）</div>
+              <div class="layer ok"><b>BG2 · 2D、奥</b>カードと中抜きの文字。2D のハードウェアが合成する</div>
+              <p class="lyr-r ok">DSi で欠けなし</p>
+            </div>
+          </div>
+        </div>
+        <figcaption>図 # — 実機でビートルが欠けなくなった修正。ビートルの後ろにあるものを、3D チップのリアプレーンから 2 つ目の 2D 背景に移しました。</figcaption>
+      </figure>
+
+      <p>次の実機テストで、もう 1 つ見つかりました。言葉が表示されたり、ビートルが開いたり閉じたりするたびに、画面全体が 1 フレームだけ<strong>白く点滅</strong>したのです。ビートルの後ろに古い言葉の残像が残らないよう、変更のたびに、まず背景だけを送り、1 フレーム後に全体の絵を送っていました。その間、画面には白い紙しか映っていなかったのです。エミュレーターでは、ほとんど見えないちらつきでした。修正は新しいコマンドです。シーンがビートルの後ろに置く絵を渡し、両方のレイヤーが同じ画面更新で切り替わります。次のビルドへのオーナーの評価は「ばっちり動いています」でした。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="memory">4&nbsp;MB に収める</h2>
+      <p>DSi のメモリは 16&nbsp;MB ですが、同じ ROM は初代 DS でも動き、そちらは 4&nbsp;MB です。最初は、すべてがプログラムのメモリイメージに入っていました。フォントだけで 1.3&nbsp;MB、サウンドが半メガバイト、さらにリーダーのモデルとそのテスト用の帯で 0.7&nbsp;MB。初代 DS モードでリーダーを切り替えると、「NO MEMORY: THE READER NEEDS 360K」（メモリ不足: リーダーには 360K が必要）と表示されました。リーダーは失敗しうるやり方でメモリを要求するので、クラッシュではなく、きちんとしたメッセージになったのです。とはいえ、これはこの先の問題の前ぶれでした。</p>
+      <p>解決策は、フォント、文言、サウンド、モデルを ROM 自身のファイルシステム（NitroFS）に移し、シーンが必要とするときに読み込むことでした。フォントは初めてそれで描くときに、文言は一度に 1 言語ぶんだけ、サウンドは初めて鳴らすときに、リーダーは一度に 1 つだけ。各シーンは入ったときに組み立てられ、最初のフレームのあとで、使わなかったものはすべて解放されます。</p>
+
+      <figure class="fig table" id="t-memory">
+        <figcaption>表 # — 初代 DS モードでの、必要なときに読み込む方式にする前と後。目標は、どのシーンでも 1.5&nbsp;MB 以上の空きでした。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th></th><th class="num">前</th><th class="num">後</th></tr></thead>
+          <tbody>
+            <tr><td>メモリ上の読み取り専用データ</td><td class="num">2,676,824 B</td><td class="num"><strong>180,992 B</strong></td></tr>
+            <tr><td>常駐イメージ全体</td><td class="num">3,196,500 B</td><td class="num"><strong>938,188 B</strong></td></tr>
+            <tr><td>起動時の空きメモリ</td><td class="num">473,516 B</td><td class="num"><strong>2,731,828 B</strong></td></tr>
+            <tr class="group"><td colspan="3">各シーンでの空き（melonDS で測定）</td></tr>
+            <tr><td>ホーム</td><td class="num">–</td><td class="num">2,719 KB</td></tr>
+            <tr><td>書く（ともだち を入力したあと）</td><td class="num">–</td><td class="num">2,428 KB</td></tr>
+            <tr><td>学ぶ（文字の表）</td><td class="num">–</td><td class="num">2,661 KB</td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">どのシーンでも、最大の空きブロックは空きの合計と同じでした。つまり、メモリの断片化は起きていませんでした。</p>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="write">「書く」: ガラケー、キーボード、ペン</h2>
+      <p>「書く」は、昔のガラケーのように使えます。キーを 1 回タップすると あ、2 回で い。入力するそばから、上画面がハンター文字を 1 画ずつ書いていきます。知っている単語には意味カードが出ます。たとえば ともだち なら「friend」です。ローマ字や名前は QWERTY キーボードで入力します。書いたものは 7 種類のスタイルのステッカーにでき、DS 用に書いた小さな PNG 書き出しプログラムで、SDカードに PNG として保存されます。</p>
+      <p>使ってみたオーナーは、手書き入力をリクエストしました。タッチペンで<strong>ハンター文字</strong>を書くと、そのかなが文章に入ります。ペンは 1 画書くごとに、書いた絵を 79 個のテンプレート（すべての文字と、濁点・半濁点の付いた形）と比べます。比べ方は、「学ぶ」がそっくりな文字を探すのに使うのと同じ種類の、絵と絵の距離です。文字自身の画から作った 3,160 個のテスト用の絵では、正しいかなが第 1 候補になったのは、きれいな絵で 98.9%、雑な絵で 94.3% でした。表示される 5 つの候補に入ったのは 99.2% 以上です。1 回の読み取りにかかる時間は、初代 DS で推定 18&nbsp;ms です。本物の手書きは手で試しただけで、測定はしていません。</p>
+
+      <figure class="fig" id="f-write">
+        <div class="screens c4">
+          <div class="shot"><img src="img/dsi/write.webp" width="540" height="824" alt="「書く」モード。黒い LCD の上画面に緑のハンター文字で はんたー、タッチスクリーンには 12 キーのパッド。" loading="lazy"><span>パッド</span></div>
+          <div class="shot"><img src="img/dsi/pen.webp" width="540" height="824" alt="ペン。枠の中にタッチペンで書いた文字と、その横に上位 5 つの候補（1 位は は）。" loading="lazy"><span>ペン</span></div>
+          <div class="shot"><img src="img/dsi/stickers.webp" width="540" height="824" alt="ステッカーの画面。ともだち、tomodachi、Friend を Manga スタイルで表示。スタイルと色の選択肢、SAVE PNG ボタン付き。" loading="lazy"><span>ステッカー</span></div>
+          <div class="shot"><img src="img/dsi/license.webp" width="540" height="824" alt="ライセンスの画面（My License）。ハンター文字の名前と、3 つの試験スタンプが入った Hunter License のカード。" loading="lazy"><span>ライセンス</span></div>
+        </div>
+        <figcaption>図 # — 「書く」のパッド、ペン、ステッカーの画面と、「学ぶ」の試験でもらえるライセンス。ライセンスの名前はテスト用の名前です。</figcaption>
+      </figure>
+
+      <figure class="fig" id="f-sticker">
+        <div class="fig-media fig-small">
+          <img class="px2" src="img/dsi/sticker_dsi.webp" width="229" height="103" alt="ステッカー。オレンジ色の単語カードにハンター文字で ありかと（arikato）、下に hxhtranslator.com のフッター。" loading="lazy">
+        </div>
+        <figcaption>図 # — 実機の DSi で初めて保存したステッカーを、SDカードから読み戻したもの（229&nbsp;×&nbsp;103、2× で表示）。DS 側の PNG 書き出しと、DSi の SDカードドライバーを通っています。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="learn">「学ぶ」: なぞる、試験、パズル</h2>
+      <p>スマホでは、「指でなぞる」はずっと「あとでやる」機能でした。タッチペンがあれば、それが「学ぶ」の中心になります。<strong>なぞる</strong>（Trace it）は、画に番号の付いた薄い文字を表示します。それをなぞると、1 画ごとに、文字自身の画からどれだけずれたかで採点されます（平均と、画の両端で）。スタンプ 3 つには、誤差がフォントサイズの 3.2% 以下でなければなりません。そっくりな別の文字は、完璧に書いてもスタンプ 1 つまでです。<strong>ハンター試験</strong>は 3 段階で出題されます（文字からかな、かなから文字、単語まるごと）。まちがいの選択肢は、その文字の本当のそっくりさんから選ばれ、合格すると上のライセンスがもらえます。</p>
+      <p><strong>今日のパズル</strong>は、1 日 1 語を、1 文字ずつ解読していくパズルです。<strong>パズルラン</strong>（Puzzle Run）は、あとからオーナーの要望で加わりました。3 回まちがえるまで次々と単語が出てきて、進むほど難しくなります。</p>
+
+      <figure class="fig table" id="t-run">
+        <figcaption>表 # — パズルランの難しさの上がり方。どの項目も決して易しくならないことを、テストで確かめています。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th class="num">解いた語数</th><th class="num">レベル</th><th class="num">単語の長さ</th><th>まちがいの選択肢</th><th>ローマ字表示</th><th>1 文字の制限時間</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0–2</td><td class="num">1</td><td class="num">1–2</td><td>似ていない</td><td>あり</td><td>なし</td></tr>
+            <tr><td class="num">3–5</td><td class="num">2</td><td class="num">2–3</td><td>少し似ている</td><td>あり</td><td>なし</td></tr>
+            <tr><td class="num">6–9</td><td class="num">3</td><td class="num">2–3</td><td>もっと似ている</td><td>あり</td><td>なし</td></tr>
+            <tr><td class="num">10–14</td><td class="num">4</td><td class="num">3–4</td><td>いちばん似た 10 個</td><td>なし</td><td>なし</td></tr>
+            <tr><td class="num">15 以上</td><td class="num">5+</td><td class="num">3–5</td><td>いちばん似た 6 個</td><td>なし</td><td>10&nbsp;秒。1 語ごとに ½&nbsp;秒ずつ短くなり、最短 4&nbsp;秒</td></tr>
+          </tbody>
+        </table></div>
+      </figure>
+
+      <figure class="fig" id="f-learn">
+        <div class="screens c4">
+          <div class="shot"><img src="img/dsi/chart.webp" width="540" height="824" alt="上画面に「学ぶ」のハンター文字の表。く が選ばれていて、タッチスクリーンにはその例の単語。" loading="lazy"><span>文字の表</span></div>
+          <div class="shot"><img src="img/dsi/trace.webp" width="540" height="824" alt="なぞる。タッチペンでなぞった文字、3 つのスタンプ、緑の PASS ボタン。" loading="lazy"><span>なぞる</span></div>
+          <div class="shot"><img src="img/dsi/exam.webp" width="540" height="824" alt="ハンター試験の結果カード。" loading="lazy"><span>試験</span></div>
+          <div class="shot"><img src="img/dsi/run.webp" width="540" height="824" alt="レベル 5 のパズルラン。解読する 3 文字の単語、ビートルのライフ 3 つ（1 つは失っている）、4 つのかなの選択肢、時間のバー。" loading="lazy"><span>パズルラン</span></div>
+        </div>
+        <figcaption>図 # — 「学ぶ」。答えは本体の前面ボタンの位置に並んでいるので、どの画面もボタンでもタッチペンでも遊べます。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="reader">133&nbsp;MHz の ARM9 で読む</h2>
+      <p>リーダーは、小さな畳み込みニューラルネットワークです（1 行をどう読むかは「<a href="index-ja.html#read">しくみ</a>」の記事で紹介しています）。中の数字は int8、つまり 1 つ 1 バイトで記録され、このプロジェクトのエンジンは整数の計算だけでそれを動かします。このエンジンはもともと ESP32 マイコン向けに、標準ライブラリなしの Rust で書かれていたので、DS 向けにもそのままコンパイルできました。問題は速度でした。</p>
+      <p>スマホや PC は、たくさんの小さな数を一度に掛け算する命令を使って、ネットワークを速く動かします。DS の ARM9 には、その命令がありません。かわりにあるのが <code>SMLAxy</code> です。レジスタの 16 ビットの半分どうしを掛けて、結果を足すところまでを一度にやる命令です。トラック E は、これを中心に 1×1 畳み込みのカーネルを書きました。リーダーの仕事の大半をこなす層です。このカーネルは一度に 2 出力 × 4 チャンネルを計算し、長さは 508 バイト。ARM9 のチップ内にある小さな命令メモリに置かれ、メインメモリを待たずに動きます。結果はすべて<strong>ビット単位で一致</strong>しなければなりません。PC と同じバイト、つまりすべての点数の最後の桁まで同じということです。</p>
+
+      <p>エミュレーターでの最初の試みでは、読み取りが終わりませんでした。画面は 5 分間 READING（読み取り中）のままでした。原因は遅さではありません。リーダーがスタックをどれだけ使うかを測るツールは、使っていないスタックを決まった模様で塗りつぶして測ります。コンパイラーがこのツールをインライン展開したあと、ツールは呼び出し元がまだ使っている変数の上まで塗ってしまったのです。リーダーが次に使ったポインタはその模様 <code>0xA5C35A3C</code> で、プロセッサは例外（フォールト）を起こしました。例外ハンドラがないので、画面はただ固まりました。PC のテストでは、これは見えませんでした。DS 以外では、この塗りつぶしは何もしないからです。これを直すとリーダーは動き、PC と完全に一致しました。出力の点数 17,472 個中 17,472 個です。</p>
+
+      <figure class="fig" id="f-readtime">
+        <div class="fig-box"><div class="chart-host" id="chart-read"></div></div>
+        <figcaption>図 # — melonDS エミュレーターで 1 行を読む時間（初代 DS モード、67&nbsp;MHz）。エミュレーターの時間計測はおおまかで、コストモデルの予測の約 1.5 倍かかりました。DSi のクロックはその 2 倍です。</figcaption>
+      </figure>
+
+      <p>カーネルのおかげで、Web版の「高速」リーダーは 2.7 倍速くなりました。それでも 1 行 11 秒では遅すぎます。カーネルを速くするだけでは限界があり、リーダーそのものを小さくする必要がありました。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="dsi-v1">dsi_v1: 計算量を 5 分の 1 に</h2>
+      <p>トラック E は、カーネルの実測速度から作ったコストモデルで、小さなリーダーの候補をいくつか見積もりました。そして、実績のあるもののうち、いちばんコストの低いものを勧めました。同じ MobileNetV4 ネットワークの最初の 3 ステージ（完全なリーダーは 4 ステージ）で、高さは 48 ピクセルではなく 32 ピクセルです。このプロジェクトでは、この形をこれまでに 2 回学習させていました。今回は v6 のデータで学習させたので、数字と一部の記号も読めます。そのあと int8 向けにファインチューニングし、Web版のリーダーと同じ変換チェーンを通しました。このチェーンでは、Espressif の int8 シミュレータとビット単位で一致するかを確かめます。</p>
+
+      <figure class="fig table" id="t-dsiv1">
+        <figcaption>表 # — DSi リーダーと、Web版の「高速」リーダーの比較。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th></th><th class="num">「高速」（Web）</th><th class="num">dsi_v1</th></tr></thead>
+          <tbody>
+            <tr><td>ネットワーク</td><td class="num">MobileNetV4-small、4 ステージ</td><td class="num">最初の 3 ステージ</td></tr>
+            <tr><td>入力の行</td><td class="num">48 × 768 px</td><td class="num"><strong>32 × 512 px</strong></td></tr>
+            <tr><td>パラメータ数</td><td class="num">323,995</td><td class="num"><strong>96,923</strong></td></tr>
+            <tr><td>1 行あたりの積和</td><td class="num">154.19 M</td><td class="num"><strong>30.62 M</strong></td></tr>
+            <tr><td>モデルファイル（int8）</td><td class="num">339,552 B</td><td class="num"><strong>103,856 B</strong></td></tr>
+            <tr><td>作業メモリ</td><td class="num">368,640 B</td><td class="num"><strong>163,840 B</strong></td></tr>
+            <tr><td>PC で 1 行（WebAssembly）</td><td class="num">5.96 ms</td><td class="num"><strong>1.24 ms</strong></td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">学習は RTX 4080 SUPER 1 枚で約 30 分でした。内訳は 2 段階のファインチューニング（12,000 ステップと 3,000 ステップ）と、4,000 ステップの量子化を考慮した学習（QAT）です。int8 モデルは、DS 向けを含むエンジンのすべてのビルドで、テスト行 512 本中 512 本が Espressif のシミュレータと一致します。</p>
+      </figure>
+
+      <figure class="fig" id="f-cer">
+        <div class="fig-box"><div class="chart-host" id="chart-cer"></div></div>
+        <figcaption>図 # — int8 での文字誤り率。アプリ自身の切り出し処理を通して測定しました（低いほど良い）。DSi リーダーは、「高速」リーダーが見たことのないデータで学んだので、数字を含む行でのまちがいは約半分です。ふつうの行では少し負けています。テストセットはすべて生成した画像です。</figcaption>
+      </figure>
+
+      <p>増えたまちがいの多くは、小さな濁点・半濁点です。高さ 32 ピクセルでは、か を が に変える点は数ピクセルの大きさしかありません。そのため、が → か や ぱ → ば が典型的なまちがいで、単語の間の空白の見落としもあります。それでも本体の上では、この引き換えには価値があります。</p>
+
+      <figure class="fig" id="f-ab">
+        <div class="fig-media fig-small">
+          <img class="melon" src="img/dsi/melonds_read_ab.webp" width="258" height="440" alt="DSi リーダーの速度テストを実行中の melonDS のウィンドウ。BIT-EXACT 11648/11648 logits、ARM9 2.38 s、scalar 6.06 s、speed-up ×2.53 と、層ごとの時間の棒グラフ。" loading="lazy">
+        </div>
+        <figcaption>図 # — melonDS での速度テスト。DSi リーダーは ARM9 カーネルありで 2.38&nbsp;秒、なしで 6.06&nbsp;秒。11,648 個の点数すべてでビット単位で一致しています。積和の回数は 5 分の 1 で、「高速」リーダーの 4.6 倍の速さです。</figcaption>
+      </figure>
+
+      <p>速度テストの層ごとの内訳から、次の標的が見えました。1×1 畳み込みは積和 1 回あたり 3.7 プロセッササイクル、それより大きい畳み込みは 4.2 サイクルで動いていました。ところが、まだカーネルのない depthwise 畳み込みは 1 回あたり <strong>18.8 サイクル</strong>かかり、全体の時間の 4 分の 1 を占めていました。2 つ目のカーネルは、4 チャンネルを 32 ビットの 1 回の読み込みで取り出し、2 つのマスクで 16 ビットの半分ずつに分けます。アンパック（展開）はしません。積和 4 回に 12 命令で、命令数から数えると 1 回あたり約 3.5 サイクルです。ランダムな層 5,000 個で、食い違いはありませんでした。</p>
+      <p>もう 1 つの変更で、読み取り中も画面が止まらなくなりました。1 回の読み取りを一気にやると、アプリが 1〜2 秒固まってしまいます。そこでリーダーは、積和約 50万回ずつの小さな区切り（バンド）で動き、毎フレーム約 12&nbsp;ms で止まるようにしました。DSi リーダーは 86 バンドで、バンドが終わるごとにプログレスバーが伸びていきます。</p>
+
+      <figure class="fig" id="f-ops">
+        <div class="fig-box"><div class="chart-host" id="chart-ops"></div></div>
+        <figcaption>図 # — ARM9 での積和 1 回あたりのプロセッササイクル数、層の種類別（melonDS 上の DSi リーダー）。depthwise カーネルの 3.5 は命令数から数えた推定値で、実機ではまだ測っていません。</figcaption>
+      </figure>
+
+      <!-- ============================================================ -->
+      <h2 id="camera">カメラで読む</h2>
+      <p>DSi のカメラは、リーダーへの入力をほとんどタダでくれます。写真は明るさと色に分かれて届き、明るさの部分がちょうど、リーダーのほしいグレーの画像なのです。カメラのドライバーは、ライブのプレビューをメインメモリの 3 つのバッファに流し込むので、カメラがアプリを待つことはありません。640&nbsp;×&nbsp;480 の静止画も、必要なときに撮れます。メモリはオンのときに 888&nbsp;KB 使い、オフのときはまったく使いません。</p>
+
+      <figure class="fig" id="f-read">
+        <div class="fig-media"><img src="img/dsi/read_host.webp" width="1576" height="784" alt="3 組の画面。ハンター文字の行をガイドバーに合わせるところ、プログレスバーを出して読んでいるところ、そして結果: はんたー しけん（hantā shiken）。" loading="lazy"></div>
+        <figcaption>図 # — 狙う、読む、結果。看板を描くテスト用のカメラを使って、PC 上で描画しました。この画像の「READ IN ~0.7&nbsp;s」は推定値で、測定値ではありません。</figcaption>
+      </figure>
+
+      <ol class="learn-steps">
+        <li><strong>狙う。</strong>プレビューは、ガイドバーの外側が暗くなります。6 フレームごとにバーの内側をさっと調べて、シグナルバーとヒント（「Get closer」＝もっと近づける、「More light」＝もっと明るく）を更新します。</li>
+        <li><strong>A を押す。</strong>アプリは静止画を撮り、そこからバーの部分を切り出します。切り出した画像は、Webアプリが行を準備するのとまったく同じやり方で縮小され、余白を足して 32&nbsp;×&nbsp;512 になります。テストでは Web版自身の JavaScript を Node で動かし、同じバイトになることを確かめています。</li>
+        <li><strong>読む。</strong>カメラがオフになり、リーダーがプロセッサとメモリをひとり占めします。リーダーはバンドごとに動き、プログレスバーでは約 37 フレームかかります。</li>
+        <li><strong>結果。</strong>吹き出しに、かな、ローマ字、そして知っている単語なら意味が出ます。リーダーの自信が 60% 未満のかなには下線が付き、タップすると次点の候補が見られます。SAVE TO LOG（記録に保存）を押すと、その行が SDカードのテキストファイルに追加されます。</li>
+      </ol>
+      <p>上から下へ書かれた行には、もう 1 つ工夫が必要でした。小さな縦書き用のリーダーがないからです。アプリは、インクのある場所をもとに列を 1 文字ずつに切り分け、それぞれをまっすぐ立てたまま横に並べます。それを横書き用のリーダーが読みます。</p>
+      <p>ドライバーを書いていると、DS のライブラリにいくつか意外な点が見つかりました。カメラの番号が逆（外側が 1）であること、外側のカメラの映像を左右反転すること、そしてカメラのセンサーが一度も応答しないと、DS の 2 つ目のプロセッサが、メインプロセッサからは何も手が届かないところで永遠に待ち続けることです。</p>
+      <p>このどれも、エミュレーターではテストできません。エミュレーターが DSi のカメラを再現できるとは知られていないからです。そのため、カメラのコードが PC 以外で初めて動いたのは、オーナーの DSi の上でした。返ってきた報告は「全部動きます」。プレビュー、静止画、ランプが消えること、横書きと縦書きの行を読むこと、そして SDカードの記録です。</p>
+
+      <!-- ============================================================ -->
+      <h2 id="status">現状</h2>
+      <p>ここまでのことはすべて、2026年11月26日の 1 日の出来事です。最初の機能リストから、オーナーが DSi で試した ROM まで。最終的な ROM は 3.8&nbsp;MB、バージョン 0.1.0 で、アプリ全体が動きます。ビートル、「読む」、ペン付きの「書く」、パズルラン付きの「学ぶ」、そして SDカードへの保存です。</p>
+      <ul class="limits">
+        <li><strong>まだ公開していません。</strong>公開用のページを準備中です。公開したら、ここにリンクを載せます。</li>
+        <li><strong>DSi での速度は、まだ記録していません。</strong>オーバーレイには表示されますが、これまでのテストは、ちゃんと動くかどうかを見るものでした。コストモデルでは、DSi モードで 1 行約 0.6–0.7&nbsp;秒です。エミュレーターでは、初代 DS の半分のクロックで、depthwise カーネルを入れる前に 2.38&nbsp;秒でした。</li>
+        <li><strong>SDカードの写真を読む機能</strong>は予定していて、今はグレーアウトしています。行さがしAIを、時間のかかるバックグラウンド処理として使うことになります。</li>
+        <li>初代 DS（カメラがないので「読む」はグレーアウト）と 3DS では、<strong>まだテストしていません</strong>。</li>
+        <li><strong>ここにある精度の数字は、すべて生成した画像でのものです。</strong>ペンと「なぞる」のスタンプは、本物の手書きではなく、合成した絵で調整しています。</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <h2 id="words">覚えておきたい言葉</h2>
+      <dl class="glossary">
+        <div><dt>ROM</dt><dd>DS のプログラムとそのデータが入ったファイル。自作ソフトの ROM は、TWiLight Menu++ などのメニューを通して SDカードから動かす。</dd></div>
+        <div><dt>自作ソフト（Homebrew）</dt><dd>ゲーム機のメーカーではなく、ユーザーが作った、そのゲーム機用のプログラム。</dd></div>
+        <div><dt>melonDS</dt><dd>PC 用の DS・DSi エミュレーター。テストには便利だが、時間は正確ではなく、3D の描き方も本物のチップとは違う。</dd></div>
+        <div><dt>ARM9</dt><dd>DS のメインプロセッサ。もう 1 つの遅いプロセッサ（ARM7）が、サウンド、タッチ、Wi-Fi を受け持つ。</dd></div>
+        <div><dt>MAC</dt><dd>積和演算 1 回。ニューラルネットワークの基本の計算。DSi リーダーは 1 行に 3060万回を必要とする。</dd></div>
+        <div><dt>int8</dt><dd>ネットワークの数字を 1 つ 1 バイトで記録し、計算を整数で行うこと。</dd></div>
+        <div><dt>カーネル</dt><dd>1 種類の層のために、1 つのプロセッサ向けに書いた、手で調整した小さなコード。</dd></div>
+        <div><dt>ビット単位で一致</dt><dd>ほぼ同じ数字ではなく、基準とまったく同じバイトを出すこと。</dd></div>
+        <div><dt>NitroFS</dt><dd>ROM の中のファイルシステム。データを起動時にまとめてではなく、必要なときに読み込める。</dd></div>
+      </dl>
+
+      <h2 id="more">さらに詳しく</h2>
+      <p>DSi のリーダーは、Web版のリーダーと同じファミリーの、小さなメンバーです。Web版のリーダーをどう学習させ、量子化し、確かめているかは詳細解説にあります。DSi のモデルそのものは Hugging Face にあります。</p>
+      <p class="cta-row"><a class="button" href="https://huggingface.co/KokkakNiphon/hxh-ocr/tree/main/int8/dsi_v1">dsi_v1 モデル →</a> <a class="button ghost" href="deep-dive-ja.html">詳細解説を読む</a> <a class="button ghost" href="../index-ja.html">Web版のリーダーを試す</a></p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="foot-inner">
+    <p>オープンソース：OCR のコードは <a href="https://github.com/KokkakNiphon/hxh-ocr">GitHub</a>、モデルは DSi リーダーも含めて <a href="https://huggingface.co/KokkakNiphon/hxh-ocr">Hugging Face</a> で公開しています（Apache-2.0、クレジット表記あり）。DSi アプリ自体のコードは公開していません。</p>
+    <p>HxH OCR と HxH Translator は、ファンによるプロジェクトです。『HUNTER×HUNTER』の権利は冨樫義博氏、集英社および制作スタジオに帰属し、ニンテンドーDSiは任天堂の商標です。これらのプロジェクトは、そのいずれとも一切関係ありません。この記事の画面はすべて、アプリが描いたものか、エミュレーターで撮ったものです。</p>
+  </div>
+</footer>
+
+<script type="module" src="blog.js"></script>
+<script type="module" src="dsi.js"></script>
+</body>
+</html>

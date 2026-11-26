@@ -1,0 +1,96 @@
+/* The DSi post: screen galleries, the C/Rust split, the top screen's layers. On top of blog.css and deep.css. */
+:root { --sky: #4fc0e3; --go: #2bd567; }
+
+.button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-strong); }
+.button.ghost:hover { border-color: var(--text); color: var(--text); background: transparent; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.limits li { margin: 12px 0; }
+
+/* the app's own screens: top screen over touch screen, 2x, in an ink frame */
+.screens {
+  display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 16px;
+  padding: 18px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface);
+}
+.screens.c4 { --cols: 4; }
+.shot { margin: 0; display: grid; gap: 8px; justify-items: center; align-content: start; }
+.shot img { width: 100%; max-width: 270px; }
+.shot span { font: 500 11px/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); text-align: center; }
+@media (max-width: 640px) {
+  .screens { gap: 10px; padding: 12px; }
+  .screens.c4 { --cols: 2; }
+  .shot span { font-size: 10px; }
+}
+
+/* small captures (melonDS windows, the sticker) shown at their own size or a whole multiple */
+.fig-small { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 18px; padding: 18px; }
+.fig-small .shot img { width: auto; max-width: 100%; }
+.fig-small img.px2 { width: 458px; image-rendering: pixelated; }
+.fig-small img.melon { width: 258px; }
+
+/* who owns what: C (BlocksDS) and Rust */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.split-col { border: 1px solid var(--line-strong); border-radius: 4px; padding: 14px 16px 6px; background: var(--bg); }
+.split-col.rust { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--bg)); }
+.split-h { margin: 0; font: 600 15px/1.3 var(--head); color: var(--text); }
+.split-s { margin: 2px 0 10px; font: 400 12px/1.4 var(--mono); color: var(--muted); }
+.split-col ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.split-col li { margin: 0 0 8px; }
+.split-mid { display: grid; align-content: center; gap: 14px; font: 400 11.5px/1.45 var(--mono); color: var(--muted); text-align: center; }
+.split-mid span { display: block; padding: 8px 6px; border-top: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); }
+.split-mid .to-r::after { content: " →"; color: var(--text); }
+.split-mid .to-l::before { content: "← "; color: var(--text); }
+@media (max-width: 720px) {
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .split-mid { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; }
+  .split-mid .to-r::after { content: " ↓"; }
+  .split-mid .to-l::before { content: "↑ "; }
+}
+
+/* the top screen's layers, front to back, before and after the hardware fix */
+.lyr-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.lyr { display: grid; gap: 6px; align-content: start; }
+.lyr-h { margin: 0 0 4px; font: 600 14px/1.35 var(--head); color: var(--text); }
+.layer {
+  position: relative; padding: 9px 12px 9px 14px; border: 1px solid var(--line-strong); border-radius: 4px;
+  background: var(--bg); font-size: 13.5px; line-height: 1.45; color: var(--text-2);
+}
+.layer b { display: block; font: 600 12px/1.4 var(--mono); color: var(--text); letter-spacing: 0.02em; }
+.layer.d3 { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }
+.layer.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, var(--bg)); }
+.layer.ok { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 9%, var(--bg)); }
+.lyr-r { margin: 4px 0 0; font: 500 12px/1.45 var(--mono); }
+.lyr-r.bad { color: var(--bad); }
+.lyr-r.ok { color: var(--ok); }
+.lyr-axis { margin: 10px 0 0; font: 400 11.5px/1.4 var(--mono); color: var(--muted); }
+@media (max-width: 600px) { .lyr-cmp { grid-template-columns: minmax(0, 1fr); } }
+
+/* a pass/fail cell */
+table.data td.bad { color: var(--bad); }
+table.data td.ok { color: var(--ok); font-weight: 600; }
+
+/* the hardware at a glance */
+.hw { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 4px; margin: 26px 0 30px; }
+.hw > div { padding: 14px 14px 12px; display: grid; gap: 3px; align-content: start; }
+.hw > div:not(:nth-child(3n + 1)) { border-left: 1px solid var(--line); }
+.hw > div:nth-child(n + 4) { border-top: 1px solid var(--line); }
+.hw b { font: 600 19px/1.25 var(--head); color: var(--text); letter-spacing: -0.01em; }
+.hw span { font-size: 13.5px; line-height: 1.45; color: var(--text-2); }
+@media (max-width: 640px) {
+  .hw { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hw > div:not(:nth-child(3n + 1)) { border-left: 0; }
+  .hw > div:nth-child(even) { border-left: 1px solid var(--line); }
+  .hw > div:nth-child(n + 3) { border-top: 1px solid var(--line); }
+}
+
+.chart-host { min-height: 120px; }
+
+/* the glossary and numbered steps, as in explain.css (not loaded here) */
+.learn-steps li { margin: 8px 0; }
+.glossary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 18px 0 26px; }
+.glossary div { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; background: var(--surface); }
+.glossary dt { font: 600 14.5px var(--head); color: var(--text); }
+.glossary dd { margin: 2px 0 0; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+@media (max-width: 640px) { .glossary { grid-template-columns: minmax(0, 1fr); } }
+
+/* keeps a name glued with &nbsp; from being broken inside a Thai word */
+.nw { white-space: nowrap; }
