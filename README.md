@@ -20,6 +20,11 @@ models. Read points your camera at Hunter script and reads it, Write types kana 
 a 12-key pad, and Learn teaches the alphabet with a quiz. The app's own code is not in this
 repository.
 
+**On a Nintendo DSi:** [HxH Translator for DSi](https://kokkakniphon.itch.io/hxh-translator-dsi), a free homebrew port on itch.io
+with the same three modes. Read takes a picture with the DSi's camera and reads it with the small
+`dsi_v1` reader on the console's own processor ([how it was made](https://hxh-ocr.kokkakniphon.workers.dev/blog/dsi)). Its code is not public
+either.
+
 ![The browser pipeline on a generated page: every detected line boxed and numbered in reading order, vertical columns in purple](web/blog/img/pipeline/05_boxes.webp)
 
 *The browser pipeline on a generated validation page. Each box is one detected line, numbered
@@ -84,7 +89,7 @@ images.
    always uses Fast.
 
    A much smaller reader, `dsi_v1` (the first three stages of the tiny backbone, 32 × 512 px,
-   30.6 M MACs a line, 104 KB in int8), was made for the Nintendo DSi port of HxH Translator. Its
+   30.6 M MACs a line, 104 KB in int8), was made for [HxH Translator for DSi](https://kokkakniphon.itch.io/hxh-translator-dsi). Its
    weights are in the model repo on Hugging Face (`int8/dsi_v1`); the port's code is not public.
 
    ![Animation: the reader steps along a strip of Hunter script; each step's answer is coloured, repeats are glued together, blanks are dropped, and the reading grows to ぐりーどあいらんど](docs/readme/ctc_reading.gif)
