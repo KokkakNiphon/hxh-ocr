@@ -52,7 +52,7 @@ pub struct PageConfig {
     pub long_min: usize,
     pub long_max: usize,
     pub portrait_prob: f64,
-    pub mode_p: [f64; 8], // manga, frame, doc, web, card, lyric, tv (v5), promo (v6)
+    pub mode_p: [f64; 9], // manga, frame, doc, web, card, lyric, tv (v5), promo (v6), title (v7)
     pub vertical_prob: f64, // base share of vertical groups (scaled per element kind)
     pub em_min: f64,        // nominal glyph size, px per em (a line's tight height is ~0.9-1.1 em)
     pub em_max: f64,
@@ -76,6 +76,9 @@ pub struct PageConfig {
     pub ruby_prob: f64,     // share of horizontal free / sign / caption Hunter groups with a kana reading guide (furigana) above
     pub sticker_prob: f64,  // share of free-standing Hunter text with a thick outline (white around dark ink, or the inverse) and its soft shadow
     pub small_mark_prob: f64, // share of Hunter text styles with small dakuten dots (0.55-1 stroke widths) tucked at the corner
+    // v7 (the cross, `×`): all off by default
+    pub v7: bool,           // the title-card scene (9th mode weight) and cross lines; needs v6
+    pub cross_prob: f64,    // share of the inline lines (`inline_prob`) written as titles with crosses ("A×と×B")
 }
 
 impl Default for PageConfig {
@@ -84,7 +87,7 @@ impl Default for PageConfig {
             long_min: 512,
             long_max: 1024,
             portrait_prob: 0.6,
-            mode_p: [0.5, 0.21, 0.14, 0.15, 0.0, 0.0, 0.0, 0.0],
+            mode_p: [0.5, 0.21, 0.14, 0.15, 0.0, 0.0, 0.0, 0.0, 0.0],
             vertical_prob: 0.11,
             em_min: 11.0,
             em_max: 80.0,
@@ -106,6 +109,8 @@ impl Default for PageConfig {
             ruby_prob: 0.0,
             sticker_prob: 0.0,
             small_mark_prob: 0.0,
+            v7: false,
+            cross_prob: 0.0,
         }
     }
 }
@@ -139,7 +144,7 @@ pub struct Page {
     pub photo: bool, // photographed off a screen (v5)
 }
 
-pub const LAYOUTS: [&str; 8] = ["manga", "frame", "doc", "web", "card", "lyric", "tv", "promo"];
+pub const LAYOUTS: [&str; 9] = ["manga", "frame", "doc", "web", "card", "lyric", "tv", "promo", "title"];
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Kind {
@@ -524,12 +529,46 @@ pub(crate) fn make_inline_line_v6(rng: &mut Rng, sampler: &TextSampler, fonts: &
         return None;
     }
     let parts = crate::digits::inline_parts(rng, &kana);
+    lettered_line(rng, fonts, st, em, max_extent, min_px, &parts, false)
+}
+
+/// v7: a title line with crosses (`digits::cross_parts`): 1-4 kana words joined by `×` the way
+/// the anime's episode titles are ("A×と×B", "A×B×C"), the crosses drawn as strokes in the
+/// line's weight (70%) or set in the display face of the line's digits when it has a `×`.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn make_cross_line_v7(rng: &mut Rng, sampler: &TextSampler, fonts: &FontBank, st: &TextStyle, em: f64, max_len: usize, max_extent: f64, min_px: f64) -> Option<LineG> {
+    let budget = max_len.clamp(3, 14);
+    let w_max = ((budget as f64 / 2.2).ceil() as usize).clamp(1, 6);
+    let words: Vec<String> = (0..4)
+        .map(|i| {
+            let hi = if i < 2 { w_max } else { (w_max / 2).max(1) };
+            sampler.sample(rng, 1, hi).replace(' ', "")
+        })
+        .collect();
+    if words.iter().all(|w| w.is_empty()) {
+        return None;
+    }
+    let parts = crate::digits::cross_parts(rng, &words);
+    lettered_line(rng, fonts, st, em, max_extent, min_px, &parts, true)
+}
+
+/// A horizontal line of Hunter kana with digits / punctuation (and, v7, crosses) written into it:
+/// the non-kana parts drawn as strokes in the glyphs' own style (55%; 70% for cross lines) or set
+/// in a display font matched to the lettering. Records each glyph's extent (`cells`).
+#[allow(clippy::too_many_arguments)]
+fn lettered_line(rng: &mut Rng, fonts: &FontBank, st: &TextStyle, em: f64, max_extent: f64, min_px: f64, parts: &[(bool, String)], cross: bool) -> Option<LineG> {
     let raw: String = parts.iter().map(|p| p.1.as_str()).collect();
-    let fd = if fonts.faces.is_empty() || rng.chance(0.55) { None } else { sample_font_digits(rng, fonts, st, em) };
+    let p_strokes = if cross { 0.7 } else { 0.55 };
+    let fd = if fonts.faces.is_empty() || rng.chance(p_strokes) { None } else { sample_font_digits(rng, fonts, st, em) };
+    // a face without a cross: the whole line in strokes
+    let fd = fd.filter(|fd| !cross || fonts.faces[fd.face].covers("\u{d7}"));
     let l = match fd {
         None => {
             // strokes: one layout pass over the whole text
-            let ds = crate::digits::sample_style(rng, st.sw);
+            let mut ds = crate::digits::sample_style(rng, st.sw);
+            if cross {
+                crate::digits::sample_cross(rng, &mut ds, st.sw);
+            }
             let mut cells = Vec::new();
             let strokes = crate::render::layout_ex(&raw, st, rng, false, Some(&ds), Some(&mut cells));
             if strokes.is_empty() {
@@ -544,7 +583,7 @@ pub(crate) fn make_inline_line_v6(rng: &mut Rng, sampler: &TextSampler, fonts: &
             let mut cells: Vec<(char, f64, f64)> = Vec::new();
             let mut pen = 0.0;
             let mut raw = String::new();
-            for (hxh, text) in &parts {
+            for (hxh, text) in parts {
                 if *hxh {
                     let mut kc = Vec::new();
                     let strokes = crate::render::layout_ex(text, st, rng, false, None, Some(&mut kc));
@@ -582,9 +621,16 @@ pub(crate) fn make_inline_line_v6(rng: &mut Rng, sampler: &TextSampler, fonts: &
     Some(l)
 }
 
-/// A horizontal Hunter line with digits inline: v6's builder when the config asks, else v5's.
+/// A horizontal Hunter line with digits inline: v6's builder when the config asks, else v5's;
+/// with v7 a share of them (`cross_prob`) are titles with crosses instead.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn inline_line(rng: &mut Rng, sampler: &TextSampler, fonts: &FontBank, cfg: &PageConfig, st: &TextStyle, em: f64, max_len: usize, max_extent: f64) -> Option<LineG> {
+    if cfg.v7
+        && rng.chance(cfg.cross_prob)
+        && let Some(l) = make_cross_line_v7(rng, sampler, fonts, st, em, max_len, max_extent, cfg.min_stroke_px)
+    {
+        return Some(l);
+    }
     if cfg.v6 {
         make_inline_line_v6(rng, sampler, fonts, st, em, max_len, max_extent, cfg.min_stroke_px)
     } else {
@@ -2503,7 +2549,8 @@ pub fn make_page(rng: &mut Rng, sampler: &TextSampler, fonts: &FontBank, cfg: &P
     let mode = if fonts.faces.is_empty() {
         rng.weighted(&cfg.mode_p[..3]) // the web layout (and the v5 scenes) are all fonts
     } else {
-        rng.weighted(&cfg.mode_p)
+        // the title scene's weight only when set, so older sets draw exactly as before
+        rng.weighted(if cfg.mode_p[8] > 0.0 { &cfg.mode_p[..] } else { &cfg.mode_p[..8] })
     };
     let empty = rng.chance(cfg.empty_prob);
     let mut c = Composer {
@@ -2660,7 +2707,8 @@ pub fn make_page(rng: &mut Rng, sampler: &TextSampler, fonts: &FontBank, cfg: &P
         4 => crate::scenes::card_page(&mut c),
         5 => crate::scenes::lyric_page(&mut c),
         6 => crate::scenes::tv_page(&mut c),
-        _ => crate::scenes::promo_page(&mut c),
+        7 => crate::scenes::promo_page(&mut c),
+        _ => crate::scenes::title_page(&mut c),
     }
     if !empty || !fonts.faces.is_empty() {
         // Hunter-capable elements first (in kind order), then the foreign-only / icon extras, which
@@ -2746,7 +2794,7 @@ mod tests {
         let fonts = test_fonts();
         let sampler = TextSampler::new(&[]);
         let cfg = PageConfig {
-            v5: true, mode_p: [0.2, 0.1, 0.05, 0.05, 0.2, 0.2, 0.2, 0.0], photo_prob: 0.4, ui_neg_prob: 0.6, caption_prob: 0.4, inline_prob: 0.2,
+            v5: true, mode_p: [0.2, 0.1, 0.05, 0.05, 0.2, 0.2, 0.2, 0.0, 0.0], photo_prob: 0.4, ui_neg_prob: 0.6, caption_prob: 0.4, inline_prob: 0.2,
             long_min: 384, long_max: 800, ..Default::default()
         };
         let (mut nl, mut nf, mut photos) = (0, 0, 0);
@@ -2791,7 +2839,7 @@ mod tests {
         }
         let sampler = TextSampler::new(&[]);
         let cfg = PageConfig {
-            v5: true, v6: true, mode_p: [0.1, 0.1, 0.05, 0.05, 0.1, 0.1, 0.1, 0.4], photo_prob: 0.3, ui_neg_prob: 0.4, caption_prob: 0.3,
+            v5: true, v6: true, mode_p: [0.1, 0.1, 0.05, 0.05, 0.1, 0.1, 0.1, 0.4, 0.0], photo_prob: 0.3, ui_neg_prob: 0.4, caption_prob: 0.3,
             inline_prob: 0.5, ruby_prob: 0.5, sticker_prob: 0.4, small_mark_prob: 0.5, long_min: 384, long_max: 800, ..Default::default()
         };
         let ok: Vec<char> = crate::glyphs::glyph_set().vocab.iter().copied().chain(crate::digits::EXTRA.chars()).collect();
@@ -2824,6 +2872,57 @@ mod tests {
         }
         eprintln!("v6: {nl} lines, {nd} with digits / punctuation, {nr} reading guides, {promo} promo pages");
         assert!(nl > 100 && nd > 20 && nr > 10 && promo > 10, "lines {nl} digits {nd} ruby {nr} promo {promo}");
+    }
+
+    /// v7 (cross lines, title scene): reproducible, labelled quads disjoint and inside the image,
+    /// labels in the v7 vocab, foreign runs (but the reading guides) keep_margin away from every
+    /// labelled line, crosses in many lines and next to `ー` in some.
+    #[test]
+    fn v7_pages_keep_the_rules() {
+        let fonts = test_fonts();
+        if fonts.faces.is_empty() {
+            eprintln!("no fonts found: skipped");
+            return;
+        }
+        let sampler = TextSampler::new(&[]);
+        let cfg = PageConfig {
+            v5: true, v6: true, v7: true, mode_p: [0.1, 0.1, 0.05, 0.05, 0.1, 0.1, 0.1, 0.1, 0.3], photo_prob: 0.3, ui_neg_prob: 0.4,
+            caption_prob: 0.3, inline_prob: 0.5, cross_prob: 0.5, ruby_prob: 0.4, sticker_prob: 0.3, small_mark_prob: 0.3,
+            long_min: 384, long_max: 800, ..Default::default()
+        };
+        let x = crate::digits::CROSS;
+        let ok: Vec<char> = crate::glyphs::glyph_set().vocab.iter().copied().chain(crate::digits::EXTRA.chars()).chain([x]).collect();
+        let (mut nl, mut nx, mut nlong, mut title, mut title_x) = (0, 0, 0, 0, 0);
+        for i in 0..100u64 {
+            let a = make_page(&mut Rng::from_key(&[7, 1, i]), &sampler, fonts, &cfg);
+            let b = make_page(&mut Rng::from_key(&[7, 1, i]), &sampler, fonts, &cfg);
+            assert_eq!(a.pixels, b.pixels, "page {i} not reproducible");
+            title += (a.layout == "title") as usize;
+            let full = IRect { x0: 0, y0: 0, x1: a.w as i32, y1: a.h as i32 };
+            let mut acc = vec![0u8; a.w * a.h];
+            for l in &a.lines {
+                assert!(l.quad.iter().all(|p| p[0] >= -0.5 && p[1] >= -0.5 && p[0] <= a.w as f64 && p[1] <= a.h as f64), "page {i}: quad off the image");
+                assert!(l.text.chars().all(|c| c == ' ' || ok.contains(&c)), "page {i}: label {} outside the vocab", l.text);
+                let has_x = l.text.contains(x);
+                nx += has_x as usize;
+                nlong += l.text.contains(&format!("\u{30fc}{x}")) as usize;
+                title_x += (has_x && a.layout == "title") as usize;
+                let mut m = vec![0u8; a.w * a.h];
+                fill_convex_u8(&mut m, full, &l.quad, 1);
+                acc.iter_mut().zip(&m).for_each(|(x, y)| *x += y);
+            }
+            assert!(acc.iter().all(|&v| v <= 1), "overlapping quads on page {i} ({})", a.layout);
+            for f in &a.foreign {
+                for l in &a.lines {
+                    let k = if f.kind == "ruby" { 0.0 } else { cfg.keep_margin };
+                    let need = k * line_thickness(&f.quad).max(line_thickness(&l.quad)) * if a.photo { 0.5 } else { 1.0 } - 0.3;
+                    assert!(convex_dist(&f.quad, &l.quad) >= need, "page {i} ({}): {} {} '{}' too close to '{}'", a.layout, f.kind, f.script, f.text, l.text);
+                }
+            }
+            nl += a.lines.len();
+        }
+        eprintln!("v7: {nl} lines, {nx} with crosses ({nlong} with ー before one), {title} title pages ({title_x} title lines with crosses)");
+        assert!(nl > 100 && nx > 40 && nlong > 5 && title > 15 && title_x > 10, "lines {nl} crosses {nx} long {nlong} title {title} {title_x}");
     }
 
     #[test]
@@ -2865,7 +2964,7 @@ mod tests {
         // more mixing than the defaults, to stress the rule
         let cfg = PageConfig { long_min: 384, long_max: 800, foreign_prob: 0.35, mixed_prob: 0.3, ..Default::default() };
         let (mut nf, mut nl, mut ni, mut mixed_pages) = (0, 0, 0, 0);
-        let mut layouts = [0usize; 8];
+        let mut layouts = [0usize; 9];
         for i in 0..320u64 {
             let p = make_page(&mut Rng::from_key(&[11, 3, i]), &sampler, fonts, &cfg);
             layouts[LAYOUTS.iter().position(|&l| l == p.layout).unwrap()] += 1;

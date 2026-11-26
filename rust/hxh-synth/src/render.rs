@@ -294,10 +294,12 @@ pub fn layout_ex(text: &str, st: &TextStyle, rng: &mut Rng, vertical: bool, ds: 
     let small_scale = if rng.chance(0.65) { rng.uniform(0.55, 0.78) } else { 1.0 };
     let mut last_space = 0.0; // spacing added after the previous glyph
     let mut prev_extra = false;
+    let mut prev_cross = false; // v7: a cross keeps clear of the digits next to it
     for ch in text.chars() {
         if ch == ' ' {
             pen += (if st.mono { st.cell } else { 0.0 }) + rng.uniform(0.55, 1.1);
             prev_extra = false;
+            prev_cross = false;
             last_space = 0.0;
             continue;
         }
@@ -311,7 +313,10 @@ pub fn layout_ex(text: &str, st: &TextStyle, rng: &mut Rng, vertical: bool, ds: 
                     continue;
                 }
                 let ub = strokes_bbox(&strokes);
-                if prev_extra {
+                let is_x = ch == crate::digits::CROSS;
+                if prev_extra && (is_x || prev_cross) {
+                    pen += ds.gap.max(0.04) - last_space; // "3×3": tight, never touching
+                } else if prev_extra {
                     pen += ds.gap - last_space; // digit pairs sit tight, often touching
                 } else if st.mono {
                     pen += (st.cell - 0.95).max(0.0) / 2.0;
@@ -331,6 +336,7 @@ pub fn layout_ex(text: &str, st: &TextStyle, rng: &mut Rng, vertical: bool, ds: 
                 pen += ub[2] - ub[0] + sp;
                 last_space = sp;
                 prev_extra = true;
+                prev_cross = is_x;
                 placed.extend(strokes);
                 continue;
             }

@@ -71,12 +71,17 @@ images.
    | set | detector | readers | in the demo |
    |---|---|---|---|
    | `v4` (75 classes) | `det_v2`, 640 px, 350k params, 1.57 G MACs | `qat_v4_mnv4s_h48`, `_vert`: 323k params, 154 M MACs per line | the first models; `det_v2` stays in Fast |
-   | `tiny` (91 classes) | `det_tiny_v3_qat`: `det_v2` retrained with photo-style pages | `qat_fam_tiny_h48`, `_vert`: the v4 readers retrained | the readers of **Fast** (with `det_v2`) |
-   | `base` (91 classes) | `det_base_v1_qat`: MobileNetV4-small 1.0, 960 px, 1.18M params, 4.44 G MACs | `qat_fam_base_h48`, `_vert`: 1.18M params, 555 M MACs per line | **Accurate** |
+   | `tiny` (91 classes) | `det_tiny_v3_qat`: `det_v2` retrained with photo-style pages | `qat_fam_tiny_h48`, `_vert`: the v4 readers retrained | Fast's vertical reader |
+   | `base` (91 classes) | `det_base_v1_qat`: MobileNetV4-small 1.0, 960 px, 1.18M params, 4.44 G MACs | `qat_fam_base_h48`, `_vert`: 1.18M params, 555 M MACs per line | Accurate's detector and vertical reader |
+   | `tiny_v7` (92 classes) | `det_v2` | `qat_v7dh_tiny_h48`: the tiny reader retrained for numbers drawn in the lettering and the cross `×`, with the tiny vertical reader | **Fast** |
+   | `base_v7` (92 classes) | `det_base_v1_qat` | `qat_v7bs_base_h48`: the base reader, likewise, with the base vertical reader | **Accurate** |
 
    The family readers know 90 tokens: the 74 of the `v4` readers (hiragana, ー, space) and
-   `0-9 ! ? : / . -`. Fast also looks at overlapping tiles of a big photo; Accurate reads still
-   images in one pass at 960 px; the live camera always uses Fast.
+   `0-9 ! ? : / . -`. The v7 horizontal readers add a 91st, the cross `×` that separates the
+   words of the anime's episode titles ("A×ト×B"); in this alphabet the long-vowel mark `ー` is
+   a stretched X, so earlier readers read the cross as `ー`. Fast also looks at overlapping
+   tiles of a big photo; Accurate reads still images in one pass at 960 px; the live camera
+   always uses Fast.
 
    ![Animation: the reader steps along a strip of Hunter script; each step's answer is coloured, repeats are glued together, blanks are dropped, and the reading grows to ぐりーどあいらんど](docs/readme/ctc_reading.gif)
 
@@ -106,13 +111,15 @@ CER counts missed lines in full; raw output and the other combinations in
 
 | test pages | `v4` F1 | **Fast** F1 | **Accurate** F1 | Accurate CER h / v | Accurate CER of found lines |
 |---|---|---|---|---|---|
-| `pages_v5` val[900:1000]: photo-style (100 pages, 669 lines) | 75.5% | 76.3% | **83.2%** | 20.9% / 57.8% | 3.4% |
-| `pages_v3o` val[900:1000]: mixed pages (100 pages, 1,063 lines) | 85.8% | 86.7% | **91.3%** | 10.9% / 14.8% | 2.9% |
-| `pages_foreign_open`: mostly not Hunter script (150 pages, 697 lines) | 92.5% | 93.8% | **96.0%** | 4.7% / 7.5% | 1.9% |
-| `pages_v2` val[900:1000]: Hunter script only (100 pages, 1,657 lines) | 89.5% | 89.5% | **91.7%** | 8.3% / 16.7% | 2.3% |
+| `pages_v5` val[900:1000]: photo-style (100 pages, 669 lines) | 75.5% | 76.8% | **83.6%** | 19.9% / 57.8% | 2.4% |
+| `pages_v3o` val[900:1000]: mixed pages (100 pages, 1,063 lines) | 85.8% | 86.6% | **91.7%** | 10.4% / 14.8% | 2.9% |
+| `pages_foreign_open`: mostly not Hunter script (150 pages, 697 lines) | 92.5% | 93.5% | **96.7%** | 4.2% / 7.5% | 1.3% |
+| `pages_v2` val[900:1000]: Hunter script only (100 pages, 1,657 lines) | 89.5% | 89.6% | **91.6%** | 8.2% / 16.7% | 2.1% |
 
-False lines on ordinary writing stay low: on `pages_v5`, 0.14 per page for `v4`, 0.09 for
-Fast and 0.06 for Accurate; on icons 0.13, 0.10 and 0.03. Vertical columns in photo-style
+Fast and Accurate are the v7 sets the demo runs; the sets they replaced (the family readers)
+are in the model card and in `experiments/family/eval/`. False lines on ordinary writing stay
+low: on `pages_v5`, 0.14 per page for `v4`, 0.09 for Fast and 0.01 for Accurate; on icons 0.13,
+0.10 and 0.01. Vertical columns in photo-style
 frames are the weak spot of every set (CER v 58-67% on `pages_v5`, mostly missed columns).
 
 **Line readers.** On 7,444 lines cut from photo-style `v5` pages (fp32), the horizontal readers
@@ -123,10 +130,16 @@ distribution), every row bit-exact in the Rust engine:
 | reader | int8 CER | `.hxhm` |
 |---|---|---|
 | `qat_v4_mnv4s_h48` / `_vert` | 0.84% / 0.71% | 338 KB each |
-| `qat_fam_tiny_h48` / `_vert` (Fast) | 1.61% / 1.64% | 340 KB each |
-| `qat_fam_base_h48` / `_vert` (Accurate) | 1.11% / 0.82% | 1.21 MB each |
+| `qat_fam_tiny_h48` / `_vert` (Fast's vertical reader) | 1.61% / 1.64% | 340 KB each |
+| `qat_fam_base_h48` / `_vert` (Accurate's vertical reader) | 1.11% / 0.82% | 1.21 MB each |
+| `qat_v7dh_tiny_h48` (Fast) | 1.56% | 339 KB |
+| `qat_v7bs_base_h48` (Accurate) | 1.06% | 1.21 MB |
 
 The family readers trade a little on the plain lines for half the error on photo-style ones.
+On 7,018 held-out lines of the v7 cross test (2,185 of them with 3,499 crosses), int8 through
+the demo's own code, Fast reads 82% and Accurate 89% of the crosses (precision 99%) where the
+family readers read none, and line CER falls from 24% to 10.5% (Fast) and 8.3% (Accurate);
+the price is that 2-3% of the `ー` on blurry photo-style lines come out as `×`.
 
 **Speed** (node 24, one thread of a Ryzen 7 3700X, WASM SIMD): the 640 px detectors take 60 ms
 per page and the 960 px one 190 ms; a line takes 6.0 ms with the v4 or tiny readers and 19.7 ms
@@ -185,8 +198,8 @@ import json
 import cv2, numpy as np, onnxruntime as ort
 
 M = "hxh-ocr"   # local copy of the model repo: hf download KokkakNiphon/hxh-ocr --local-dir hxh-ocr
-vocab = json.load(open(f"{M}/vocab/family.json", encoding="utf-8"))["tokens"]
-sess = ort.InferenceSession(f"{M}/onnx/tiny/qat_fam_tiny_h48_48x768.onnx")   # or onnx/base/...
+vocab = json.load(open(f"{M}/vocab/v7.json", encoding="utf-8"))["tokens"]
+sess = ort.InferenceSession(f"{M}/onnx/tiny_v7/qat_v7dh_tiny_h48_48x768.onnx")   # or onnx/base_v7/...
 
 def read_line(path, H=48, W=768):
     g = cv2.imread(path, cv2.IMREAD_GRAYSCALE)        # one line, cropped with a little margin
@@ -205,7 +218,8 @@ def read_line(path, H=48, W=768):
 print(read_line("web/examples/ex6.png"))   # ぐりーどあいらんど
 ```
 
-The `v4` readers use `vocab/v4.json` instead. For whole pages in Python, run a detector ONNX
+The family readers and every vertical reader use `vocab/family.json`, the `v4` readers
+`vocab/v4.json`. For whole pages in Python, run a detector ONNX
 (`onnx/v4/det_v2_640x640.onnx`, or `onnx/base/det_base_v1_qat_960x960.onnx` with
 `HXH_LETTERBOX=960`) on `hxh_ocr.det_data.letterbox(page)` and decode its maps with
 `hxh_ocr.det_post.decode` and `reading_order` (the reference post-processing; the browser's
@@ -216,14 +230,15 @@ checkpoints load with `hxh_ocr.engine.load_checkpoint` and `hxh_ocr.det_model.lo
 
 ```sh
 cargo build --release --manifest-path rust/Cargo.toml
-# one 48 x 768 grayscale strip (PGM) through the int8 reader (Fast's tiny reader)
-rust/target/release/hxh-cli web/models/model.hxhm strip.pgm --vocab family.txt
+# one 48 x 768 grayscale strip (PGM) through the int8 reader (Fast's v7 reader)
+rust/target/release/hxh-cli web/models/model.hxhm strip.pgm --vocab v7.txt
 # a whole page: letterbox, detector, lines in reading order, rectified crops
 cargo run --release --manifest-path rust/Cargo.toml -p hxh-detect --example detect -- \
   page web/models/det.hxhm page.pgm --crops crops/
 ```
 
-`vocab/family.txt` and `vocab/v4.txt` (one class per line, blank first) are in the model repo.
+`vocab/v7.txt`, `vocab/family.txt` and `vocab/v4.txt` (one class per line, blank first) are in
+the model repo.
 The engine itself (`rust/hxh-infer`) is `no_std`, allocation-free and dependency-free; the
 `.hxhm` format is in `rust/FORMAT.md`, the kernels contract in `rust/KERNELS.md` and the
 detector post-processing in `rust/DETECT.md`.
@@ -262,13 +277,16 @@ python scripts/fetch_fonts.py                      # official upstream files int
 bash scripts/launch_family.sh data                 # then, one stage at a time:
 bash scripts/launch_family.sh det-tiny             #   det-base, readers-tiny, readers-base,
 bash scripts/launch_family.sh int8                 #   int8, json, eval
+# 5b. readers v6 (numbers in the lettering) and v7 (the cross), stage by stage
+bash scripts/launch_v6.sh data                     #   readers, int8, json, eval
+bash scripts/launch_v7.sh data                     #   readers, int8, json, eval
 # 6. browser build and page-level tests
 pwsh scripts/build_web.ps1
 node web/test/page_e2e.mjs --sweep
 ```
 
 The exact arguments of every published run are in each checkpoint's `config`, in
-`scripts/launch_family.sh` and in the journal. Each sample is seeded from
+`scripts/launch_family.sh`, `scripts/launch_v6.sh`, `scripts/launch_v7.sh` and in the journal. Each sample is seeded from
 `(seed, split, index)`, so a set can be regenerated or extended exactly; JPEG bytes can differ
 with other OpenCV or Pillow versions. The page generator reads fonts at run time for its
 ordinary writing (`--font-dir`); the published sets used `fonts/open`, whose files are listed
@@ -292,7 +310,7 @@ web/                the demo (index.html, app.js, ocr.js; models/ = Fast, models
                     Accurate), the blog (web/blog/), node tests (web/test/)
 site/               Cloudflare Workers static hosting of web/ (scripts/build_site.py)
 experiments/        ESP-PPQ spike, quantised models, golden vectors and engine checks;
-                    experiments/family/: the tiny and base sets and their benchmarks
+                    experiments/family/: the tiny, base, v6 and v7 sets and their benchmarks
 docs/research/      the journal and its figures
 previews/           contact sheets of the generated data
 ```
@@ -307,7 +325,8 @@ previews/           contact sheets of the generated data
 - Readers are weaker on lines cut from pages than on their own line sets, and the 640 px
   detectors miss more small text than the 960 px one.
 - Katakana and small kana come out as full-size hiragana, because the glyphs do not tell them
-  apart; the `v4` readers know no digits or punctuation.
+  apart; the `v4` readers know no digits or punctuation, and only the v7 readers know the
+  cross `×` (the vertical readers do not).
 - Phones have not been benchmarked.
 
 ## Licence

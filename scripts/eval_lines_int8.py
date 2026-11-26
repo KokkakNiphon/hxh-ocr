@@ -4,8 +4,10 @@ digits or punctuation read on lines without any, and negatives read as text.
 
     python scripts/eval_lines_int8.py [--models name=model.hxhm,...] [--sets name=labels.tsv:n,...] [--out x.json]
 
-Defaults: the deployed Fast and Accurate horizontal readers and the v6 ones on lines_v6_digits val,
-lines_v6 val, lines_v5b val and the first 3,000 lines of synth_v4 val (horizontal lines only).
+Defaults: the deployed Fast and Accurate horizontal readers, the v6 and the v7 ones on
+lines_v7_cross val, lines_v7 val, lines_v6_digits val, lines_v6 val, lines_v5b val and the first
+3,000 lines of synth_v4 val (horizontal lines only). The cross `×` (v7) counts with the digits and
+punctuation, and has its own metrics (hxh_ocr.metrics.cross_metrics).
 """
 from __future__ import annotations
 
@@ -22,16 +24,20 @@ import cv2
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from hxh_ocr.metrics import align, score  # noqa: E402
+from hxh_ocr.metrics import align, cross_metrics, score  # noqa: E402
 
-XS = set("0123456789!?:/.-")
+XS = set("0123456789!?:/.-×")
 MODELS = {
     "fast (qat_fam_tiny_h48)": "web/models/model.hxhm",
     "tiny_v6 (qat_v6c_tiny_h48)": "experiments/family/tiny_v6/model.hxhm",
+    "tiny_v7 (qat_v7_tiny_h48)": "experiments/family/tiny_v7/model.hxhm",
     "accurate (qat_fam_base_h48)": "web/models/accurate/model.hxhm",
     "base_v6 (qat_v6b_base_h48)": "experiments/family/base_v6/model.hxhm",
+    "base_v7 (qat_v7_base_h48)": "experiments/family/base_v7/model.hxhm",
 }
 SETS = {
+    "lines_v7_cross val": "data/lines_v7_cross/val/labels.tsv:0",
+    "lines_v7 val": "data/lines_v7/val/labels.tsv:0",
     "lines_v6_digits val": "data/lines_v6_digits/val/labels.tsv:0",
     "lines_v6 val": "data/lines_v6/val/labels.tsv:0",
     "lines_v5b val": "data/lines_v5b/val/labels.tsv:0",
@@ -78,7 +84,8 @@ def metrics(refs, hyps, confs, min_conf=0.8):
             "digit_lines_acc": x_acc, "digit_chars": x_ref, "digit_char_err": x_err / max(1, x_ref),
             "plain_lines": len(plain), "plain_chars": sum(len(refs[i]) for i in plain),
             "extra_on_plain_chars": x_chars, "extra_on_plain_lines": x_lines,
-            "negatives": len(neg), "negatives_read": neg_read, "negatives_shown_at_0.8": neg_shown}
+            "negatives": len(neg), "negatives_read": neg_read, "negatives_shown_at_0.8": neg_shown,
+            **cross_metrics([refs[i] for i in pos], [hyps[i] for i in pos])}
 
 
 def main():
@@ -119,8 +126,10 @@ def main():
                 print(f"{sname:22s} {mname:28s} CER {100 * m['cer']:5.2f}%  acc {100 * m['acc']:5.1f}%  | digit lines "
                       f"{m['digit_lines']:5d} CER {100 * m['digit_lines_cer']:5.2f}% acc {100 * m['digit_lines_acc']:5.1f}% "
                       f"char err {100 * m['digit_char_err']:5.2f}% | false digits {m['extra_on_plain_chars']} chars on "
-                      f"{m['extra_on_plain_lines']}/{m['plain_lines']} plain lines | neg read {100 * m['negatives_read']:.0f}%",
-                      flush=True)
+                      f"{m['extra_on_plain_lines']}/{m['plain_lines']} plain lines | neg read {100 * m['negatives_read']:.0f}%"
+                      + (f" | x recall {100 * m['cross_recall']:.1f}% prec {100 * m['cross_precision']:.1f}% "
+                         f"({m['cross_ref']} ref) lines acc {100 * m['cross_lines_acc']:.1f}%" if m["cross_ref"] else "")
+                      + f" | x on plain {m['cross_on_plain_lines']}", flush=True)
     if a.out:
         Path(a.out).write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
 

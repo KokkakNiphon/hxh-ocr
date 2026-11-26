@@ -1,15 +1,22 @@
 """Collect the released model family into release/hf-model/ for the Hugging Face Hub (nothing is uploaded).
 
-Three sets, each a line detector plus a horizontal and a vertical CTC line reader:
+Five sets, each a line detector plus a horizontal and a vertical CTC line reader:
 
-    v4    the first models (75 classes): det_v2, qat_v4_mnv4s_h48, qat_v4_mnv4s_h48_vert.
-          The blog and the parked ESP32 work describe these.
-    tiny  model family "tiny" (91 classes): det_tiny_v3_qat, qat_fam_tiny_h48, _vert.
-    base  model family "base" (91 classes): det_base_v1_qat (960 px), qat_fam_base_h48, _vert.
+    v4       the first models (75 classes): det_v2, qat_v4_mnv4s_h48, qat_v4_mnv4s_h48_vert.
+             The blog and the parked ESP32 work describe these.
+    tiny     model family "tiny" (91 classes): det_tiny_v3_qat, qat_fam_tiny_h48, _vert.
+    base     model family "base" (91 classes): det_base_v1_qat (960 px), qat_fam_base_h48, _vert.
+    tiny_v7  readers v7 (92 classes: the cross x added): det_v2, qat_v7dh_tiny_h48 and the family
+             tiny vertical reader (91 classes, unchanged). A drop-in folder: what the demo runs as Fast.
+    base_v7  det_base_v1_qat, qat_v7bs_base_h48 and the family base vertical reader: Accurate.
 
 The browser demo runs two presets of them (presets.json):
-    Fast      = v4/det (det_v2) + tiny readers   -> web/models/            (live camera, tiles)
-    Accurate  = base detector + base readers     -> web/models/accurate/   (still images, no tiles)
+    Fast      = int8/tiny_v7/*   -> web/models/            (live camera, tiles)
+    Accurate  = int8/base_v7/*   -> web/models/accurate/   (still images, no tiles)
+
+The v7 QAT readers were exported with the cross's logit lowered (a prior shift: tiny 0.5, base
+1.0; scripts/export_onnx.py --logit-shift); their packaged QAT checkpoints carry the same shift,
+so they match the shipped ONNX and int8 files.
 
     release/hf-model/
         README.md, LICENSE, NOTICE      model card (oss/hf/model/README.md), Apache-2.0 text and the
@@ -88,19 +95,37 @@ INT8 = {
         "model_v.hxhm": ("experiments/family/base/model_v.hxhm", "experiments/rust_engine/qat_fam_base_h48_vert_ptq/model.hxhm"),
         "model_v.json": ("experiments/family/base/model_v.json", None),
     },
+    "tiny_v7": {
+        "det.hxhm": ("experiments/family/tiny_v7/det.hxhm", "experiments/det_engine/det_v2/model.hxhm"),
+        "det.json": ("experiments/family/tiny_v7/det.json", None),
+        "model.hxhm": ("experiments/family/tiny_v7/model.hxhm", "experiments/rust_engine/qat_v7dh_tiny_h48_ptq/model.hxhm"),
+        "model.json": ("experiments/family/tiny_v7/model.json", None),
+        "model_v.hxhm": ("experiments/family/tiny_v7/model_v.hxhm", "experiments/rust_engine/qat_fam_tiny_h48_vert_ptq/model.hxhm"),
+        "model_v.json": ("experiments/family/tiny_v7/model_v.json", None),
+    },
+    "base_v7": {
+        "det.hxhm": ("experiments/family/base_v7/det.hxhm", "experiments/det_engine/det_base_v1_qat_ptq/model.hxhm"),
+        "det.json": ("experiments/family/base_v7/det.json", None),
+        "model.hxhm": ("experiments/family/base_v7/model.hxhm", "experiments/rust_engine/qat_v7bs_base_h48_ptq/model.hxhm"),
+        "model.json": ("experiments/family/base_v7/model.json", None),
+        "model_v.hxhm": ("experiments/family/base_v7/model_v.hxhm", "experiments/rust_engine/qat_fam_base_h48_vert_ptq/model.hxhm"),
+        "model_v.json": ("experiments/family/base_v7/model_v.json", None),
+    },
 }
-VOCAB_OF = {"v4": "v4", "tiny": "family", "base": "family"}
+# vocab of the horizontal (model.json) and the vertical (model_v.json) reader of each set
+VOCAB_OF = {"v4": "v4", "tiny": "family", "base": "family", "tiny_v7": "v7", "base_v7": "v7"}
+VOCAB_OF_V = {"v4": "v4", "tiny": "family", "base": "family", "tiny_v7": "family", "base_v7": "family"}
 
 # What the browser runs: preset -> (web folder, {file in that folder: file in the package})
 PRESETS = {
-    "fast": ("web/models", {f: f"int8/{'v4' if f.startswith('det') else 'tiny'}/{f}" for f in INT8["v4"]}),
-    "accurate": ("web/models/accurate", {f: f"int8/base/{f}" for f in INT8["base"]}),
+    "fast": ("web/models", {f: f"int8/tiny_v7/{f}" for f in INT8["tiny_v7"]}),
+    "accurate": ("web/models/accurate", {f: f"int8/base_v7/{f}" for f in INT8["base_v7"]}),
 }
 PRESET_NOTES = {
-    "fast": {"label": "Fast", "detector": "det_v2 (640)", "readers": "qat_fam_tiny_h48, qat_fam_tiny_h48_vert",
+    "fast": {"label": "Fast", "detector": "det_v2 (640)", "readers": "qat_v7dh_tiny_h48, qat_fam_tiny_h48_vert",
              "tiles": True, "use": "the live camera, phones, and still images when speed matters; "
                                    "full-page pass plus tiles and a second look in the region of the text"},
-    "accurate": {"label": "Accurate", "detector": "det_base_v1_qat (960)", "readers": "qat_fam_base_h48, qat_fam_base_h48_vert",
+    "accurate": {"label": "Accurate", "detector": "det_base_v1_qat (960)", "readers": "qat_v7bs_base_h48, qat_fam_base_h48_vert",
                  "tiles": False, "use": "still images (photos, screenshots, scans): one full-page pass at 960 px, no tiles"},
 }
 
@@ -123,9 +148,14 @@ MODELS = {
         "qat_fam_base_h48": (f"{_PPQ}/qat_fam_base_h48_ptq", "model.hxhm", None),
         "qat_fam_base_h48_vert": (f"{_PPQ}/qat_fam_base_h48_vert_ptq", "model_v.hxhm", None),
     },
+    # v7 sets: only the new horizontal readers (the detectors and vertical readers are the v4 /
+    # family ones above, byte for byte)
+    "tiny_v7": {"qat_v7dh_tiny_h48": (f"{_PPQ}/qat_v7dh_tiny_h48_ptq", "model.hxhm", None)},
+    "base_v7": {"qat_v7bs_base_h48": (f"{_PPQ}/qat_v7bs_base_h48_ptq", "model.hxhm", None)},
 }
 
-# checkpoints: set -> {name: (run checkpoint, kind, ONNX model name to compare with or None, json)}
+# checkpoints: set -> {name: (run checkpoint, kind, ONNX model name to compare with or None, json
+#                            [, logit shift {class: delta} applied to the packaged copy])}
 #   kind: reader | det (fp32, BN unfolded) | det_qat (BN folded, "folded" state dict)
 CKPTS = {
     "v4": {
@@ -150,6 +180,15 @@ CKPTS = {
         "qat_fam_base_h48.pt": ("runs/qat_fam_base_h48/best.pt", "reader", "qat_fam_base_h48", "model.json"),
         "fam_base_h48_vert.pt": ("runs/fam_base_h48_vert/best.pt", "reader", None, "model_v.json"),
         "qat_fam_base_h48_vert.pt": ("runs/qat_fam_base_h48_vert/best.pt", "reader", "qat_fam_base_h48_vert", "model_v.json"),
+    },
+    # v7: the fp32 checkpoint the QAT started from, and the QAT checkpoint with the export's shift
+    "tiny_v7": {
+        "v7d_tiny_h48.pt": ("runs/v7d_tiny_h48/best.pt", "reader", None, "model.json"),
+        "qat_v7dh_tiny_h48.pt": ("runs/qat_v7dh_tiny_h48/best.pt", "reader", "qat_v7dh_tiny_h48", "model.json", {91: 0.5}),
+    },
+    "base_v7": {
+        "v7b_base_h48.pt": ("runs/v7b_base_h48/best.pt", "reader", None, "model.json"),
+        "qat_v7bs_base_h48.pt": ("runs/qat_v7bs_base_h48/best.pt", "reader", "qat_v7bs_base_h48", "model.json", {91: 1.0}),
     },
 }
 KEEP = ("config", "step", "folded", "ema", "exponents", "best_cer", "best_f1", "int8_f1", "seconds")
@@ -213,7 +252,7 @@ def scan_private(out: Path) -> list[str]:
     return hits
 
 
-def strip_checkpoint(src: Path, dst: Path, kind: str) -> dict:
+def strip_checkpoint(src: Path, dst: Path, kind: str, shift: dict | None = None) -> dict:
     ck = torch.load(src, map_location="cpu", weights_only=False)
     dropped = sorted(set(ck) - set(KEEP))
     out = {k: ck[k] for k in KEEP if k in ck}
@@ -224,6 +263,14 @@ def strip_checkpoint(src: Path, dst: Path, kind: str) -> dict:
     out["config"] = json.loads(json.dumps(out["config"], default=str))  # builtins only (weights_only)
     check_paths(out["config"])
     what = "BN-folded weights of the QAT detector." if kind == "det_qat" else "EMA weights only."
+    if shift:  # the export's prior shift, so the checkpoint matches the shipped ONNX / int8 files
+        b = out["ema"]["head.cls.bias"]
+        assert b.shape == (out["config"]["num_classes"],), f"{src}: classifier bias {tuple(b.shape)}"
+        for c, d in shift.items():
+            b[c] -= d
+        out["config"]["logit_shift"] = {str(c): d for c, d in shift.items()}
+        what += (" The classifier bias carries the int8 export's logit shift (config['logit_shift']: class -> "
+                 "amount subtracted).")
     out["note"] = NOTE.format(what=what, loader=LOADERS[kind])
     torch.save(out, dst)
     torch.load(dst, map_location="cpu", weights_only=True)  # plain tensors and builtins only
@@ -249,12 +296,15 @@ def load_det_folded(path, device="cpu"):
 
 
 @torch.no_grad()
-def check_checkpoint(src: Path, dst: Path, kind: str, onnx_path: Path | None) -> dict:
+def check_checkpoint(src: Path, dst: Path, kind: str, onnx_path: Path | None, shift: dict | None = None) -> dict:
     from hxh_ocr.det_model import load_det_checkpoint
     from hxh_ocr.engine import load_checkpoint
 
     load = {"reader": load_checkpoint, "det": load_det_checkpoint, "det_qat": load_det_folded}[kind]
     a, cfg = load(src)
+    if shift:  # the original plus the same shift must equal the packaged copy
+        for c, d in shift.items():
+            a.head.cls.bias[c] -= d
     b, _ = load(dst)
     if kind == "reader":
         shape = (1, 1, 48, 768)
@@ -357,14 +407,13 @@ def main():
     vocabs: dict[str, list[str]] = {}
     for s in INT8:
         vs = [json.loads((out / "int8" / s / f).read_text(encoding="utf-8")) for f in ("model.json", "model_v.json")]
-        assert vs[0]["vocab"] == vs[1]["vocab"], f"{s}: horizontal and vertical vocab differ"
-        for v in vs:
+        for v, key in zip(vs, (VOCAB_OF[s], VOCAB_OF_V[s])):
             assert v["classes"] == len(v["vocab"]) + 1 and v["blank"] == 0, f"{s}: classes / blank"
-        key = VOCAB_OF[s]
-        if key in vocabs:
-            assert vocabs[key] == vs[0]["vocab"], f"{s}: vocab differs from the other {key} set"
-        vocabs[key] = vs[0]["vocab"]
+            if key in vocabs:
+                assert vocabs[key] == v["vocab"], f"{s}: vocab differs from the other {key} sets"
+            vocabs[key] = v["vocab"]
     assert vocabs["family"][: len(vocabs["v4"])] == vocabs["v4"], "family vocab must extend the v4 one"
+    assert vocabs["v7"][: len(vocabs["family"])] == vocabs["family"], "v7 vocab must extend the family one"
     write_vocab(out, "v4", vocabs["v4"],
                 "v4 readers (int8/v4): CTC class 0 is the blank; class i (1..74) is tokens[i - 1]. Labels are "
                 "full-size hiragana, ー and space: katakana and small kana are folded in, since they share glyphs.")
@@ -372,6 +421,11 @@ def main():
                 "model family readers (int8/tiny, int8/base): CTC class 0 is the blank; class i (1..90) is "
                 "tokens[i - 1]. Classes 1..74 are the v4 tokens with the same ids, then 0-9 ! ? : / . - "
                 "(digits and punctuation as they appear inline in Hunter lines).")
+    write_vocab(out, "v7", vocabs["v7"],
+                "v7 horizontal readers (int8/tiny_v7/model, int8/base_v7/model): CTC class 0 is the blank; class i "
+                "(1..91) is tokens[i - 1]. Classes 1..90 are the family tokens with the same ids, then the cross x "
+                "(U+00D7) of the anime's episode titles. The vertical readers of those sets are the family ones "
+                "(vocab/family.json).")
 
     # ---- presets: the browser's copies must be exactly these files
     presets = {}
@@ -382,7 +436,7 @@ def main():
             assert w.read_bytes() == (out / pkg).read_bytes(), f"{web}/{f} != {pkg} (preset {p})"
         presets[p] = {**PRESET_NOTES[p], "web_folder": web + "/",
                       "files": {f"{web}/{f}": pkg for f, pkg in files.items()},
-                      "vocab": "vocab/family.json"}
+                      "vocab": "vocab/v7.json", "vocab_vertical": "vocab/family.json"}
     (out / "presets.json").write_text(json.dumps(
         {"note": "The two model sets the HxH OCR Reader runs (https://hxh-ocr.kokkakniphon.workers.dev). Copy "
                  "each preset's files to the web folder named here, under the left-hand file names.",
@@ -416,16 +470,17 @@ def main():
     # ---- checkpoints
     for s, ckpts in CKPTS.items():
         (out / "pytorch" / s).mkdir(parents=True)
-        for name, (rel, kind, onnx_name, json_name) in ckpts.items():
+        for name, (rel, kind, onnx_name, json_name, *rest) in ckpts.items():
+            shift = rest[0] if rest else None
             src, dst = ROOT / rel, out / "pytorch" / s / name
-            info = strip_checkpoint(src, dst, kind)
+            info = strip_checkpoint(src, dst, kind, shift)
             cfg = torch.load(dst, map_location="cpu", weights_only=True)["config"]
             if kind == "reader":
                 tokens = json.loads((out / "int8" / s / json_name).read_text(encoding="utf-8"))["vocab"]
                 assert cfg.get("tokens") == tokens, f"{s}/{name}: checkpoint tokens differ from int8/{s}/{json_name}"
                 assert cfg["num_classes"] == len(tokens) + 1, f"{s}/{name}: num_classes"
             if not args.no_check:
-                info.update(check_checkpoint(src, dst, kind, onnx_names[onnx_name] if onnx_name else None))
+                info.update(check_checkpoint(src, dst, kind, onnx_names[onnx_name] if onnx_name else None, shift))
                 if kind == "reader" and "onnx_output_shape" in info:
                     assert info["onnx_output_shape"][1] == cfg["num_classes"], f"{s}/{name}: ONNX classes"
             manifest["checkpoints"][f"{s}/{name}"] = info

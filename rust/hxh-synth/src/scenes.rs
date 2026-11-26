@@ -17,6 +17,9 @@
 //!   a thick light outline with its soft shadow, or the inverse) on a light or dark textured
 //!   ground, numbers and `!!` written into the Hunter lines, a kana reading guide above them,
 //!   the product on one side, a logo and fine print.
+//! * `title_page` (v7): an anime episode title card: a big bold katakana title with crosses
+//!   between its words ("A×ト×B"), the same title in Hunter lettering with its crosses under (or
+//!   over) it, both centred, on a plain, dark or blurred ground.
 //!
 //! Everything unlabelled is recorded in `Page::foreign` (icons and avatars as script "icon"),
 //! and every labelled line keeps the keep-clear rule of `page.rs`.
@@ -28,7 +31,7 @@ use tiny_skia::PathBuilder;
 use crate::fonts::Class;
 use crate::foreign::{kata, romaji, Role, Script};
 use crate::geom::*;
-use crate::page::{compose, inline_line, make_font_line, make_icon_line, make_line_cells, make_line_text, pick_face, ruby_line, sample_fstyle, art_pub, fill_bg_pub, Composer, FStyle, Fx, Halo, Ink, Kind, LineG, Shadow};
+use crate::page::{compose, inline_line, make_cross_line_v7, make_font_line, make_icon_line, make_line_cells, make_line_text, pick_face, ruby_line, sample_fstyle, art_pub, fill_bg_pub, Composer, FStyle, Fx, Halo, Ink, Kind, LineG, Shadow};
 use crate::raster::*;
 use crate::render::{sample_style_v5, TextStyle};
 use crate::text::label_of;
@@ -1007,6 +1010,154 @@ pub(crate) fn promo_page(c: &mut Composer) {
             let (cx, cy) = (w * c.rng.uniform(0.6, 0.9), h * c.rng.uniform(0.75, 0.92));
             let lum = if dark { 0.95 } else { 0.08 };
             foreign_at(c, l, cx, cy, 0.0, lum, &Fx::default(), "price");
+        }
+    }
+}
+
+/// v7: an anime episode title card, after a title card the owner keeps as a private test
+/// picture (never trained on): the title in big bold katakana with crosses between its words
+/// ("A×ト×B", unlabelled), the same title in Hunter lettering with its crosses under it (80%) or
+/// over it, both centred, on a plain light ground with a soft gradient or vignette (55%), a dark
+/// one (20%) or a blurred scene (25%). The Hunter line takes the crosses' accent colour (a mid
+/// grey in grayscale) or the title's ink; an episode number above and a Latin title with crosses
+/// below now and then (both unlabelled).
+pub(crate) fn title_page(c: &mut Composer) {
+    let (w, h) = (c.w as f64, c.h as f64);
+    let pr = c.page_rect();
+    let u = c.rng.f64();
+    let (dark, scene) = ((0.55..0.75).contains(&u), u >= 0.75);
+    let light = if scene {
+        fill_bg_pub(&mut c.page, pr, c.rng, true);
+        let n = c.rng.int(2, 8) as usize;
+        let k = c.rng.uniform(0.0, 0.3) as f32;
+        art_pub(&mut c.page, pr, c.rng, n, k, w.min(h) / 5.0);
+        let s = c.rng.uniform(2.0, 9.0);
+        blur(&mut c.page.d, c.w, c.h, s, true);
+        c.page.d.iter().sum::<f32>() / c.page.d.len().max(1) as f32 > 0.5
+    } else {
+        let base = if dark { c.rng.uniform(0.02, 0.25) } else { c.rng.uniform(0.82, 1.0) } as f32;
+        let cell = c.rng.uniform(150.0, 500.0);
+        let n1 = value_noise(c.w, c.h, c.rng, cell);
+        let a1 = c.rng.uniform(0.0, 0.04) as f32;
+        let vig = if c.rng.chance(0.5) { c.rng.uniform(0.03, 0.2) } else { 0.0 } as f32;
+        let (cw, ch) = (c.w, c.h);
+        for y in 0..ch {
+            let dy = (y as f64 / h - 0.5) * 2.0;
+            for x in 0..cw {
+                let dx = (x as f64 / w - 0.5) * 2.0;
+                let r2 = ((dx * dx + dy * dy) / 2.0) as f32;
+                let i = y * cw + x;
+                let v = base + a1 * n1[i] + if dark { 0.3 * vig * r2 } else { -vig * r2 };
+                c.page.d[i] = v.clamp(0.0, 1.0);
+            }
+        }
+        !dark
+    };
+    // the Hunter title, neat lettering in a medium-heavy weight
+    let mut st = hxh_style(c, false);
+    st.wave_amp = 0.0;
+    st.wave_along = 0.0;
+    if c.rng.chance(0.6) {
+        st.sw = c.rng.uniform(0.09, 0.17);
+    }
+    if !st.mono {
+        st.spacing = st.spacing.min(0.7);
+    }
+    let title_px = (h.min(w * 0.6) * c.rng.uniform(0.09, 0.2)).max(14.0);
+    let mut em = (title_px * c.rng.uniform(0.32, 0.62)).max(c.cfg.em_min);
+    let room = w * c.rng.uniform(0.8, 0.94);
+    let mut built = None;
+    for _ in 0..5 {
+        let max_len = ((room / (em * (1.0 + st.spacing.min(0.6)))).floor() as usize).clamp(3, 14);
+        let l = if c.rng.chance(0.92) {
+            make_cross_line_v7(c.rng, c.sampler, c.fonts, &st, em, max_len, room, c.cfg.min_stroke_px)
+        } else {
+            let t = word(c, 2, max_len.max(2));
+            make_line_cells(c.rng, &t, &st, em, c.cfg.min_stroke_px)
+        };
+        if let Some(l) = l
+            && l.b[2] - l.b[0] <= room
+        {
+            built = Some(l);
+            break;
+        }
+        em = (em * 0.85).max(c.cfg.em_min);
+    }
+    let Some(l) = built else { return };
+    // inks: the title's, and the Hunter line in the crosses' accent colour (55%) or the same ink
+    let accent = c.rng.chance(0.55);
+    let (tlum, ink) = if light {
+        let t = c.rng.uniform(0.0, 0.2);
+        (t, if accent { c.rng.uniform(0.3, 0.7) } else { (t + c.rng.uniform(-0.05, 0.1)).clamp(0.0, 0.3) })
+    } else {
+        let t = c.rng.uniform(0.82, 1.0);
+        (t, if accent { c.rng.uniform(0.45, 0.8) } else { (t + c.rng.uniform(-0.1, 0.05)).clamp(0.7, 1.0) })
+    };
+    let (mut fx, mut tfx) = (Fx::default(), Fx::default());
+    if scene && c.rng.chance(0.7) {
+        let olum = if light { c.rng.uniform(0.85, 1.0) } else { c.rng.uniform(0.0, 0.2) } as f32;
+        tfx.outline = Some(((title_px * c.rng.uniform(0.03, 0.08)).max(1.0), olum));
+        if c.rng.chance(0.7) {
+            fx.outline = Some(((em * c.rng.uniform(0.04, 0.12)).max(1.0), olum));
+        }
+    }
+    // centred; the Hunter line under the title (or over it)
+    let below = c.rng.chance(0.8);
+    let cx = w / 2.0 + c.rng.normal(0.0, w * 0.015);
+    let lh = l.b[3] - l.b[1];
+    let gap = title_px * c.rng.uniform(0.45, 1.0) + fx.extent() + tfx.extent();
+    let top = ((h - (title_px + gap + lh)) * c.rng.uniform(0.25, 0.6)).max(h * 0.04);
+    let (ty, hy) = if below { (top + title_px / 2.0, top + title_px + gap + lh / 2.0) } else { (top + lh + gap + title_px / 2.0, top + lh / 2.0) };
+    let label = l.raw.clone();
+    let deg = c.rng.normal(0.0, 0.3);
+    let (mx, my) = ((l.b[0] + l.b[2]) / 2.0, (l.b[1] + l.b[3]) / 2.0);
+    let m = mul(&tr(cx, hy), &mul(&rot(deg), &tr(-mx, -my)));
+    if c.put_line_fx(l, &m, ink as f32, &fx, Kind::Free, Kind::Free.name()).is_none() {
+        return;
+    }
+    // the katakana title (unlabelled), shrunk to the page width if need be
+    if c.fonts.has_script(crate::fonts::JAPANESE) {
+        let text: String = kata(&label).chars().filter(|&ch| ch != ' ').collect();
+        let bold = c.rng.uniform(0.0, 0.05); // em (font_line dilates by bold x px)
+        let mut px = title_px;
+        for _ in 0..2 {
+            let Some(tl) = font_line(c, Script::Kana, &[Class::Display, Class::Sans], &text, px, bold) else { break };
+            let tw = tl.b[2] - tl.b[0];
+            if tw <= w * 0.95 {
+                foreign_at(c, tl, cx, ty, deg, tlum as f32, &tfx, "title");
+                break;
+            }
+            px *= w * 0.92 / tw;
+        }
+    }
+    // an episode number above the block, a Latin title with crosses below it (unlabelled)
+    let block_top = top - title_px * 0.2;
+    if c.rng.chance(0.35) {
+        let n = c.rng.int(1, 149);
+        let (script, text) = match c.rng.below(3) {
+            0 if c.fonts.has_script(crate::fonts::JAPANESE) => (Script::Japanese, format!("\u{7b2c}{n}\u{8a71}")),
+            1 => (Script::Latin, format!("EPISODE {n}")),
+            _ => (Script::Latin, format!("#{n:02}")),
+        };
+        let px = title_px * c.rng.uniform(0.25, 0.4);
+        if let Some(el) = font_line(c, script, &[Class::Sans, Class::Display], &text, px, 0.0) {
+            let y = block_top - px * c.rng.uniform(0.9, 1.6);
+            if y > px {
+                foreign_at(c, el, cx, y, deg, tlum as f32, &tfx, "episode");
+            }
+        }
+    }
+    if c.rng.chance(0.2) {
+        let words = c.tg.text(c.rng, Script::Latin, Role::Heading, 28);
+        let text = words.split_whitespace().take(3).collect::<Vec<_>>().join(" \u{d7} ");
+        let px = title_px * c.rng.uniform(0.2, 0.32);
+        if !text.is_empty()
+            && let Some(el) = font_line(c, Script::Latin, &[Class::Sans, Class::Serif], &text, px, 0.0)
+        {
+            let y = top + title_px + gap + lh + title_px * c.rng.uniform(0.5, 0.9) + px / 2.0;
+            if y < h - px && el.b[2] - el.b[0] < w * 0.9 {
+                foreign_at(c, el, cx, y, deg, tlum as f32, &tfx, "subtitle");
+            }
         }
     }
 }

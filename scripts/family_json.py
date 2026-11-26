@@ -40,6 +40,7 @@ def main():
     ap.add_argument("--rec-name", required=True)
     ap.add_argument("--rec-v-name", required=True)
     ap.add_argument("--vocab", required=True, help="vocab.json of the readers' training data")
+    ap.add_argument("--vocab-v", default=None, help="the vertical reader's vocab.json when it differs (v7: the v6 vocab)")
     ap.add_argument("--min-conf", type=float, default=0.8)
     ap.add_argument("--min-show-score", type=float, default=None, help="default: web/models/det.json's")
     ap.add_argument("--params", default=None, help="json of post-processing params (default: det_v2's)")
@@ -47,7 +48,8 @@ def main():
     args = ap.parse_args()
     d = ROOT / "experiments" / "family" / args.size
     notes = json.loads(Path(args.notes).read_text(encoding="utf-8")) if args.notes else {}
-    vocab = json.loads(Path(args.vocab).read_text(encoding="utf-8"))
+    vocab_h = json.loads(Path(args.vocab).read_text(encoding="utf-8"))
+    vocab_v = json.loads(Path(args.vocab_v).read_text(encoding="utf-8")) if args.vocab_v else vocab_h
     base = json.loads((ROOT / "web" / "models" / "det.json").read_text(encoding="utf-8"))
     dh = hxhm_header(d / "det.hxhm")
     assert dh["raw_output"], "det.hxhm is not a detector"
@@ -68,6 +70,7 @@ def main():
     }
     (d / "det.json").write_text(json.dumps(det, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     for key, fname, name, vert in (("rec", "model", args.rec_name, False), ("rec_v", "model_v", args.rec_v_name, True)):
+        vocab = vocab_v if vert else vocab_h
         h = hxhm_header(d / f"{fname}.hxhm")
         assert h["num_classes"] == len(vocab) + 1, (fname, h["num_classes"], len(vocab))
         inp = {"height": h["input"]["h"], "width": h["input"]["w"], "channels": 1, "resize": "area",
@@ -77,7 +80,7 @@ def main():
         m = {"name": name, "description": notes.get(key, {}).get("description", ""), "file": f"{fname}.hxhm",
              "input": inp, "classes": h["num_classes"], "blank": h["blank"], "macs": h["macs"], "vocab": vocab}
         (d / f"{fname}.json").write_text(json.dumps(m, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"wrote {d}/det.json, model.json, model_v.json (det {S}x{S}, {dh['macs'] / 1e9:.2f} G MACs; vocab {len(vocab)})")
+    print(f"wrote {d}/det.json, model.json, model_v.json (det {S}x{S}, {dh['macs'] / 1e9:.2f} G MACs; vocab {len(vocab_h)}, vertical {len(vocab_v)})")
 
 
 if __name__ == "__main__":

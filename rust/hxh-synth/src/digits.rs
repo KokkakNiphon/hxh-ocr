@@ -10,6 +10,12 @@
 //!
 //! Frame: em units, x along the line, y down, the digit box centred on (0, 0): x in
 //! [-w/2, w/2], y in [-h/2, h/2]. `.` sits on the baseline (y = h/2), `:` around the middle.
+//!
+//! Generator v7 adds the cross `×` (U+00D7), the separator of the 2011 anime's episode titles
+//! ("A×ト×B") and of the series name. In Hunter lettering it is two crossing strokes in the
+//! line's own weight, most of a glyph high and a little narrower than high: next to `ー` (a
+//! stretched X, `>-<`), `め` (an X closed on one side) and `ね` (a bow tie) it is the one to tell
+//! apart. Only `--v7` lines contain it, so v6 output is unchanged.
 
 use crate::geom::{bezier, P};
 use crate::glyphs::Stroke;
@@ -18,8 +24,12 @@ use crate::rng::Rng;
 /// The tokens the extended reader vocab adds after the 74 kana + space tokens.
 pub const EXTRA: &str = "0123456789!?:/.-";
 
+/// v7: the cross, the vocab's 91st token (after `EXTRA`).
+pub const CROSS: char = '\u{d7}';
+
+/// Digits, `! ? : / . -` and (v7) the cross: drawn by `strokes`, never by the glyph traces.
 pub fn is_extra(c: char) -> bool {
-    EXTRA.contains(c)
+    EXTRA.contains(c) || c == CROSS
 }
 
 /// How the digits of one line are drawn (shared by every digit and mark of the line).
@@ -39,6 +49,12 @@ pub struct DigitStyle {
     pub wedge: bool,     // ! as a tapered wedge (display lettering)
     pub dot_k: f64,      // dot radius relative to half the stroke width
     pub y_off: f64,      // em, the digits' centre relative to the glyphs' axis
+    // v7, the cross (set by `sample_cross`; `sample_style` fills fixed values without drawing)
+    pub xh: f64, // cross height, em
+    pub xw: f64, // cross width, em
+    pub xk: f64, // cross stroke width relative to the line's
+    pub xy: f64, // cross centre relative to the digits' centre, em
+    pub xr: f64, // where the second stroke crosses the first (0.5: the middle)
 }
 
 /// A digit style for a line whose glyph strokes are `sw` em wide.
@@ -77,7 +93,24 @@ pub fn sample_style(rng: &mut Rng, sw: f64) -> DigitStyle {
         wedge: rng.chance(0.4),
         dot_k: rng.uniform(1.0, 1.6),
         y_off: rng.normal(0.0, 0.03),
+        xh: 0.75 * h,
+        xw: 0.65 * h,
+        xk: 1.0,
+        xy: 0.0,
+        xr: 0.5,
     }
+}
+
+/// v7: how the line's crosses are drawn. Real title lettering draws `×` most of a glyph high
+/// (0.55-0.95 em; a quarter of the lines smaller, like a font's `×`), 0.6-1.05 of its height
+/// wide, in the glyphs' stroke weight (a fifth heavier, like a display `✕`), on the line's axis.
+pub fn sample_cross(rng: &mut Rng, ds: &mut DigitStyle, sw: f64) {
+    let xh = if rng.chance(0.25) { rng.uniform(0.36, 0.55) } else { rng.uniform(0.55, 0.95) };
+    ds.xh = xh.max(2.4 * sw);
+    ds.xw = (ds.xh * rng.uniform(0.6, 1.05)).max(2.0 * sw);
+    ds.xk = if rng.chance(0.2) { rng.uniform(1.15, 1.6) } else { rng.uniform(0.85, 1.1) };
+    ds.xy = rng.normal(0.0, 0.025) - ds.y_off; // on the glyphs' axis rather than the digits'
+    ds.xr = if rng.chance(0.2) { rng.uniform(0.4, 0.6) } else { 0.5 };
 }
 
 fn line(pts: Vec<P>) -> Stroke {
@@ -218,6 +251,16 @@ pub fn strokes(c: char, ds: &DigitStyle, sw: f64) -> Vec<Stroke> {
         '/' => vec![line(vec![[0.38 * w, t], [-0.38 * w, b]])],
         '.' => vec![dot([0.0, b - dot_r], dot_r)],
         '-' => vec![line(vec![[-0.3 * w, 0.02 * h], [0.3 * w, 0.02 * h]])],
+        CROSS => {
+            // two strokes; hand lettering now and then crosses them off-centre (`xr`)
+            let (hw, hh, y) = (ds.xw / 2.0, ds.xh / 2.0, ds.xy);
+            let d = (ds.xr - 0.5) * 2.0 * hw;
+            let mut v = vec![line(vec![[-hw, y - hh], [hw, y + hh]]), line(vec![[hw + d, y - hh], [-hw + d, y + hh]])];
+            for s in v.iter_mut() {
+                s.width_scale = ds.xk;
+            }
+            v
+        }
         _ => vec![],
     };
     let k = if c == '!' || c == '?' { ds.pslant } else { ds.slant };
@@ -314,6 +357,96 @@ pub fn inline_parts(rng: &mut Rng, kana: &str) -> Vec<(bool, String)> {
     parts
 }
 
+/// The parts of a v7 title line, in order: (is kana, text). `words` are 1-4 kana words; the
+/// crosses go between them the way the anime's titles do it: "A×と×B" (a particle between two
+/// crosses, about half the lines), "A×B", "A×B×C", "A×B×C×D", now and then counts ("A×3",
+/// "3×3") and a leading or trailing cross. A word before a cross ends in `ー` a third of the time
+/// and `め` / `ね` sit next to one now and then, so the reader learns the cross against the glyphs
+/// that look like it. Spaces around the crosses 8% of the time (labelled: a wide gap).
+pub fn cross_parts(rng: &mut Rng, words: &[String]) -> Vec<(bool, String)> {
+    let x = CROSS.to_string();
+    let sep = if rng.chance(0.08) { format!(" {x} ") } else { x.clone() };
+    let mut w: Vec<String> = words.iter().filter(|s| !s.is_empty()).cloned().collect();
+    if w.is_empty() {
+        w.push("はんたー".into());
+    }
+    // the glyphs that look like the cross, right before it
+    let tweak = |rng: &mut Rng, s: &mut String| {
+        let u = rng.f64();
+        if u < 0.33 {
+            if !s.ends_with('ー') {
+                s.push('ー');
+            }
+        } else if u < 0.4 {
+            s.push('め');
+        } else if u < 0.45 {
+            s.push('ね');
+        }
+    };
+    let mut parts: Vec<(bool, String)> = Vec::new();
+    match rng.weighted(&[0.48, 0.24, 0.13, 0.04, 0.05, 0.03, 0.03]) {
+        0 => {
+            // A×と×B
+            let p = ["と", "の", "も", "や", "で", "が", "に", "を", "へ", "は"][rng.weighted(&[0.45, 0.15, 0.06, 0.06, 0.06, 0.05, 0.05, 0.04, 0.03, 0.05])];
+            let mut a = w[0].clone();
+            tweak(rng, &mut a);
+            let b = w.get(1).cloned().unwrap_or_else(|| w[0].clone());
+            parts.push((true, a));
+            parts.push((false, sep.clone()));
+            parts.push((true, p.to_string()));
+            parts.push((false, sep));
+            parts.push((true, b));
+        }
+        k @ 1..=3 => {
+            // A×B, A×B×C, A×B×C×D
+            let n = k + 1;
+            for i in 0..n {
+                let mut s = w[i % w.len()].clone();
+                if i + 1 < n {
+                    tweak(rng, &mut s);
+                }
+                parts.push((true, s));
+                if i + 1 < n {
+                    parts.push((false, sep.clone()));
+                }
+            }
+        }
+        4 => {
+            // a count after a word: A×3, A×10
+            let mut a = w[0].clone();
+            tweak(rng, &mut a);
+            let hi = if rng.chance(0.7) { 10 } else { 100 };
+            let n = rng.int(1, hi);
+            parts.push((true, a));
+            parts.push((false, format!("{x}{n}")));
+        }
+        5 => {
+            // a product of numbers, after or before a word: 3×3, 10×10
+            let (a, b) = (rng.int(1, 13), rng.int(1, 13));
+            if rng.chance(0.5) {
+                parts.push((true, w[0].clone()));
+                parts.push((false, format!(" {a}{x}{b}")));
+            } else {
+                parts.push((false, format!("{a}{x}{b}")));
+                parts.push((true, w[0].clone()));
+            }
+        }
+        _ => {
+            // a leading or trailing cross: ×A, A×
+            if rng.chance(0.5) {
+                parts.push((false, x.clone()));
+                parts.push((true, w[0].clone()));
+            } else {
+                let mut a = w[0].clone();
+                tweak(rng, &mut a);
+                parts.push((true, a));
+                parts.push((false, x.clone()));
+            }
+        }
+    }
+    parts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -324,14 +457,17 @@ mod tests {
         let mut rng = Rng::from_key(&[1, 2, 3]);
         for _ in 0..200 {
             let sw = rng.uniform(0.04, 0.3);
-            let ds = sample_style(&mut rng, sw);
-            for c in EXTRA.chars() {
+            let mut ds = sample_style(&mut rng, sw);
+            sample_cross(&mut rng, &mut ds, sw);
+            for c in EXTRA.chars().chain([CROSS]) {
                 let s = strokes(c, &ds, sw);
                 assert!(!s.is_empty(), "{c}");
                 let b = strokes_bbox(&s);
                 let slack = 0.05 + ds.slant.abs().max(ds.pslant.abs()) * ds.h + sw;
-                assert!(b[1] >= -ds.h / 2.0 - slack && b[3] <= ds.h / 2.0 + slack, "{c} {b:?} h {}", ds.h);
-                assert!(b[0] >= -ds.w / 2.0 - slack && b[2] <= ds.w / 2.0 + slack, "{c} {b:?} w {}", ds.w);
+                // the cross has its own box: xw x xh around (0, xy)
+                let (w, h0, h1) = if c == CROSS { (ds.xw, ds.xy - ds.xh / 2.0, ds.xy + ds.xh / 2.0) } else { (ds.w, -ds.h / 2.0, ds.h / 2.0) };
+                assert!(b[1] >= h0 - slack && b[3] <= h1 + slack, "{c} {b:?} h {}", ds.h);
+                assert!(b[0] >= -w / 2.0 - slack && b[2] <= w / 2.0 + slack, "{c} {b:?} w {w}");
             }
         }
     }
@@ -350,5 +486,27 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn cross_parts_keep_the_words_and_put_a_cross_in_every_line() {
+        let mut rng = Rng::from_key(&[6, 7]);
+        let words: Vec<String> = ["はんたー", "と", "めね"].iter().map(|s| s.to_string()).collect();
+        let mut beside_long = 0;
+        for _ in 0..3000 {
+            let parts = cross_parts(&mut rng, &words);
+            let text: String = parts.iter().map(|p| p.1.as_str()).collect();
+            assert!(text.contains(CROSS), "{text}");
+            assert!(!text.starts_with(' ') && !text.ends_with(' ') && !text.contains("  "), "{text:?}");
+            for (is_kana, t) in &parts {
+                if *is_kana {
+                    assert!(!t.is_empty() && !t.chars().any(is_extra) && !t.contains(' '), "{t}");
+                } else {
+                    assert!(t.chars().all(|c| is_extra(c) || c == ' ') && t.chars().any(is_extra), "{t}");
+                }
+            }
+            beside_long += text.contains("ー\u{d7}") as usize;
+        }
+        assert!(beside_long > 300, "{beside_long}");
     }
 }

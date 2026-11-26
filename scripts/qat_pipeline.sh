@@ -13,21 +13,28 @@ cd "$(dirname "$0")/.."
 NAME=$1; SRC=$2; H=${3:-32}; W=${4:-512}; DATA=${DATA:-data/synth_v3}
 # QAT_DATA: training lines for QAT (default DATA); NC: classes incl. blank (91 with the extended
 # vocab; then also export HXH_VOCAB=<the extended vocab.json> so the hold-out decode knows them)
-QAT_DATA=${QAT_DATA:-$DATA}; NC=${NC:-75}  # QAT_WORKERS: loader workers (default 2; 1 when memory is short)
+QAT_DATA=${QAT_DATA:-$DATA}; NC=${NC:-75}  # QAT_WORKERS: loader workers (default 2; 1 when memory is short); QAT_PAD_BLANK: train_qat.py --pad-blank
+# QAT_FROM: reuse runs/<QAT_FROM>/best.pt instead of running QAT; LOGIT_SHIFT: export_onnx.py --logit-shift
 PY=.venv/Scripts/python.exe
 PPQ=.venv-ppq/Scripts/python.exe
 export PYTHONUTF8=1
 export HXH_ORIENT=${HXH_ORIENT:-h}
 log() { echo "[$(date +%T)] $NAME: $*"; }
 
-log "QAT from runs/$SRC/best.pt"
 mkdir -p runs/$NAME
+if [ -n "${QAT_FROM:-}" ]; then
+  # reuse a finished QAT checkpoint (e.g. to export it again with LOGIT_SHIFT)
+  log "QAT checkpoint from runs/$QAT_FROM"
+  cp runs/$QAT_FROM/best.pt runs/$QAT_FROM/config.json runs/$NAME/
+else
+log "QAT from runs/$SRC/best.pt"
 $PY scripts/train_qat.py --ckpt runs/$SRC/best.pt --data $QAT_DATA --name $NAME \
-  --calib-dir $DATA/val --calib-width $W --num-workers ${QAT_WORKERS:-2} --lr ${QAT_LR:-1e-4} ${QAT_STEPS:+--steps $QAT_STEPS}   $([ "${EQ:-0}" = 1 ] && echo --equalize) > runs/$NAME/train_qat.out 2>&1
+  --calib-dir $DATA/val --calib-width $W --num-workers ${QAT_WORKERS:-2} --lr ${QAT_LR:-1e-4} ${QAT_STEPS:+--steps $QAT_STEPS} ${QAT_PAD_BLANK:+--pad-blank $QAT_PAD_BLANK}   $([ "${EQ:-0}" = 1 ] && echo --equalize) > runs/$NAME/train_qat.out 2>&1
 tail -2 runs/$NAME/train_qat.out
+fi
 
 log "export ONNX ${H}x${W}"
-$PY scripts/export_onnx.py --run runs/$NAME --width $W --opset 18 2>&1 | grep -E "OK|ops:" || true
+$PY scripts/export_onnx.py --run runs/$NAME --width $W --opset 18 ${LOGIT_SHIFT:+--logit-shift $LOGIT_SHIFT} 2>&1 | grep -E "OK|ops:|logit shift" || true
 cp runs/$NAME/model_${H}x${W}.onnx exports/q_$NAME.onnx   # quantize.py overwrites its input
 
 log "ESP-PPQ PTQ (esp32s3, KL, no TQT)"

@@ -31,6 +31,7 @@ USAGE:
                   [--ui-prob P] [--foreign-em-min PX] [--keep-margin K]
                   [--v5 1] [--photo-prob P] [--ui-neg-prob P] [--caption-prob P] [--inline-prob P] [--resume 1]
                   [--v6 1] [--ruby-prob P] [--sticker-prob P] [--small-mark-prob P]
+                  [--v7 1] [--cross-prob P]
       Writes DIR/<split>/labels.jsonl (one JSON object per page:
       {\"image\", \"width\", \"height\", \"layout\", \"lines\": [{\"quad\": [[x,y] x4], \"text\", \"orient\": \"h\"|\"v\", \"kind\"}],
        \"foreign\": [{\"quad\", \"text\", \"script\", \"font\", \"orient\", \"kind\"}]}),
@@ -63,6 +64,12 @@ USAGE:
       draws free-standing Hunter text with a thick outline and the outline's soft shadow;
       --small-mark-prob gives that share of Hunter text styles small dakuten dots (0.55-1 stroke
       widths across, close to the glyph's bottom-right corner) instead of the v4 marks.
+      v7 (the cross, with --v6 1): --v7 1 adds the title-card scene (9th --mode-p weight: a big
+      katakana title with crosses between its words, unlabelled, and the same title in Hunter
+      lettering under or over it, centred, on a plain, dark or blurred ground); --cross-prob makes
+      that share of the inline lines (--inline-prob) titles with crosses (\"A×と×B\", \"A×B×C\",
+      counts \"A×3\"), the cross drawn in the line's strokes or a display face; in `lines` the
+      vocab gets `×` as its 91st token and negative crops with a cross are dropped.
 
   hxh-synth lines --out DIR [--train N] [--val N] [--seed S] [--threads T] [--jitter 0.04]
                   [--neg-prob 0.25] [--min-height 9] [--quality 92] [page flags as for pages]
@@ -227,10 +234,10 @@ fn page_cfg(a: &Args) -> Result<PageConfig, String> {
     let mode_p = match a.kv.get("mode-p") {
         Some(v) => {
             let p: Vec<f64> = v.split(',').map(|x| x.trim().parse::<f64>()).collect::<Result<_, _>>().map_err(|_| format!("bad --mode-p {v}"))?;
-            if !(p.len() == 4 || p.len() == 7 || p.len() == 8) || p.iter().any(|&x| x < 0.0) || p.iter().sum::<f64>() <= 0.0 {
-                return Err(format!("--mode-p needs 4, 7 or 8 non-negative weights (manga,frame,doc,web[,card,lyric,tv[,promo]]), got {v}"));
+            if !(p.len() == 4 || p.len() == 7 || p.len() == 8 || p.len() == 9) || p.iter().any(|&x| x < 0.0) || p.iter().sum::<f64>() <= 0.0 {
+                return Err(format!("--mode-p needs 4, 7, 8 or 9 non-negative weights (manga,frame,doc,web[,card,lyric,tv[,promo[,title]]]), got {v}"));
             }
-            let mut m = [0.0; 8];
+            let mut m = [0.0; 9];
             m[..p.len()].copy_from_slice(&p);
             m
         }
@@ -258,8 +265,16 @@ fn page_cfg(a: &Args) -> Result<PageConfig, String> {
         ruby_prob: a.get("ruby-prob", d.ruby_prob)?,
         sticker_prob: a.get("sticker-prob", d.sticker_prob)?,
         small_mark_prob: a.get("small-mark-prob", d.small_mark_prob)?,
+        v7: a.get::<u8>("v7", 0)? != 0,
+        cross_prob: a.get("cross-prob", d.cross_prob)?,
         ..d
     };
+    if cfg.v7 && !cfg.v6 {
+        return Err("--v7 1 needs --v6 1".into());
+    }
+    if cfg.mode_p[8] > 0.0 && !cfg.v7 {
+        return Err("the title scene (9th --mode-p weight) needs --v7 1".into());
+    }
     Ok(cfg)
 }
 
@@ -474,6 +489,9 @@ fn cmd_lines(a: &Args) -> Result<(), String> {
     if cfg.inline_prob > 0.0 {
         // extended vocab: the 74 kana tokens first (same ids as before), then digits and punctuation
         vocab.extend(EXTRA_VOCAB.chars().map(|c| c.to_string()));
+        if cfg.v7 {
+            vocab.push(hxh_synth::digits::CROSS.to_string()); // v7: the cross, id 91
+        }
     }
     fs::write(out.join("vocab.json"), serde_json::to_string(&vocab).unwrap()).map_err(|e| e.to_string())?;
     let mut splits = serde_json::Map::new();
@@ -530,7 +548,7 @@ fn cmd_lines(a: &Args) -> Result<(), String> {
                         let v = f.orient == "v";
                         // v6: digits are read wherever they are written, so a run with digits (or
                         // ! ?) is no "read nothing" example
-                        let digits = cfg.v6 && f.text.chars().any(|c| c.is_ascii_digit() || c == '!' || c == '?');
+                        let digits = cfg.v6 && f.text.chars().any(|c| c.is_ascii_digit() || c == '!' || c == '?' || (cfg.v7 && c == hxh_synth::digits::CROSS));
                         if line_thickness(&f.quad) >= min_th && !digits
                             && let Some((px, w, h)) = cut_line(&p.pixels, p.w, p.h, &f.quad, v, &mut rr, jit) {
                                 let rel = format!("images/{:04}/{:08}_n.jpg", i / 1000, i);

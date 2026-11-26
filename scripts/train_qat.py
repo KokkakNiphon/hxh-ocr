@@ -30,7 +30,7 @@ import torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from hxh_ocr.data import LineDataset, find_vocab, make_loader, split_dirs  # noqa: E402
-from hxh_ocr.engine import input_lengths, load_checkpoint, predict  # noqa: E402
+from hxh_ocr.engine import ctc_lengths, load_checkpoint, pad_like_app, predict  # noqa: E402
 from hxh_ocr.metrics import score  # noqa: E402
 from hxh_ocr.model import fuse_bn  # noqa: E402
 from hxh_ocr.qat import QATModel, equalize  # noqa: E402
@@ -76,6 +76,9 @@ def get_args(argv=None):
     p.add_argument("--num-workers", type=int, default=2)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default=None)
+    p.add_argument("--pad-blank", type=float, default=0.0,
+                   help="v7: > 0 supervises every frame with CTC (the padding after a short line must read as blank) and pads "
+                        "this share of the batches to the static width like the app (default 0: frames over the text only)")
     p.add_argument("--equalize", action="store_true",
                    help="cross-layer equalization of the folded model before QAT (width-1.0 MobileNetV4)")
     p.add_argument("--tf32", action="store_true", help="allow TF32 convs (inexact float-mode / calibration)")
@@ -200,6 +203,8 @@ def main():
                 sampler.set_epoch(epoch + args.seed * 1000 + 777); epoch += 1
                 batches = iter(train_loader)
 
+    pad_rng = random.Random(args.seed + 12345)
+
     def train_step(lr):
         nonlocal step, run_loss, run_n
         for g in opt.param_groups:
@@ -207,9 +212,11 @@ def main():
         qat.train()
         batch = next_batch()
         x = batch["images"].to(device, non_blocking=True)
+        if args.pad_blank > 0 and pad_rng.random() < args.pad_blank:
+            x = pad_like_app(x, max_width)  # the app's padding to the static width
         logits = qat(x)  # [B, C, 1, T], fp32
         logp = F.log_softmax(logits[:, :, 0, :], dim=1).permute(2, 0, 1)
-        in_len = input_lengths(batch["widths"], logp.shape[0])
+        in_len = ctc_lengths(batch["widths"], logp.shape[0], args.pad_blank)
         loss = F.ctc_loss(logp, batch["targets"], in_len, batch["target_lengths"],
                           blank=0, reduction="mean", zero_infinity=True)
         opt.zero_grad(set_to_none=True)

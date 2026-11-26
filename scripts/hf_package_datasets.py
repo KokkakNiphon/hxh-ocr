@@ -14,12 +14,15 @@ Two dataset repos are built, each as a folder that matches the repo exactly, so
         README.md                              (copied from oss/hf/datasets/hxh-ocr-lines/)
         data/synth_v4/{train,validation}-xxxxx-of-yyyyy.parquet   <- data/synth_v4 (default config)
         data/v5/{train,validation}-...                            <- data/lines_v5b (cut from v5 pages)
+        data/v6, v6m, v6_digits (validation only)                  <- data/lines_v6, lines_v6m, lines_v6_digits
+        data/v7, v7x, v7_cross (validation only)                   <- data/lines_v7, lines_v7x, lines_v7_cross
     release/hf-datasets/hxh-ocr-pages/        pages for the detector
         README.md
         data/v3o/{train,validation}-...        <- data/pages_v3o (default config)
         data/v2/{train,validation}-...         <- data/pages_v2
         data/foreign_open/validation-...       <- data/pages_foreign_open
         data/v5/{train,validation}-...         <- data/pages_v5 (photo-style)
+        data/v6/validation-..., data/v7/validation-...   <- data/pages_v6, data/pages_v7 (test pages)
 
 Anything else under the two data/ folders (shards of sets that are no longer released) is
 deleted. Image bytes are embedded unchanged (the generators' JPEGs) in the Hugging Face `Image`
@@ -74,6 +77,15 @@ SOURCES = [
     ("v2", "hxh-ocr-pages", "v2", "pages_v2", "pages"),
     ("foreign_open", "hxh-ocr-pages", "foreign_open", "pages_foreign_open", "pages"),
     ("v5", "hxh-ocr-pages", "v5", "pages_v5", "pages"),
+    # readers v6 (numbers in the lettering) and v7 (the cross of the episode titles)
+    ("lines_v6", "hxh-ocr-lines", "v6", "lines_v6", "lines"),
+    ("lines_v6m", "hxh-ocr-lines", "v6m", "lines_v6m", "lines"),
+    ("lines_v6_digits", "hxh-ocr-lines", "v6_digits", "lines_v6_digits", "lines"),
+    ("lines_v7", "hxh-ocr-lines", "v7", "lines_v7", "lines"),
+    ("lines_v7x", "hxh-ocr-lines", "v7x", "lines_v7x", "lines"),
+    ("lines_v7_cross", "hxh-ocr-lines", "v7_cross", "lines_v7_cross", "lines"),
+    ("v6", "hxh-ocr-pages", "v6", "pages_v6", "pages"),
+    ("v7", "hxh-ocr-pages", "v7", "pages_v7", "pages"),
 ]
 # rendered with Windows system fonts: never released (open-font replacements: pages_v3o, pages_foreign_open)
 NOT_OPEN = {"pages_v3", "pages_foreign"}

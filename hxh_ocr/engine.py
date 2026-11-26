@@ -58,6 +58,24 @@ def input_lengths(widths: torch.Tensor, T: int) -> torch.Tensor:
     return torch.clamp(torch.ceil(widths.float() / STRIDE_W).long(), 1, T)
 
 
+def pad_like_app(x: torch.Tensor, width: int) -> torch.Tensor:
+    """Pad a batch on the right to `width` by repeating its last column, the way web/ocr.js pads
+    every line shorter than the reader's input (the collate pads each sample to the batch width
+    the same way)."""
+    if x.shape[-1] >= width:
+        return x
+    return torch.cat([x, x[..., -1:].expand(*x.shape[:-1], width - x.shape[-1])], dim=-1)
+
+
+def ctc_lengths(widths: torch.Tensor, T: int, pad_blank: float) -> torch.Tensor:
+    """CTC input lengths: the frames over each line (`input_lengths`), or, with `pad_blank` > 0
+    (readers v7), every frame of the batch, so the padding after a short line is supervised as
+    blank (int8 readers emitted runs of `!` there; train with `pad_like_app` now and then)."""
+    if pad_blank > 0:
+        return torch.full((len(widths),), T, dtype=torch.long)
+    return input_lengths(widths, T)
+
+
 @torch.no_grad()
 def predict(model, loader, device, tokens, amp: bool = False):
     """Run the model over a loader; returns (refs, hyps, dataset_indices).

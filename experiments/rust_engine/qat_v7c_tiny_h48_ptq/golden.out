@@ -1,0 +1,79 @@
+
+    ___________ ____        ____  ____  ____
+   / ____/ ___// __ \      / __ \/ __ \/ __ \
+  / __/  \__ \/ /_/ /_____/ /_/ / /_/ / / / /
+ / /___ ___/ / ____/_____/ ____/ ____/ /_/ /
+/_____//____/_/         /_/   /_/    \___\_\
+
+
+wrote experiments\rust_engine\qat_v7c_tiny_h48_ptq\model.hxhm
+  version 1, 68 ops, 69 tensors, file 339600 B (weights 313376 B, biases 22080 B), arena 368640 B, MACs 154,202,112
+  op0   Conv     /conv_stem/Conv                        -> 24x384x32 e-4 @36864
+  op1   Conv     /blocks/blocks.0/blocks.0.0/conv/Conv  -> 12x192x16 e-3 @331776
+  op2   Conv     /blocks/blocks.0/blocks.0.1/conv/Conv  -> 12x192x16 e-3 @36864
+  op3   Conv     /blocks/blocks.1/blocks.1.0/conv/Conv  -> 6x192x48 e-4 @73728
+  op4   Conv     /blocks/blocks.1/blocks.1.1/conv/Conv  -> 6x192x32 e-3 @36864
+  op5   DwConv   /blocks/blocks.2/blocks.2.0/dw_start/c -> 6x192x32 e-3 @73728
+  op6   Conv     /blocks/blocks.2/blocks.2.0/pw_exp/con -> 6x192x96 e-2 @110592
+  op7   DwConv   /blocks/blocks.2/blocks.2.0/dw_mid/con -> 3x192x96 e-4 @36864
+  op8   Conv     /blocks/blocks.2/blocks.2.0/pw_proj/co -> 3x192x48 e-3 @92160
+  op9   Conv     /blocks/blocks.2/blocks.2.1/pw_exp/con -> 3x192x96 e-2 @36864
+  op10  DwConv   /blocks/blocks.2/blocks.2.1/dw_mid/con -> 3x192x96 e-4 @119808
+  op11  Conv     /blocks/blocks.2/blocks.2.1/pw_proj/co -> 3x192x48 e-3 @36864
+  op12  Add      /blocks/blocks.2/blocks.2.1/Add        -> 3x192x48 e-3 @36864 (in place)
+  op13  Conv     /blocks/blocks.2/blocks.2.2/pw_exp/con -> 3x192x96 e-3 @64512
+  op14  DwConv   /blocks/blocks.2/blocks.2.2/dw_mid/con -> 3x192x96 e-4 @119808
+  op15  Conv     /blocks/blocks.2/blocks.2.2/pw_proj/co -> 3x192x48 e-3 @64512
+  op16  Add      /blocks/blocks.2/blocks.2.2/Add        -> 3x192x48 e-3 @64512 (in place)
+  op17  Conv     /blocks/blocks.2/blocks.2.3/pw_exp/con -> 3x192x96 e-3 @92160
+  op18  Requant  PPQ_Operation_0                        -> 3x192x48 e-2 @64512 (in place)
+  op19  DwConv   /blocks/blocks.2/blocks.2.3/dw_mid/con -> 3x192x96 e-4 @147456
+  op20  Conv     /blocks/blocks.2/blocks.2.3/pw_proj/co -> 3x192x48 e-2 @36864
+  op21  Add      /blocks/blocks.2/blocks.2.3/Add        -> 3x192x48 e-2 @36864 (in place)
+  op22  Conv     /blocks/blocks.2/blocks.2.4/pw_exp/con -> 3x192x96 e-2 @64512
+  op23  Requant  PPQ_Operation_1                        -> 3x192x48 e-1 @36864 (in place)
+  op24  DwConv   /blocks/blocks.2/blocks.2.4/dw_mid/con -> 3x192x96 e-3 @119808
+  op25  Conv     /blocks/blocks.2/blocks.2.4/pw_proj/co -> 3x192x48 e-1 @64512
+  op26  Add      /blocks/blocks.2/blocks.2.4/Add        -> 3x192x48 e-1 @64512 (in place)
+  op27  DwConv   /blocks/blocks.2/blocks.2.5/dw_start/c -> 3x192x48 e-3 @36864
+  op28  Requant  PPQ_Operation_2                        -> 3x192x48 e0 @64512 (in place)
+  op29  Conv     /blocks/blocks.2/blocks.2.5/pw_exp/con -> 3x192x192 e-4 @92160
+  op30  Conv     /blocks/blocks.2/blocks.2.5/pw_proj/co -> 3x192x48 e0 @36864
+  op31  Add      /blocks/blocks.2/blocks.2.5/Add        -> 3x192x48 e0 @36864 (in place)
+  op32  DwConv   /blocks/blocks.3/blocks.3.0/dw_start/c -> 3x192x48 e-3 @64512
+  op33  Conv     /blocks/blocks.3/blocks.3.0/pw_exp/con -> 3x192x288 e-2 @92160
+  op34  DwConv   /blocks/blocks.3/blocks.3.0/dw_mid/con -> 2x192x288 e-3 @258048
+  op35  Conv     /blocks/blocks.3/blocks.3.0/pw_proj/co -> 2x192x64 e-1 @36864
+  op36  DwConv   /blocks/blocks.3/blocks.3.1/dw_start/c -> 2x192x64 e-1 @61440
+  op37  Conv     /blocks/blocks.3/blocks.3.1/pw_exp/con -> 2x192x256 e-2 @86016
+  op38  DwConv   /blocks/blocks.3/blocks.3.1/dw_mid/con -> 2x192x256 e-3 @184320
+  op39  Conv     /blocks/blocks.3/blocks.3.1/pw_proj/co -> 2x192x64 e-1 @61440
+  op40  Add      /blocks/blocks.3/blocks.3.1/Add        -> 2x192x64 e-1 @61440 (in place)
+  op41  Conv     /blocks/blocks.3/blocks.3.2/pw_exp/con -> 2x192x256 e-1 @86016
+  op42  DwConv   /blocks/blocks.3/blocks.3.2/dw_mid/con -> 2x192x256 e-3 @184320
+  op43  Conv     /blocks/blocks.3/blocks.3.2/pw_proj/co -> 2x192x64 e-1 @36864
+  op44  Add      /blocks/blocks.3/blocks.3.2/Add        -> 2x192x64 e-1 @36864 (in place)
+  op45  Conv     /blocks/blocks.3/blocks.3.3/pw_exp/con -> 2x192x192 e0 @61440
+  op46  Requant  PPQ_Operation_3                        -> 2x192x64 e0 @36864 (in place)
+  op47  DwConv   /blocks/blocks.3/blocks.3.3/dw_mid/con -> 2x192x192 e-3 @135168
+  op48  Conv     /blocks/blocks.3/blocks.3.3/pw_proj/co -> 2x192x64 e0 @61440
+  op49  Add      /blocks/blocks.3/blocks.3.3/Add        -> 2x192x64 e0 @61440 (in place)
+  op50  Conv     /blocks/blocks.3/blocks.3.4/pw_exp/con -> 2x192x256 e-1 @86016
+  op51  Requant  PPQ_Operation_4                        -> 2x192x64 e1 @61440 (in place)
+  op52  DwConv   /blocks/blocks.3/blocks.3.4/dw_mid/con -> 2x192x256 e-3 @184320
+  op53  Conv     /blocks/blocks.3/blocks.3.4/pw_proj/co -> 2x192x64 e1 @36864
+  op54  Add      /blocks/blocks.3/blocks.3.4/Add        -> 2x192x64 e1 @36864 (in place)
+  op55  Conv     /blocks/blocks.3/blocks.3.5/pw_exp/con -> 2x192x256 e1 @61440
+  op56  DwConv   /blocks/blocks.3/blocks.3.5/dw_mid/con -> 2x192x256 e-3 @159744
+  op57  Conv     /blocks/blocks.3/blocks.3.5/pw_proj/co -> 2x192x64 e1 @61440
+  op58  Add      /blocks/blocks.3/blocks.3.5/Add        -> 2x192x64 e1 @61440 (in place)
+  op59  AvgPool  /head/ReduceMean                       -> 1x192x64 e0 @36864
+  op60  DwConv   /head/blocks/blocks.0/dw/Conv          -> 1x192x64 e-2 @49152
+  op61  Conv     /head/blocks/blocks.0/pw/Conv          -> 1x192x64 e0 @61440
+  op62  Add      /head/blocks/blocks.0/Add              -> 1x192x64 e0 @36864 (in place)
+  op63  DwConv   /head/blocks/blocks.1/dw/Conv          -> 1x192x64 e-2 @49152
+  op64  Requant  PPQ_Operation_5                        -> 1x192x64 e1 @36864 (in place)
+  op65  Conv     /head/blocks/blocks.1/pw/Conv          -> 1x192x64 e1 @61440
+  op66  Add      /head/blocks/blocks.1/Add              -> 1x192x64 e1 @36864 (in place)
+  op67  Conv     /head/cls/Conv                         -> 1x192x92 e0 @49152
+golden: 512 vectors -> experiments\rust_engine\qat_v7c_tiny_h48_ptq\golden.bin

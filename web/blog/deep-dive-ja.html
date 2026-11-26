@@ -72,7 +72,7 @@
     <h1>発明された文字をブラウザで読む: 『HUNTER×HUNTER』のハンター文字のための 1&nbsp;MB int8 OCR</h1>
     <p class="dek">合成した行画像とページ画像、MobileNetV4 ベースの CTC 認識器と DBNet-lite 行検出器、Espressif の int8 規則に従う量子化を考慮した学習（QAT）、そしてその規則とビット単位で一致する WebAssembly 上の Rust エンジン。以下の数値はすべて、プロジェクトの研究ジャーナルと実行ログから取っている。</p>
     <p class="post-update"><b>更新（2026年11月25日）</b> 本レポートは最初のモデル、すなわち v4 認識器（75 クラス）と det_v2 を扱っている。現在の<a href="../index-ja.html">読み取りページ</a>は、写真風のページでも学習したモデルファミリーを使う。「高速」は det_v2 と再学習した小型認識器（91 クラス: かな、空白、数字と <code>! ? : / . -</code>）、「高精度」は 960&nbsp;px の MobileNetV4-small 1.0 検出器と大型認識器で、合計 3.6&nbsp;MB である。学習と評価は <code>docs/research/JOURNAL.md</code>（2026-11-25）にある。</p>
-    <p class="post-update"><b>更新（2026年11月26日）</b> 文字デザインの一部として描かれた数字（型番の <code>07</code> や、タイトル末尾の <code>!!</code> など）を読む新しい認識器を学習・評価した。ただし読み取りページにはまだ入れていない。<a href="#app-v6">付録 E</a> を参照。</p>
+    <p class="post-update"><b>更新（2026年11月26日）</b> <a href="../index-ja.html">読み取りページ</a>は v7 認識器に切り替えた。文字デザインの一部として描かれた数字（型番の <code>07</code> や、タイトル末尾の <code>!!</code> など、<a href="#app-v6">付録 E</a>）に加え、アニメの話タイトルの「×」も読める（<a href="#app-v7">付録 F</a>）。</p>
     <p class="paper-meta"><span><b>コード</b> hxh_ocr/, rust/, web/</span><span><b>記録</b> docs/research/JOURNAL.md</span><span><b>評価</b> 生成画像のみ</span></p>
   </div>
 
@@ -951,7 +951,60 @@ node web/test/page_e2e.mjs --conf-sweep</pre>
         <li><strong>短い行の後に続く <code>!</code>。</strong> int8 の認識器は、短い行の後の余白部分にこれを出すことがある。アプリはどの行も最後の列を繰り返して 768&nbsp;px まで埋めるが、学習ではその部分を blank として教えていない。現行の高速認識器は synth_v4 の 3,000 行中 8 行でこれを起こす。</li>
         <li>太い文字の<strong>小さな濁点</strong>は、今もいちばん多い読み落としである。</li>
       </ul>
-      <p>v6 の認識器はそのまま差し替えられる（<code>experiments/family/tiny_v6</code> と <code>base_v6</code>）が、読み取りページは当面ファミリーの認識器を使い続ける。学習は <code>scripts/launch_v6.sh</code> と、研究ジャーナルの 2026-11-25 の項にある。</p>
+      <p>v6 の認識器（<code>experiments/family/tiny_v6</code> と <code>base_v6</code>）もそのまま差し替えられたが、読み取りページはファミリーの認識器から、数字も読める v7（付録 F）に直接切り替えた。学習は <code>scripts/launch_v6.sh</code> と、研究ジャーナルの 2026-11-25 の項にある。</p>
+
+      <h3 id="app-v7"><span class="sec-n">F</span> 話タイトルの「×」（認識器 v7、2026年11月）</h3>
+      <p>2011年版アニメは話タイトルを <code>A×ト×B</code> のように「×」でつないだ言葉で書き、タイトルカードでは同じタイトルをハンター文字でも、言葉の間に「×」を入れて繰り返す。これまでの認識器には「×」のトークンがなく、しかもハンター文字には「×」に似た字が二つある。長音符 <code>ー</code> は横に引き伸ばした X（<code>&gt;-&lt;</code>）、<code>め</code> は片側を閉じた X である。こうした行のテストセットで、v6 認識器は「×」の 58–63% を <code>ー</code> と読み、残りの多くを <code>め</code> と読むか読み落とした。</p>
+      <p><strong>生成器 v7</strong>（<code>hxh-synth --v7 1</code>、既定ではオフ。v6 の出力はバイト単位で変わらない）:</p>
+      <ul>
+        <li>「×」を 92 番目のクラスとして加える。描き方は v6 の数字と同じで、隣の文字と同じ変形、手ぶれ、線の太さ、効果を通した 2 本の線である。高さは文字の大半ほどで、幅は高さより少し狭い。行によっては太く、小さく、またはディスプレイ書体で描く。</li>
+        <li>タイトル風の内容: 1〜4 個のかなの言葉を実際のタイトルと同じようにつなぐ。約半数が <code>A×と×B</code>、残りは <code>A×B</code>、<code>A×B×C</code>、<code>A×3</code> のような数である。「×」の前の言葉の 3 分の 1 は <code>ー</code> で終わるので、認識器は似た字のすぐ隣にある「×」を見ることになる。</li>
+        <li>タイトルカードの場面: 「×」入りの大きな太いカタカナのタイトル（ラベルなし）と、その下か上に同じタイトルのハンター文字を、無地・暗い・ぼけた背景に置く（<a class="xref" href="#f-v7pages">図</a>）。</li>
+      </ul>
+
+      <figure class="fig" id="f-v7pages">
+        <div class="fig-media"><img src="img/deep/v7_pages.webp" alt="生成器 v7 によるタイトルカードのページ 2 枚。言葉の間に×が入った大きなカタカナのタイトルと、その下に×入りの同じタイトルのハンター文字。2 枚目は暗い画面を撮影した体裁。" loading="lazy"></div>
+        <figcaption>図 # — タイトルカードの場面の pages_v7 検証ページ 2 枚。オレンジ: カタカナのタイトルと話数（ラベルなし）。緑: ラベル付きのハンター文字の行で、認識器はその「×」を読まなければならない。</figcaption>
+      </figure>
+
+      <p><strong>学習。</strong> 横書き認識器 2 つを v6 版から微調整し、分類器を 91 クラスから 92 クラスに広げた（既存の行はそのまま）。ステージ 1（5,000 ステップ）は新しい行を混合の 15% とした。ステージ 2（3,000 ステップ）では「×」を多く含む追加データを加えた。高速版の認識器は int8 版で単語間の空白を落とし始めたため、synth_v4 を約 70% に戻すステージをさらに加えた。int8 の確認から、二つの修正が生まれた:</p>
+      <ul>
+        <li><strong>パディング部分に出る <code>!</code> の連続</strong>（付録 E で残った課題）。学習で CTC 損失に全フレームを数えるようにし、短い行の後のパディングを空白として読むよう教えた。一部のバッチはアプリと同じく 768&nbsp;px までパディングする。synth_v4 で、高速版が行末の後に出す記号は 25 から 1 に減った。</li>
+        <li><strong>「×」の事前確率の補正。</strong> 学習用の行は、実際のハンター文字よりも <code>ー</code> に対する「×」の割合がずっと高い。そのため int8 認識器は、写真風のぼけた行の <code>ー</code> の約 5% を <code>×</code> と読んだ。int8 書き出しの前に「×」のスコアを一定量下げる（高精度は 1.0、高速は 0.5）と、これが半分になった。代わりに「×」の読み取り率は約 4 ポイント下がる。</li>
+      </ul>
+      <p>その後はいつもどおり QAT、ESP-PPQ による PTQ、<code>.hxhm</code> 書き出しを行った。どちらの認識器も、ホスト側エンジン、素朴な参照実装、WASM の SIMD 版とスカラー版でビット単位で一致する（512/512）。検出器と縦書き認識器は変えていない。</p>
+
+      <figure class="fig table" id="t-v7">
+        <figcaption>表 # — v6 と v7 の認識器（int8、アプリ自身のコード経由）。行セットは横書きの行を <code>readCrop</code> で読んだ結果。ページセットは、現行の検出器を使ったブラウザのパイプライン全体で、読み取りの確信度 0.8 のときの結果。</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>指標</th><th class="num">高速 v6</th><th class="num">高速 v7</th><th class="num">高精度 v6</th><th class="num">高精度 v7</th></tr></thead>
+          <tbody>
+            <tr><td class="k">「×」テストの CER（7,018 行）</td><td class="num">17.91%</td><td class="num"><strong>10.54%</strong></td><td class="num">17.02%</td><td class="num"><strong>8.30%</strong></td></tr>
+            <tr><td class="k">「×」として読めた「×」（3,499 個）</td><td class="num">0%</td><td class="num"><strong>81.9%</strong></td><td class="num">0%</td><td class="num"><strong>88.5%</strong></td></tr>
+            <tr><td class="k">数字テストの CER</td><td class="num">10.56%</td><td class="num"><strong>9.87%</strong></td><td class="num">8.54%</td><td class="num"><strong>7.33%</strong></td></tr>
+            <tr><td class="k">lines_v5b val の CER</td><td class="num">7.68%</td><td class="num"><strong>7.58%</strong></td><td class="num">6.88%</td><td class="num"><strong>6.43%</strong></td></tr>
+            <tr><td class="k">synth_v4 val の CER（3,000 行）</td><td class="num">1.57%</td><td class="num"><strong>1.49%</strong></td><td class="num">0.96%</td><td class="num">1.01%</td></tr>
+            <tr><td class="k">余計な数字・記号・「×」が出た行（lines_v5b の普通の行）</td><td class="num">23 / 5,924</td><td class="num">47 / 5,924</td><td class="num">17 / 5,924</td><td class="num">45 / 5,924</td></tr>
+            <tr><td class="k">pages_v7 val、F1</td><td class="num">76.93%</td><td class="num">76.62%</td><td class="num">86.80%</td><td class="num">86.57%</td></tr>
+            <tr><td class="k">pages_v7 val、検出した行の CER</td><td class="num">12.03%</td><td class="num"><strong>8.49%</strong></td><td class="num">11.71%</td><td class="num"><strong>7.17%</strong></td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">「×」テストは学習に使っていない別セット（lines_v7_cross val、1,500 ページ、専用の seed）で、横書き 7,018 行のうち 2,185 行に合計 3,499 個の「×」がある。まだ読み落とす「×」の多くは、目で見ても読めないほどぼけたりノイズが乗ったりした行にある。</p>
+      </figure>
+
+      <figure class="fig" id="f-v7lines">
+        <div class="fig-media white"><img src="img/deep/v7_lines_ja.webp" alt="「×」を含む生成行 10 本と、それぞれの正解、高精度 v6 と v7 の読み。v6 はすべての×を長音符か め と読み、完全一致は 0 本。v7 は 10 本中 8 本が完全一致。" loading="lazy"></div>
+        <figcaption>図 # — 「×」テストから無作為に選んだ 10 行を、高精度 v6 と高精度 v7（int8）で読んだ結果。赤: 誤った文字。薄く取り消し線: 読み落とした文字。✓: 完全一致。v6 は「×」を <code>ー</code> か <code>め</code> と読み、完全一致は 0 本。v7 は 8 本。</figcaption>
+      </figure>
+
+      <p><strong>代償と残る課題。</strong></p>
+      <ul>
+        <li><strong><code>ー</code> を <code>×</code> と読む。</strong> 写真風のぼけた行では、v7 認識器はまだ長音符の 2–3% を「×」と読む。くっきりした行では起きない（synth_v4 で 412 個中 0）。</li>
+        <li><strong>余計な記号。</strong> v7 認識器はどちらも、写真風の普通の行の約 0.8% に余計な数字・記号・「×」を出す。v6 は 0.3–0.4% だった。</li>
+        <li><strong>単独の「×」。</strong> アプリの閉じるボタンは「×」そのものに見えるが、v7 はそれを無視すべきものとして学んでいない。アプリ側で「×」や記号だけの行を隠すこともできる。</li>
+        <li><strong>古いページセット。</strong> 確信度 0.8 では、高速 v7 は外国語の文字上の誤検出行が v6 より少し多い（pages_foreign_open で 1 ページあたり 0.09 対 0.04）。確信度で絞らなければ、このセットも v6 と同じ精度で読む。</li>
+      </ul>
+      <p>v7 認識器は 11 月 26 日から読み取りページで動いている。高速は <code>experiments/family/tiny_v7</code>、高精度は <code>base_v7</code> で、検出器と縦書き認識器は変えていない。学習手順は <code>scripts/launch_v7.sh</code> と 2026-11-26 の研究ノートにある。</p>
     </article>
   </div>
 </main>

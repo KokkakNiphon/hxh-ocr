@@ -1,0 +1,12 @@
+{
+ "det": {
+  "description": "Unchanged copy of det_v2 (the deployed Fast detector, unchanged); see its json.",
+  "tuning": "browser pipeline, int8, reading confidence 0.8: see docs/research/JOURNAL.md (2026-11-25, model family) and experiments/family/eval"
+ },
+ "rec": {
+  "description": "Model family 'tiny' horizontal reader v7: MobileNetV4-small 0.5 CTC (324k params, 154 M MACs), 48x768, 92 classes (74 kana + space + 0-9 ! ? : / . - + the cross ×, the first 91 with the same ids as the v6 and family readers), fine-tuned from the v6 reader's float checkpoint (v6c_tiny_h48) with the classifier grown by one row: stage 1, 5,000 steps on lines_v7 (generator v7, hxh-synth --v7: the cross × of the anime's episode titles written into the Hunter lettering, drawn as two strokes in the line's own weight and ends or set in the display face of the line's digits, in title content such as A×と×B, A×B×C and counts A×3, often right after ー or め, its look-alikes; an episode title-card scene with a big katakana title over or under the Hunter line) (twice) + lines_v6 + lines_v6m + lines_v5b + synth_v4 (twice, 63% of the lines); stage 2, 3,000 steps with the cross-heavy supplement lines_v7x (title scenes on 43% of the pages, crosses in a third of its lines) twice on top, with the padding after short lines supervised as blank (--pad-blank 0.3, which ended int8 runs of ! there); stage 3 (rebalancing), 2,000 steps with synth_v4 three times (about 70% of the lines), padding supervised; QAT with the padding supervised; the cross's logit lowered by 0.5 at export (a prior shift: the training lines carry crosses far more often than real text, and blurry long-vowel marks ー were read as crosses; scripts/cross_prior.py), int8 via ESP-PPQ PTQ, .hxhm bit-exact with ESP-PPQ (host engine, naive reference, wasm SIMD, wasm scalar)."
+ },
+ "rec_v": {
+  "description": "Unchanged copy of the family 'tiny' vertical reader qat_fam_tiny_h48_vert (model_v.hxhm and model_v.json as in experiments/family/tiny/, 91 classes without the cross); episode titles are horizontal, so it was not retrained for v7."
+ }
+}

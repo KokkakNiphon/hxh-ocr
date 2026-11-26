@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from hxh_ocr.data import LineDataset, Vocab, make_loader  # noqa: E402
 from hxh_ocr.engine import load_checkpoint, predict  # noqa: E402
 from hxh_ocr.fonts import label_font  # noqa: E402
-from hxh_ocr.metrics import align, confusions, edit_distance, score  # noqa: E402
+from hxh_ocr.metrics import align, confusions, cross_metrics, edit_distance, score  # noqa: E402
 
 
 def worst_grid(ds, refs, hyps, idxs, path, k=32, cols=2, scale=2):
@@ -79,7 +79,7 @@ def main():
     cer, acc = score([refs[i] for i in pos], [hyps[i] for i in pos])
     false_read = sum(1 for i in neg if hyps[i].strip()) / max(1, len(neg))
     # extended vocab: digits / punctuation read on lines that have none (pure Hunter lines)
-    xs = set("0123456789!?:/.-")
+    xs = set("0123456789!?:/.-×")  # with the cross (v7)
     plain = [i for i in pos if not set(refs[i]) & xs]
     x_chars = sum(sum(c in xs for c in hyps[i]) for i in plain)
     x_rate = x_chars / max(1, sum(len(refs[i]) for i in plain))
@@ -103,6 +103,12 @@ def main():
     if xl:
         print(f"{len(xl)} lines with digits / punctuation: CER {x_cer:.4f}  line accuracy {x_acc:.4f} | "
               f"digit / punctuation characters: {x_ref}, error rate {x_char_err:.4f}")
+    xm = cross_metrics([refs[i] for i in pos], [hyps[i] for i in pos])
+    if xm["cross_ref"] or xm["cross_false"]:
+        print(f"crosses: {xm['cross_ref']} in the labels, recall {xm['cross_recall']:.4f}, precision {xm['cross_precision']:.4f}, "
+              f"missed ones read as {xm['cross_read_as']}; {xm['cross_lines']} lines with crosses, line accuracy "
+              f"{xm['cross_lines_acc']:.4f}; crosses on {xm['cross_on_plain_lines']} lines without any; "
+              f"look-alikes read as crosses {xm['lookalikes_read_as_cross']}")
     conf = confusions([refs[i] for i in pos], [hyps[i] for i in pos], 20)
     print(f"{len(pos)} lines  CER {cer:.4f}  line accuracy {acc:.4f}" +
           (f" | {len(neg)} negatives, read as text: {false_read:.4f}" if neg else ""))
@@ -116,7 +122,7 @@ def main():
          "extra_tokens_on_plain_lines": x_chars, "extra_tokens_per_char": x_rate, "plain_lines": len(plain), "plain_lines_with_extra": x_lines,
          "plain_chars": sum(len(refs[i]) for i in plain),
          "digit_lines": len(xl), "digit_lines_cer": x_cer, "digit_lines_acc": x_acc,
-         "digit_chars": x_ref, "digit_char_err": x_char_err,
+         "digit_chars": x_ref, "digit_char_err": x_char_err, **xm,
          "confusions": [[a, b, c] for (a, b), c in conf]}, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"wrote {run / f'worst32{tag}.png'}")
 

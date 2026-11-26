@@ -1,6 +1,7 @@
 """Detector check on the v6 test pages (data/pages_v6): recall of the unchanged detectors by line
-type (numbers / punctuation in the line, a kana reading guide right above it, promo scene) and
-what happens to the reading guides (boxed into a Hunter line, boxed on their own, left alone).
+type (numbers / punctuation in the line, a kana reading guide right above it, promo scene; on
+the v7 pages also crosses in the line and the title scene) and what happens to the reading guides
+(boxed into a Hunter line, boxed on their own, left alone).
 
     python scripts/det_check_v6.py [--models v2tiny,base] [--out experiments/family/eval/det_check_v6.json]
 
@@ -57,7 +58,8 @@ def main():
                             str(d / "model.hxhm"), str(d / "model_v.hxhm")], capture_output=True, text=True, encoding="utf-8", check=True)
         dump = json.loads(p.stdout)
         min_score = json.loads((d / "det.json").read_text(encoding="utf-8")).get("min_show_score", 0)
-        cats = {k: [0, 0] for k in ("all h", "h with numbers / punct.", "h without", "h with a reading guide", "h in promo scenes", "v")}
+        cats = {k: [0, 0] for k in ("all h", "h with numbers / punct.", "h without", "h with a reading guide", "h in promo scenes",
+                                    "h with crosses (v7)", "h in title scenes (v7)", "v")}
         misses = {k: {"partly boxed (>= 30% of it)": 0, "not found": 0} for k in ("numbers", "plain")}
         ruby = {"guides": 0, "inside a matched Hunter box (>= 30% of it)": 0, "boxed on its own": 0, "shown on its own": 0, "left alone": 0}
         for pg, dp in zip(pages, dump):
@@ -87,6 +89,10 @@ def main():
                         keys.append("h with a reading guide")
                     if s["layout"] == "promo":
                         keys.append("h in promo scenes")
+                    if "×" in gl["text"]:
+                        keys.append("h with crosses (v7)")
+                    if s["layout"].startswith("title"):
+                        keys.append("h in title scenes (v7)")
                 for k in keys:
                     cats[k][0] += hit
                     cats[k][1] += 1

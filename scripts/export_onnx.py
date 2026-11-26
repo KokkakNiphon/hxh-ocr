@@ -62,6 +62,9 @@ def main():
     p.add_argument("--dynamic", action="store_true", help="also export a dynamic-width variant")
     p.add_argument("--dynamo", action="store_true", help="use the torch.export based exporter")
     p.add_argument("--out", default=None, help="output dir (default: run dir)")
+    p.add_argument("--logit-shift", default=None,
+                   help="CLASS=DELTA[,...]: subtract DELTA from those classes' logits (the classifier bias), a prior "
+                        "shift (readers v7: the cross, scripts/cross_prior.py)")
     args = p.parse_args()
 
     run = Path(args.run)
@@ -70,6 +73,14 @@ def main():
     model, cfg = load_checkpoint(args.ckpt or run / "best.pt", "cpu", args.weights)
     H = args.height or cfg["height"]
     fused = fuse_bn(model, (H, args.width))
+    if args.logit_shift:
+        heads = [m for m in fused.modules() if isinstance(m, torch.nn.Conv2d) and m.out_channels == cfg["num_classes"]]
+        assert len(heads) == 1 and heads[0].bias is not None, "no single classifier conv with a bias"
+        with torch.no_grad():
+            for item in args.logit_shift.split(","):
+                c, d = item.split("=")
+                heads[0].bias[int(c)] -= float(d)
+                print(f"logit shift: class {int(c)} ({cfg['tokens'][int(c) - 1]}) -{float(d)}")
     with torch.no_grad():
         x = torch.randn(2, 1, H, args.width)
         print(f"fuse_bn: max|diff| vs unfused (eval) = {(model(x) - fused(x)).abs().max():.2e}")

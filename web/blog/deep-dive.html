@@ -71,7 +71,7 @@
     <h1>Reading an invented alphabet in the browser: a 1&nbsp;MB int8 OCR for Hunter&nbsp;×&nbsp;Hunter script</h1>
     <p class="dek">Synthetic lines and pages, a MobileNetV4 CTC reader and a DBNet-lite line detector, quantisation-aware training that follows Espressif's int8 rules, and a Rust engine in WebAssembly that matches them bit for bit. Every number below comes from the project's research journal and run logs.</p>
     <p class="post-update"><b>Update, November 25, 2026.</b> This report describes the first models: the v4 readers (75 classes) and det_v2. The <a href="../index.html">Reader</a> now runs a model family trained with photo-style pages as well. Fast is det_v2 with retrained tiny readers (91 classes: the kana, space, digits and <code>! ? : / . -</code>); Accurate is a MobileNetV4-small 1.0 detector at 960&nbsp;px with wider readers, 3.6&nbsp;MB in all. Their training and benchmarks are in <code>docs/research/JOURNAL.md</code> (2026-11-25).</p>
-    <p class="post-update"><b>Update, November 26, 2026.</b> New readers that read numbers drawn as part of the lettering, such as a model number <code>07</code> or a <code>!!</code> after a title, are trained and tested but not in the Reader yet: <a href="#app-v6">Appendix E</a>.</p>
+    <p class="post-update"><b>Update, November 26, 2026.</b> The <a href="../index.html">Reader</a> now runs the v7 readers. They also read numbers drawn as part of the lettering, such as a model number <code>07</code> or a <code>!!</code> after a title (<a href="#app-v6">Appendix E</a>), and the cross <code>×</code> of the anime&#39;s episode titles (<a href="#app-v7">Appendix F</a>).</p>
     <p class="paper-meta"><span><b>Code</b> hxh_ocr/, rust/, web/</span><span><b>Record</b> docs/research/JOURNAL.md</span><span><b>Evaluation</b> generated images only</span></p>
   </div>
 
@@ -950,7 +950,60 @@ node web/test/page_e2e.mjs --conf-sweep</pre>
         <li><strong>Runs of <code>!</code> after short lines.</strong> int8 readers can emit these in the padding after a short line. The app pads every line to 768&nbsp;px by repeating its last column, and training never supervises those frames as blank. The deployed Fast reader does it on 8 of 3,000 synth_v4 lines.</li>
         <li><strong>Small dakuten</strong> in bold lettering are still the most common miss.</li>
       </ul>
-      <p>The v6 readers are drop-in replacements (<code>experiments/family/tiny_v6</code> and <code>base_v6</code>), but the Reader keeps the family readers for now. The training is in <code>scripts/launch_v6.sh</code> and the journal entry of 2026-11-25.</p>
+      <p>The v6 readers were drop-in replacements (<code>experiments/family/tiny_v6</code> and <code>base_v6</code>), but the Reader went from the family readers straight to v7 (Appendix F), which reads the numbers as well. The training is in <code>scripts/launch_v6.sh</code> and the journal entry of 2026-11-25.</p>
+
+      <h3 id="app-v7"><span class="sec-n">F</span> The cross of the episode titles (readers v7, November 2026)</h3>
+      <p>The 2011 anime writes its episode titles as words joined by crosses, such as <code>A×ト×B</code>, and its title cards repeat the title in Hunter script with crosses between the words. The readers had no token for the cross, and two Hunter glyphs look like it: the long-vowel mark <code>ー</code> is a stretched X (<code>&gt;-&lt;</code>), and <code>め</code> is an X closed on one side. On a held-out test of such lines, the v6 readers read 58–63% of the crosses as <code>ー</code> and most of the rest as <code>め</code> or nothing.</p>
+      <p><strong>Generator v7</strong> (<code>hxh-synth --v7 1</code>, off by default; v6 output is unchanged byte for byte):</p>
+      <ul>
+        <li>The cross becomes the 92nd class. It is drawn like v6's digits: two strokes through the same transform, hand jitter, stroke weight and effects as the glyphs beside it, most of a glyph high and a little narrower than high. Some lines draw it heavier or smaller, or set it in a display font.</li>
+        <li>Title content: one to four kana words joined the way the titles are, with <code>A×と×B</code> on about half the lines, then <code>A×B</code>, <code>A×B×C</code> and counts such as <code>A×3</code>. A third of the words before a cross end in <code>ー</code>, so the reader sees the cross right next to its look-alike.</li>
+        <li>A title-card scene: a big bold katakana title with its crosses (unlabelled), and the same title in Hunter lettering under or over it, on a plain, dark or blurred ground (<a class="xref" href="#f-v7pages">Figure</a>).</li>
+      </ul>
+
+      <figure class="fig" id="f-v7pages">
+        <div class="fig-media"><img src="img/deep/v7_pages.webp" alt="Two generated title-card pages from generator v7: a big katakana title with crosses between its words, and under it the same title in Hunter glyphs with crosses; the second page is photographed off a dark screen." loading="lazy"></div>
+        <figcaption>Fig. # — Two pages_v7 validation pages in the title-card scene. Orange: the katakana title and an episode number (unlabelled). Green: the labelled Hunter line, whose crosses the reader must read.</figcaption>
+      </figure>
+
+      <p><strong>Training.</strong> Both horizontal readers were fine-tuned from their v6 versions, with the classifier grown from 91 to 92 classes and the old rows kept. Stage 1 (5,000 steps) used the new lines at 15% of the mix. Stage 2 (3,000 steps) added a supplement with more crosses. The Fast reader then got a rebalancing stage with synth_v4 at about 70% of the lines, because its int8 build had started dropping word spaces. The int8 checks led to two fixes:</p>
+      <ul>
+        <li><strong>Runs of <code>!</code> in the padding</strong> (an open problem from Appendix E). The trainer now counts every frame in the CTC loss, so the padding after a short line must read as blank. It also pads some batches to the full 768&nbsp;px, as the app does. On synth_v4, the Fast reader's marks after the end of a line fell from 25 to 1.</li>
+        <li><strong>A prior shift for the cross.</strong> The training lines carry crosses far more often, relative to <code>ー</code>, than real Hunter text does. The int8 readers read about 5% of the <code>ー</code> on blurry photo-style lines as <code>×</code>. Lowering the cross's score by a constant before int8 export (1.0 for Accurate, 0.5 for Fast) halved that, at a cost of about 4 points of cross recall.</li>
+      </ul>
+      <p>Then came the usual QAT, ESP-PPQ PTQ and <code>.hxhm</code> export. Both readers match bit for bit (512/512) in the host engine, the naive reference, and WASM SIMD and scalar. The detectors and vertical readers are unchanged.</p>
+
+      <figure class="fig table" id="t-v7">
+        <figcaption>Table # — The v6 readers against v7, int8, through the app's own code. Line sets are horizontal lines read with <code>readCrop</code>; page sets use the full browser pipeline at reading confidence 0.8 with the deployed detectors.</figcaption>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>measure</th><th class="num">Fast v6</th><th class="num">Fast v7</th><th class="num">Accurate v6</th><th class="num">Accurate v7</th></tr></thead>
+          <tbody>
+            <tr><td class="k">cross test CER (7,018 lines)</td><td class="num">17.91%</td><td class="num"><strong>10.54%</strong></td><td class="num">17.02%</td><td class="num"><strong>8.30%</strong></td></tr>
+            <tr><td class="k">crosses read as crosses (3,499)</td><td class="num">0%</td><td class="num"><strong>81.9%</strong></td><td class="num">0%</td><td class="num"><strong>88.5%</strong></td></tr>
+            <tr><td class="k">digit test CER</td><td class="num">10.56%</td><td class="num"><strong>9.87%</strong></td><td class="num">8.54%</td><td class="num"><strong>7.33%</strong></td></tr>
+            <tr><td class="k">lines_v5b val CER</td><td class="num">7.68%</td><td class="num"><strong>7.58%</strong></td><td class="num">6.88%</td><td class="num"><strong>6.43%</strong></td></tr>
+            <tr><td class="k">synth_v4 val CER (3,000 lines)</td><td class="num">1.57%</td><td class="num"><strong>1.49%</strong></td><td class="num">0.96%</td><td class="num">1.01%</td></tr>
+            <tr><td class="k">stray digits, marks or crosses, plain lines_v5b lines</td><td class="num">23 / 5,924</td><td class="num">47 / 5,924</td><td class="num">17 / 5,924</td><td class="num">45 / 5,924</td></tr>
+            <tr><td class="k">pages_v7 val, F1</td><td class="num">76.93%</td><td class="num">76.62%</td><td class="num">86.80%</td><td class="num">86.57%</td></tr>
+            <tr><td class="k">pages_v7 val, CER of found lines</td><td class="num">12.03%</td><td class="num"><strong>8.49%</strong></td><td class="num">11.71%</td><td class="num"><strong>7.17%</strong></td></tr>
+          </tbody>
+        </table></div>
+        <p class="table-note">The cross test is a held-out set (lines_v7_cross val, 1,500 pages, a seed of its own) where 2,185 of the 7,018 horizontal lines carry 3,499 crosses. Many of the crosses still missed are on lines that are too blurred or noisy to read by eye.</p>
+      </figure>
+
+      <figure class="fig" id="f-v7lines">
+        <div class="fig-media white"><img src="img/deep/v7_lines_en.webp" alt="Ten generated lines with crosses, each with what it says, the v6 Accurate reader's reading and the v7 reader's reading. The v6 reader reads every cross as a long-vowel mark or as me and gets none exact; the v7 reader gets 8 of 10 exact." loading="lazy"></div>
+        <figcaption>Fig. # — Ten cross-test lines drawn at random, read by Accurate v6 and Accurate v7 (int8). Red: wrong characters. Faint and struck through: characters the reader dropped. ✓: exact. v6 reads the crosses as <code>ー</code> or <code>め</code> and gets none of the ten exact; v7 gets eight.</figcaption>
+      </figure>
+
+      <p><strong>Costs and open problems.</strong></p>
+      <ul>
+        <li><strong><code>ー</code> read as <code>×</code>.</strong> On blurry photo-style lines, the v7 readers still read 2–3% of the long-vowel marks as crosses, and none on clean ones (0 of 412 on synth_v4).</li>
+        <li><strong>Stray marks.</strong> Both v7 readers put a stray digit, mark or cross on about 0.8% of plain photo-style lines, against 0.3–0.4% for v6.</li>
+        <li><strong>A lone cross.</strong> A close button in an app looks exactly like a cross, and v7 never saw one as something to ignore. The app could hide lines that are nothing but crosses or marks.</li>
+        <li><strong>Older page sets.</strong> At reading confidence 0.8, Fast v7 shows a few more false lines on foreign text than v6 (0.09 against 0.04 a page on pages_foreign_open). Without the filter it reads that set as well as v6.</li>
+      </ul>
+      <p>The v7 readers have run in the Reader since November 26: Fast is <code>experiments/family/tiny_v7</code> and Accurate is <code>base_v7</code>, with the detectors and vertical readers unchanged. The training is in <code>scripts/launch_v7.sh</code> and the journal entry of 2026-11-26.</p>
     </article>
   </div>
 </main>
