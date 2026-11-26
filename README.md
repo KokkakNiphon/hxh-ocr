@@ -83,6 +83,10 @@ images.
    tiles of a big photo; Accurate reads still images in one pass at 960 px; the live camera
    always uses Fast.
 
+   A much smaller reader, `dsi_v1` (the first three stages of the tiny backbone, 32 × 512 px,
+   30.6 M MACs a line, 104 KB in int8), was made for the Nintendo DSi port of HxH Translator. Its
+   weights are in the model repo on Hugging Face (`int8/dsi_v1`); the port's code is not public.
+
    ![Animation: the reader steps along a strip of Hunter script; each step's answer is coloured, repeats are glued together, blanks are dropped, and the reading grows to ぐりーどあいらんど](docs/readme/ctc_reading.gif)
 
    *The real reader on a real strip, one step at a time. It answers once for every 4 pixels (192

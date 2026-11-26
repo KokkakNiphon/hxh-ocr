@@ -2820,6 +2820,29 @@ last token. Its own journal note is in the translator entry.
 numbers and the cross test, and the usage with `vocab/v7.json`; `CITATION.cff` is version 1.1.0.
 The public repository is synced from `main` through the export audit.
 
+## 2026-11-26: the DSi reader dsi_v1 on Hugging Face (the model only)
+
+The owner: "also upload the DSI model", then "We'll only release the DSi model, but not the
+sourcecode". So `dsi_v1` (the 3-stage, 32 × 512 reader of the entry "dsi_v1, a 3-stage 32 px
+reader for the DSi") is published as a model, and nothing of the DSi port's code: `dsi/`,
+`rust/hxh-dsi-core`, `rust/hxh-dsi`, the ARMv5TE engine backend and `scripts/launch_dsi.sh` stay
+in the private repository (they are not on `main` either, only on the DSi branch).
+
+- **Hugging Face** (`KokkakNiphon/hxh-ocr`): a reader-only set, `int8/dsi_v1/model.hxhm` and
+  `model.json`, with `espdl/dsi_v1/qat_dsi_v1.espdl`, `onnx/dsi_v1/qat_dsi_v1_32x512.onnx` and
+  `pytorch/dsi_v1/` (`dsi_v1_s2.pt`, the fp32 start of QAT, and `qat_dsi_v1.pt`); its vocab is
+  `vocab/family.json`. The model card has a section on it (why 3 stages at 32 px, the DS-mode
+  timing, the int8 line results against the family tiny reader, how to run the ONNX at 32 × 512)
+  and a model-index entry (`v6_digits` CER 13.35%).
+- **Packager**: `scripts/hf_package_models.py` takes the set from `experiments/family/dsi_v1` and
+  checks it like every other one (the `.hxhm` equals its experiment output, the `.espdl`
+  converts to exactly that `.hxhm`, the stripped checkpoints give outputs identical to the
+  originals and the QAT one matches the ONNX). The checkpoint check now builds its input from the
+  reader's own height (32 × 512 here, 48 × 768 for the others). Without the private files (a
+  checkout of `main`, or the public repository) the package is built without the set.
+- **GitHub**: the public README says the DSi reader is on Hugging Face and that the port's code is
+  not public; no DSi files are exported.
+
 ## 2026-11-24: plan addition: full-page reading (text-line detection)
 
 Decided with the owner. The recogniser reads one horizontal line per crop;

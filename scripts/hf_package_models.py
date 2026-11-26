@@ -10,6 +10,12 @@ Five sets, each a line detector plus a horizontal and a vertical CTC line reader
              tiny vertical reader (91 classes, unchanged). A drop-in folder: what the demo runs as Fast.
     base_v7  det_base_v1_qat, qat_v7bs_base_h48 and the family base vertical reader: Accurate.
 
+Plus one reader-only set:
+
+    dsi_v1   qat_dsi_v1 (91 classes): a 3-stage reader at 32 x 512 (30.6 M MACs a line) made for the
+             Nintendo DSi port of HxH Translator. Only the model is published; its files are in the
+             private repository, so the set is left out when they are not there.
+
 The browser demo runs two presets of them (presets.json):
     Fast      = int8/tiny_v7/*   -> web/models/            (live camera, tiles)
     Accurate  = int8/base_v7/*   -> web/models/accurate/   (still images, no tiles)
@@ -112,8 +118,12 @@ INT8 = {
         "model_v.json": ("experiments/family/base_v7/model_v.json", None),
     },
 }
+INT8["dsi_v1"] = {
+    "model.hxhm": ("experiments/family/dsi_v1/model.hxhm", "experiments/rust_engine/qat_dsi_v1_ptq/model.hxhm"),
+    "model.json": ("experiments/family/dsi_v1/model.json", None),
+}
 # vocab of the horizontal (model.json) and the vertical (model_v.json) reader of each set
-VOCAB_OF = {"v4": "v4", "tiny": "family", "base": "family", "tiny_v7": "v7", "base_v7": "v7"}
+VOCAB_OF = {"v4": "v4", "tiny": "family", "base": "family", "tiny_v7": "v7", "base_v7": "v7", "dsi_v1": "family"}
 VOCAB_OF_V = {"v4": "v4", "tiny": "family", "base": "family", "tiny_v7": "family", "base_v7": "family"}
 
 # What the browser runs: preset -> (web folder, {file in that folder: file in the package})
@@ -152,6 +162,7 @@ MODELS = {
     # family ones above, byte for byte)
     "tiny_v7": {"qat_v7dh_tiny_h48": (f"{_PPQ}/qat_v7dh_tiny_h48_ptq", "model.hxhm", None)},
     "base_v7": {"qat_v7bs_base_h48": (f"{_PPQ}/qat_v7bs_base_h48_ptq", "model.hxhm", None)},
+    "dsi_v1": {"qat_dsi_v1": (f"{_PPQ}/qat_dsi_v1_ptq", "model.hxhm", None)},
 }
 
 # checkpoints: set -> {name: (run checkpoint, kind, ONNX model name to compare with or None, json
@@ -190,7 +201,16 @@ CKPTS = {
         "v7b_base_h48.pt": ("runs/v7b_base_h48/best.pt", "reader", None, "model.json"),
         "qat_v7bs_base_h48.pt": ("runs/qat_v7bs_base_h48/best.pt", "reader", "qat_v7bs_base_h48", "model.json", {91: 1.0}),
     },
+    "dsi_v1": {
+        "dsi_v1_s2.pt": ("runs/dsi_v1_s2/best.pt", "reader", None, "model.json"),
+        "qat_dsi_v1.pt": ("runs/qat_dsi_v1/best.pt", "reader", "qat_dsi_v1", "model.json"),
+    },
 }
+# The DSi reader's files live only in the private repository (the model is published, the DSi app's
+# code is not): without them the package is built without the dsi_v1 set.
+if not (ROOT / "experiments" / "family" / "dsi_v1" / "model.hxhm").exists():
+    for _d in (INT8, MODELS, CKPTS):
+        _d.pop("dsi_v1", None)
 KEEP = ("config", "step", "folded", "ema", "exponents", "best_cer", "best_f1", "int8_f1", "seconds")
 ABS_PATH = re.compile(r"^(?:[A-Za-z]:[\\/]|/(?:home|Users|mnt|tmp|root)/|\\\\)|AppData|\.claude")
 NOTE = ("HxH OCR (https://github.com/KokkakNiphon/hxh-ocr), Apache-2.0. {what} Optimizer state and raw "
@@ -307,7 +327,8 @@ def check_checkpoint(src: Path, dst: Path, kind: str, onnx_path: Path | None, sh
             a.head.cls.bias[c] -= d
     b, _ = load(dst)
     if kind == "reader":
-        shape = (1, 1, 48, 768)
+        h = int(cfg.get("height", 48))
+        shape = (1, 1, h, 16 * h)  # the readers' static input: 48 x 768, the DSi reader 32 x 512
     else:
         lb = int(cfg.get("letterbox") or 640)
         shape = (1, 1, lb, lb)
@@ -406,8 +427,9 @@ def main():
     # ---- vocabularies: identical in every reader json of a set, and per vocab family
     vocabs: dict[str, list[str]] = {}
     for s in INT8:
-        vs = [json.loads((out / "int8" / s / f).read_text(encoding="utf-8")) for f in ("model.json", "model_v.json")]
-        for v, key in zip(vs, (VOCAB_OF[s], VOCAB_OF_V[s])):
+        files = [f for f in ("model.json", "model_v.json") if (out / "int8" / s / f).exists()]  # dsi_v1: no vertical
+        vs = [json.loads((out / "int8" / s / f).read_text(encoding="utf-8")) for f in files]
+        for v, key in zip(vs, (VOCAB_OF[s], VOCAB_OF_V.get(s))):
             assert v["classes"] == len(v["vocab"]) + 1 and v["blank"] == 0, f"{s}: classes / blank"
             if key in vocabs:
                 assert vocabs[key] == v["vocab"], f"{s}: vocab differs from the other {key} sets"
@@ -418,7 +440,7 @@ def main():
                 "v4 readers (int8/v4): CTC class 0 is the blank; class i (1..74) is tokens[i - 1]. Labels are "
                 "full-size hiragana, ー and space: katakana and small kana are folded in, since they share glyphs.")
     write_vocab(out, "family", vocabs["family"],
-                "model family readers (int8/tiny, int8/base): CTC class 0 is the blank; class i (1..90) is "
+                "model family readers (int8/tiny, int8/base), every vertical reader after v4 and the DSi reader (int8/dsi_v1): CTC class 0 is the blank; class i (1..90) is "
                 "tokens[i - 1]. Classes 1..74 are the v4 tokens with the same ids, then 0-9 ! ? : / . - "
                 "(digits and punctuation as they appear inline in Hunter lines).")
     write_vocab(out, "v7", vocabs["v7"],
